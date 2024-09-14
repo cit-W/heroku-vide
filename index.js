@@ -19,4 +19,7 @@ app.get('/prueba', (req, res) => {
   res.send('Prueba correcta');
 });
 
+// Ruta html - jes
+app.get('/jes', (req, res) => res.render('pages/prueba'));
+
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
