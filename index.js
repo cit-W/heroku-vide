@@ -5,6 +5,15 @@ const PORT = process.env.PORT || 5001;
 
 const app = express();
 
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
 app
   .use(express.static(path.join(__dirname, 'public')))
   .set('views', path.join(__dirname, 'views'))
@@ -13,14 +22,16 @@ app
 // Ruta principal
 app.get('/', (req, res) => res.render('pages/index'));
 
-// database
-app.get('/database', async (req, res) => {
+app.get('/db', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM personas');
-    res.render('pages/index', { personas: result.rows });
+    const client = await pool.connect();
+    const result = await client.query('SELECT NOW()');
+    const results = { 'results': (result) ? result.rows : null};
+    res.render('pages/db', results );
+    client.release();
   } catch (err) {
     console.error(err);
-    res.send('Error al conectar a la base de datos.');
+    res.send("Error " + err);
   }
 });
 
