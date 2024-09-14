@@ -25,9 +25,9 @@ app.get('/', (req, res) => res.render('pages/index'));
 app.get('/db', async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT NOW()');
-    const results = { 'results': (result) ? result.rows : null};
-    res.render('pages/db', results );
+    const result = await client.query('SELECT * FROM personas');
+    const personas = result.rows;
+    res.render('pages/db', { personas });
     client.release();
   } catch (err) {
     console.error(err);
