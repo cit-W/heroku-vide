@@ -1,23 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <%- include ("../partials/header.ejs") %>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personas</title>
+    <link rel="stylesheet" href="/public/stylesheets/database.css">
 </head>
-
 <body>
+    <h1>Listado de Personas</h1>
 
-<%- include ("../partials/nav.ejs") %>
+    <ul>
+        <% personas.forEach(function(persona) { %>
+            <li><%= persona.nombre %> <%= persona.apellido %> - Edad: <%= persona.edad %></li>
+        <% }); %>
+    </ul>
 
-<div class="container">
-<h2>Database Results</h2>
+    <button id="myButton">Presionar</button>
 
-<ul>
-    <% results.forEach(function(r) { %>
-        <li><%= r.id %> - <%= r.name %></li>
-    <% }); %>
-</ul>
-
-</div>
-
+    <script src="/public/js/database.js"></script>
 </body>
 </html>
