@@ -24,6 +24,7 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
+module.exports = pool;
 
 app
   .use(express.static(path.join(__dirname, 'public')))
