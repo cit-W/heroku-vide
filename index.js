@@ -48,7 +48,6 @@ app.get('/db', async (req, res) => {
 });
 
 // Usar las rutas
-app.use('/general', general);
 app.use('/account', accountRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
