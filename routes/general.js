@@ -28,7 +28,7 @@ router.get('/info_user', async (req, res) => {
   }
 
   try {
-    const query = 'SELECT * FROM usuarios WHERE cedula = $1';
+    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
     const result = await pool.query(query, [cedula]);
 
     if (result.rows.length > 0) {
