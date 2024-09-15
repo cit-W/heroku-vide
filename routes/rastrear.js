@@ -1,17 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 router.get('/obtener_nombres', async (req, res) => {
-    try {
-        const client = await pool.connect();
-        const result = await client.query('SELECT * FROM personas');
-        const personas = result.rows;
-        res.render('pages/db', { personas });
-        client.release();
-    } catch (err) {
-        console.error(err);
-        res.send("Error " + err);
-    }
+  try {
+    const query = 'SELECT nombre FROM android_mysql.id2024sql';
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
