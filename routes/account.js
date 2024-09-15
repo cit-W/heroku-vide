@@ -9,12 +9,12 @@ const pool = new Pool({
   }
 });
 
-// DELETE reserva personal
+// DELETE - Eliminar reserva personal
 router.delete('/delete_reserva_personal', async (req, res) => {
   const id = req.query.id;
 
   if (!id) {
-    return res.status(400).json({ error: "No se proporcionó un ID válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un ID válido" });
   }
 
   try {
@@ -32,12 +32,12 @@ router.delete('/delete_reserva_personal', async (req, res) => {
   }
 });
 
-// DELETE trabajo social personal
+// DELETE - Eliminar trabajo social personal
 router.delete('/delete_social_personal', async (req, res) => {
   const id = req.query.id;
 
   if (!id) {
-    return res.status(400).json({ error: "No se proporcionó un ID válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un ID válido" });
   }
 
   try {
@@ -55,16 +55,16 @@ router.delete('/delete_social_personal', async (req, res) => {
   }
 });
 
-// GET reservas por ID del profesor
+// GET - Obtener reservas por ID del profesor
 router.get('/reservasIDs_personal', async (req, res) => {
   const profesor = req.query.profesor;
 
   if (!profesor) {
-    return res.status(400).json({ error: "No se proporcionó un profesor válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un profesor válido" });
   }
 
   try {
-    const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1  ORDER BY lugar';
+    const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1 ORDER BY lugar';
     const result = await pool.query(query, [profesor]);
 
     if (result.rows.length > 0) {
@@ -78,12 +78,12 @@ router.get('/reservasIDs_personal', async (req, res) => {
   }
 });
 
-// GET IDs de trabajo social por profesor
+// GET - Obtener IDs de trabajo social por profesor
 router.get('/socialIDs_personal', async (req, res) => {
   const profesor = req.query.profesor;
 
   if (!profesor) {
-    return res.status(400).json({ error: "No se proporcionó un profesor válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un profesor válido" });
   }
 
   try {
