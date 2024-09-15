@@ -32,9 +32,21 @@ router.delete('/delete_reserva_personal', async (req, res) => {
 });
 
 router.get('/delete_social_personal', async (req, res) => {
+  const id = req.query.id;
+
+  if (!id) {
+    return res.status(400).json({ error: "No se proporcionó un ID válido" });
+  }
+
   try {
-    const result = await pool.query('SELECT * FROM personas');
-    res.json(result.rows);
+    const query = 'DELETE FROM android_mysql.trabajo_social WHERE id = $1';
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount > 0) {
+      res.json({ message: "Borrado exitosamente" });
+    } else {
+      res.status(404).json({ error: "Error al borrar o el ID no existe" });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -42,21 +54,16 @@ router.get('/delete_social_personal', async (req, res) => {
 });
 
 router.get('/reservasIDs_personal', async (req, res) => {
-  const { profesor } = req.query;
+  const profesor = req.query.profesor;
 
   if (!profesor) {
-    return res.status(400).json({ error: "Se debe proporcionar el nombre del profesor" });
+    return res.status(400).json({ error: "No se proporcionó un profesor válido" });
   }
 
   try {
-    const query = 'SELECT id FROM reservar_areas WHERE profesor = $1 ORDER BY lugar';
+    const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1  ORDER BY lugar';
     const result = await pool.query(query, [profesor]);
-
-    if (result.rows.length > 0) {
-      res.json(result.rows);
-    } else {
-      res.json({ message: "No hay registros" });
-    }
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
