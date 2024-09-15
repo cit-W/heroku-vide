@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const pool = require('../index.js');
 
 router.delete('/delete_reserva_personal', async (req, res) => {
   const id = req.query.id; // Obtiene el parámetro 'id' de la URL
@@ -50,7 +51,7 @@ router.get('/reservasIDs_personal', async (req, res) => {
     const client = await pool.connect();
 
     // Consulta para seleccionar los IDs de reservas donde el campo 'profesor' coincida
-    const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1 ORDER BY lugar';
+    const query = 'SELECT id FROM reservar_areas WHERE profesor = $1 ORDER BY lugar';
     const result = await client.query(query, [profesor]);
 
     if (result.rows.length > 0) {
