@@ -13,7 +13,7 @@ router.delete('/delete_reserva_personal', async (req, res) => {
   const id = req.query.id;
 
   if (!id) {
-    return res.status(400).send("No se proporcionó un ID válido");
+    return res.status(400).json({ error: "No se proporcionó un ID válido" });
   }
 
   try {
@@ -21,73 +21,62 @@ router.delete('/delete_reserva_personal', async (req, res) => {
     const result = await pool.query(query, [id]);
 
     if (result.rowCount > 0) {
-      res.send("Borrado exitosamente");
+      res.json({ message: "Borrado exitosamente" });
     } else {
-      res.status(404).send("Error al borrar o el ID no existe");
+      res.status(404).json({ error: "Error al borrar o el ID no existe" });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error " + err);
+    res.status(500).json({ error: err.message });
   }
 });
 
 router.get('/delete_social_personal', async (req, res) => {
   try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT * FROM personas');
-    const personas = result.rows;
-    res.render('pages/db', { personas });
-    client.release();
+    const result = await pool.query('SELECT * FROM personas');
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.send("Error " + err);
+    res.status(500).json({ error: err.message });
   }
 });
 
 router.get('/reservasIDs_personal', async (req, res) => {
-  const { profesor } = req.query; // Capturamos el parámetro 'profesor' enviado en la URL
+  const { profesor } = req.query;
 
   if (!profesor) {
-    return res.status(400).send("Se debe proporcionar el nombre del profesor");
+    return res.status(400).json({ error: "Se debe proporcionar el nombre del profesor" });
   }
 
   try {
-    const client = await pool.connect();
-
-    // Consulta para seleccionar los IDs de reservas donde el campo 'profesor' coincida
     const query = 'SELECT id FROM reservar_areas WHERE profesor = $1 ORDER BY lugar';
-    const result = await client.query(query, [profesor]);
+    const result = await pool.query(query, [profesor]);
 
     if (result.rows.length > 0) {
-      res.json(result.rows); // Enviamos los resultados como JSON
+      res.json(result.rows);
     } else {
-      res.send("No hay registros");
+      res.json({ message: "No hay registros" });
     }
-
-    client.release();
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error " + err);
+    res.status(500).json({ error: err.message });
   }
 });
 
 router.get('/socialIDs_personal', async (req, res) => {
-  const profesor = req.query.profesor; // Obtiene el parámetro 'profesor' de la URL
+  const profesor = req.query.profesor;
 
   if (!profesor) {
-      return res.status(400).send("No se proporcionó un profesor válido");
+    return res.status(400).json({ error: "No se proporcionó un profesor válido" });
   }
 
   try {
-      const query = 'SELECT id FROM android_mysql.trabajo_social WHERE profesor = $1';
-      const result = await pool.query(query, [profesor]);
-      const personas = result.rows;
-
-      res.render('pages/db', { personas });
-      client.release();
+    const query = 'SELECT id FROM android_mysql.trabajo_social WHERE profesor = $1';
+    const result = await pool.query(query, [profesor]);
+    res.json(result.rows);
   } catch (err) {
-      console.error(err);
-      res.status(500).send("Error " + err);
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
