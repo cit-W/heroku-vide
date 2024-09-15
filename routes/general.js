@@ -20,4 +20,26 @@ router.get('/conexion_verification', async (req, res) => {
   }
 });
 
+router.get('/info_user', async (req, res) => {
+  const cedula = req.query.cedula;
+
+  if (!cedula) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un cedula válido" });
+  }
+
+  try {
+    const query = 'SELECT * FROM usuarios WHERE cedula = $1';
+    const result = await pool.query(query, [cedula]);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el cedula proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
