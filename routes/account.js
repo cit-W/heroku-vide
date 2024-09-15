@@ -9,6 +9,7 @@ const pool = new Pool({
   }
 });
 
+// DELETE reserva personal
 router.delete('/delete_reserva_personal', async (req, res) => {
   const id = req.query.id;
 
@@ -21,17 +22,18 @@ router.delete('/delete_reserva_personal', async (req, res) => {
     const result = await pool.query(query, [id]);
 
     if (result.rowCount > 0) {
-      res.json({ message: "Borrado exitosamente" });
+      res.json({ success: true, message: "Borrado exitosamente" });
     } else {
-      res.status(404).json({ error: "Error al borrar o el ID no existe" });
+      res.status(404).json({ success: false, error: "Error al borrar o el ID no existe" });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-router.get('/delete_social_personal', async (req, res) => {
+// DELETE trabajo social personal
+router.delete('/delete_social_personal', async (req, res) => {
   const id = req.query.id;
 
   if (!id) {
@@ -43,16 +45,17 @@ router.get('/delete_social_personal', async (req, res) => {
     const result = await pool.query(query, [id]);
 
     if (result.rowCount > 0) {
-      res.json({ message: "Borrado exitosamente" });
+      res.json({ success: true, message: "Borrado exitosamente" });
     } else {
-      res.status(404).json({ error: "Error al borrar o el ID no existe" });
+      res.status(404).json({ success: false, error: "Error al borrar o el ID no existe" });
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// GET reservas por ID del profesor
 router.get('/reservasIDs_personal', async (req, res) => {
   const profesor = req.query.profesor;
 
@@ -63,13 +66,19 @@ router.get('/reservasIDs_personal', async (req, res) => {
   try {
     const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1  ORDER BY lugar';
     const result = await pool.query(query, [profesor]);
-    res.json(result.rows);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron reservas para el profesor proporcionado" });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// GET IDs de trabajo social por profesor
 router.get('/socialIDs_personal', async (req, res) => {
   const profesor = req.query.profesor;
 
@@ -80,10 +89,15 @@ router.get('/socialIDs_personal', async (req, res) => {
   try {
     const query = 'SELECT id FROM android_mysql.trabajo_social WHERE profesor = $1';
     const result = await pool.query(query, [profesor]);
-    res.json(result.rows);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el profesor proporcionado" });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

@@ -9,28 +9,35 @@ const pool = new Pool({
   }
 });
 
+// GET - Obtener nombres por cédula
 router.get('/obtener_nombres', async (req, res) => {
   const cedula = req.query.cedula;
 
   if (!cedula) {
-    return res.status(400).json({ error: "No se proporcionó un profesor válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un profesor válido" });
   }
 
   try {
     const query = 'SELECT cedula FROM android_mysql.usuarios WHERE cedula = $1';
     const result = await pool.query(query, [cedula]);
-    res.json(result.rows);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontró un profesor con la cédula proporcionada" });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// POST - Crear un nuevo usuario
 router.post('/create_user', async (req, res) => {
   const { name, cedula, nivel, curso } = req.body;
 
-  if ( !name || !cedula || !nivel || !curso ) {
-    return res.status(400).json({ error: "Faltan datos para completar el registro" });
+  if (!name || !cedula || !nivel || !curso) {
+    return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
   }
 
   try {
@@ -41,10 +48,11 @@ router.post('/create_user', async (req, res) => {
     `;
     const values = [name, cedula, nivel, curso];
     await pool.query(query, values);
-    res.json({ message: "Reserva registrada con éxito" });
+
+    res.json({ success: true, message: "Usuario registrado con éxito" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al registrar la reserva" });
+    res.status(500).json({ success: false, error: "Error al registrar el usuario" });
   }
 });
 
