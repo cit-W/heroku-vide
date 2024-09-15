@@ -1,31 +1,28 @@
 const express = require('express');
 const router = express.Router();
 
-router.post('/delete_reserva_personal', async (req, res) => {
-  const { id } = req.body; // Captura el 'id' enviado desde el formulario
+router.delete('/delete_reserva_personal', async (req, res) => {
+  const id = req.query.id; // Obtiene el parámetro 'id' de la URL
 
   if (!id) {
-    return res.status(400).send("No se proporcionó un ID válido");
+      return res.status(400).send("No se proporcionó un ID válido");
   }
 
   try {
-    const client = await pool.connect();
-    
-    // Consulta SQL para eliminar el registro con el ID proporcionado
-    const query = 'DELETE FROM reservar_areas WHERE id = $1';
-    const result = await client.query(query, [id]);
+      const client = await pool.connect();
+      const query = 'DELETE FROM android_mysql.reservar_areas WHERE id = $1';
+      const result = await client.query(query, [id]);
 
-    // Verificar si se afectaron filas (es decir, si se eliminó algo)
-    if (result.rowCount > 0) {
-      res.send("Borrado exitosamente");
-    } else {
-      res.send("Error al borrar o el ID no existe");
-    }
+      if (result.rowCount > 0) {
+          res.send("Borrado exitosamente");
+      } else {
+          res.status(404).send("Error al borrar o el ID no existe");
+      }
 
-    client.release();
+      client.release();
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error " + err);
+      console.error(err);
+      res.status(500).send("Error " + err);
   }
 });
 
@@ -53,7 +50,7 @@ router.get('/reservasIDs_personal', async (req, res) => {
     const client = await pool.connect();
 
     // Consulta para seleccionar los IDs de reservas donde el campo 'profesor' coincida
-    const query = 'SELECT id FROM reservar_areas WHERE profesor = $1 ORDER BY lugar';
+    const query = 'SELECT id FROM android_mysql.reservar_areas WHERE profesor = $1 ORDER BY lugar';
     const result = await client.query(query, [profesor]);
 
     if (result.rows.length > 0) {
@@ -70,16 +67,23 @@ router.get('/reservasIDs_personal', async (req, res) => {
 });
 
 router.get('/socialIDs_personal', async (req, res) => {
-    try {
-        const client = await pool.connect();
-        const result = await client.query('SELECT * FROM personas');
-        const personas = result.rows;
-        res.render('pages/db', { personas });
-        client.release();
-    } catch (err) {
-        console.error(err);
-        res.send("Error " + err);
-    }
+  const profesor = req.query.profesor; // Obtiene el parámetro 'profesor' de la URL
+
+  if (!profesor) {
+      return res.status(400).send("No se proporcionó un profesor válido");
+  }
+
+  try {
+      const client = await pool.connect();
+      const query = 'SELECT id FROM android_mysql.trabajo_social WHERE profesor = $1';
+      const result = await client.query(query, [profesor]);
+      const personas = result.rows;
+      res.render('pages/db', { personas });
+      client.release();
+  } catch (err) {
+      console.error(err);
+      res.status(500).send("Error " + err);
+  }
 });
 
 module.exports = router;
