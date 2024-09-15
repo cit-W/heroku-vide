@@ -9,7 +9,7 @@ const pool = new Pool({
   }
 });
 
-router.post('/obtener_nombres', async (req, res) => {
+router.get('/obtener_nombres', async (req, res) => {
   const cedula = req.query.cedula;
 
   if (!cedula) {
