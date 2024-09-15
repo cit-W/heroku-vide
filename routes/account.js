@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../index.js');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 router.delete('/delete_reserva_personal', async (req, res) => {
   const id = req.query.id;
