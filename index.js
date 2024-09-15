@@ -1,6 +1,17 @@
 const express = require('express');
 const path = require('path');
 
+// Importar las rutas
+const accountRoutes = require('./routes/account');
+const horariosCursosRoutes = require('./routes/horarios_cursos');
+const horariosProfesRoutes = require('./routes/horarios_profes');
+const infoEstudiantesRoutes = require('./routes/info_estudiantes');
+const rastrearRoutes = require('./routes/rastrear');
+const reportesRoutes = require('./routes/reportes');
+const reservasRoutes = require('./routes/reservas');
+const signInRoutes = require('./routes/sign_in');
+const trabajoSocialRoutes = require('./routes/trabajo_social');
+
 const PORT = process.env.PORT || 5001;
 
 const app = express();
@@ -34,5 +45,16 @@ app.get('/db', async (req, res) => {
     res.send("Error " + err);
   }
 });
+
+// Usar las rutas
+app.use('/account', accountRoutes);
+app.use('/horarios_cursos', horariosCursosRoutes);
+app.use('/horarios_profes', horariosProfesRoutes);
+app.use('/info_estudiantes', infoEstudiantesRoutes);
+app.use('/rastrear', rastrearRoutes);
+app.use('/reportes', reportesRoutes);
+app.use('/reservas', reservasRoutes);
+app.use('/sign_in', signInRoutes);
+app.use('/trabajo_social', trabajoSocialRoutes);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
