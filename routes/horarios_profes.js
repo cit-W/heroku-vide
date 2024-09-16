@@ -213,7 +213,7 @@ router.get('/ver_horario', async (req, res) => {
         }
     } catch (err) {
         console.error("Error al consultar los registros: ", err);
-        res.status(500).send("Error al consultar los registros: " + err.message);
+        res.send("No_hay_registros");
     }
 });
 
