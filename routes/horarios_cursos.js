@@ -1,5 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 router.post('/crear_horario', async (req, res) => {
   const { Hora, LunesHora, MartesHora, MiercolesHora, JuevesHora, ViernesHora, nombre } = req.body;
