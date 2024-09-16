@@ -209,11 +209,15 @@ router.get('/ver_horario', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_registros");
+            res.json({
+                message: "No_hay_registros"
+            });
         }
     } catch (err) {
         console.error("Error al consultar los registros: ", err);
-        res.send("No_hay_registros");
+        res.json({
+            message: "No_hay_registros"
+        });
     }
 });
 

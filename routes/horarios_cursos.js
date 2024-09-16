@@ -215,13 +215,17 @@ router.get('/ver_horario', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.status(404).json({ success: false, message: "No hay registros en la tabla proporcionada" });
+            res.json({
+                message: "No_hay_registros"
+            });
         }
         
         client.release();
     } catch (err) {
         console.error(err);
-        res.send("No_hay_registros");
+        res.json({
+            message: "No_hay_registros"
+        });
     }
 });
 
