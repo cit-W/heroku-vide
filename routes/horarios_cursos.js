@@ -221,7 +221,7 @@ router.get('/ver_horario', async (req, res) => {
         client.release();
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, error: err.message });
+        res.send("No_hay_registros");
     }
 });
 
