@@ -74,7 +74,7 @@ router.post('/reportar', async (req, res) => {
 
 // POST - Reservar lugar
 router.post('/reservar_lugar', async (req, res) => {
-  const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
+  const { profesor, clase, lugar, hora_inicio, hora_final } = req.query; // Cambiado de req.body a req.query
 
   if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
