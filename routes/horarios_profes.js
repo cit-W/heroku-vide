@@ -207,10 +207,10 @@ router.get('/ver_horario', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({data: result.rows});
         } else {
             res.json({
-                message: "No_hay_registros"
+                data: "No_hay_registros"
             });
         }
     } catch (err) {
