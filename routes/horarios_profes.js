@@ -216,7 +216,7 @@ router.get('/ver_horario', async (req, res) => {
     } catch (err) {
         console.error("Error al consultar los registros: ", err);
         res.json({
-            message: "No_hay_registros"
+            data: "No_hay_registros"
         });
     }
 });
