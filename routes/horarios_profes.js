@@ -193,7 +193,7 @@ router.get('/ver_horario', async (req, res) => {
         // Nota: PostgreSQL no tiene SUBSTRING_INDEX, pero puedes usar funciones similares para manejar la lógica de conversión de tiempos
         const query = `
             SELECT * 
-            FROM ${name} 
+            FROM horarios_profes.${name} 
             ORDER BY 
                 CASE 
                     WHEN horas ~ '^[0-9]+:[0-9]+' THEN 
