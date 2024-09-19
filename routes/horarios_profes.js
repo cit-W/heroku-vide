@@ -157,11 +157,10 @@ router.get('/registro_horario', async (req, res) => {
     try {
         const client = await pool.connect();
         
-        // Obtén la lista de tablas en el esquema 'public'
         const query = `
             SELECT table_name 
             FROM information_schema.tables 
-            WHERE table_schema = 'public'
+            WHERE table_schema = 'horarios_profes'
             ORDER BY table_name ASC;
         `;
         const result = await client.query(query);
@@ -170,7 +169,7 @@ router.get('/registro_horario', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json({success: true, data: "No_hay_registros"});
         }
     } catch (err) {
         console.error("Error al consultar las tablas: ", err);
