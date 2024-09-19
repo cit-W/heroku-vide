@@ -25,7 +25,7 @@ router.post('/add_trabajo_social', async (req, res) => {
     `;
     const values = [profesor, descripcion, cantidad_horas, cuando];
     await pool.query(query, values);
-    res.json({ success: true, message: "Trabajo social registrado con éxito" });
+    res.json({ success: true, data: "Trabajo social registrado con éxito" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: "Error al registrar el trabajo social" });

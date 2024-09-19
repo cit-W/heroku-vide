@@ -56,6 +56,50 @@ router.post('/delete_reservas', async (req, res) => {
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
+      res.status(404).json({ success: false, message: "No se encontraron reservas para el hora_final proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/delete_social', async (req, res) => {
+  const hora_final = req.query.hora_final;
+
+  if (!hora_final) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
+  }
+
+  try {
+    const query = 'DELETE FROM android_mysql.trabajo_social WHERE cuando = $1';
+    const result = await pool.query(query, [hora_final]);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el hora_final proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/deleteAll', async (req, res) => {
+  const hora_final = req.query.hora_final;
+
+  if (!hora_final) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
+  }
+
+  try {
+    const query = "DELETE FROM usuarios WHERE nivel='Coordinador' OR nivel='Profesor'; ";
+    const result = await pool.query(query, [hora_final]);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
       res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el hora_final proporcionado" });
     }
   } catch (err) {
