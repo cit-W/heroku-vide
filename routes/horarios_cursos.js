@@ -193,13 +193,6 @@ router.get('/ver_horario', async (req, res) => {
         return res.status(400).json({ success: false, error: "No se proporcionó un nombre válido" });
     }
 
-    // Lista de nombres de tablas permitidos
-    const allowedTables = ['horario_1', 'horario_2', 'horario_3']; // Añade aquí los nombres de tablas válidos
-
-    if (!allowedTables.includes(name)) {
-        return res.status(400).json({ success: false, error: "Nombre de tabla no válido" });
-    }
-
     try {
         const client = await pool.connect();
         
@@ -216,7 +209,7 @@ router.get('/ver_horario', async (req, res) => {
             res.json({ success: true, data: result.rows });
         } else {
             res.json({
-                message: "No_hay_registros"
+            success: true, data: "No_hay_registros"
             });
         }
         
@@ -224,7 +217,7 @@ router.get('/ver_horario', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.json({
-            message: "No_hay_registros"
+            success: true, data: "No_hay_registros"
         });
     }
 });
