@@ -65,21 +65,4 @@ router.post('/delete_reservas', async (req, res) => {
   }
 });
 
-router.post('/deleteAll', async (req, res) => {
-  // Eliminado el parámetro hora_final ya que no se usa en la consulta
-  try {
-    const query = "DELETE FROM android_mysql.usuarios WHERE nivel='Coordinador' OR nivel='Profesor'";
-    const result = await pool.query(query);
-
-    if (result.rowCount > 0) {
-      res.json({ success: true, message: `Se eliminaron ${result.rowCount} usuarios` });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron usuarios para eliminar" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 module.exports = router;
