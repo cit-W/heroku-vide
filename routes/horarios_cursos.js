@@ -206,7 +206,7 @@ router.get('/ver_horario', async (req, res) => {
         // Usamos un nombre de tabla validado
         const query = `
             SELECT * 
-            FROM "${name}" 
+            FROM horarios_cursos."${name}" 
             ORDER BY CAST(SUBSTRING(horas, 1, POSITION(' - ' IN horas) - 1) AS TIME);
         `;
         
