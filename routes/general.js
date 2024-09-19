@@ -42,70 +42,66 @@ router.get('/info_user', async (req, res) => {
   }
 });
 
-// router.post('/delete_reservas', async (req, res) => {
-//   const hora_final = req.query.hora_final;
+router.post('/delete_reservas', async (req, res) => {
+  const hora_final = req.query.hora_final;
 
-//   if (!hora_final) {
-//     return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
-//   }
+  if (!hora_final) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
+  }
 
-//   try {
-//     const query = 'DELETE FROM android_mysql.reservar_areas WHERE hora_final = $1';
-//     const result = await pool.query(query, [hora_final]);
+  try {
+    const query = 'DELETE FROM android_mysql.reservar_areas WHERE hora_final = $1';
+    const result = await pool.query(query, [hora_final]);
 
-//     if (result.rows.length > 0) {
-//       res.json({ success: true, data: result.rows });
-//     } else {
-//       res.status(404).json({ success: false, message: "No se encontraron reservas para el hora_final proporcionado" });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, error: err.message });
-//   }
-// });
+    // Mejora: Verificar el número de filas afectadas en lugar de las filas devueltas
+    if (result.rowCount > 0) {
+      res.json({ success: true, message: `Se eliminaron ${result.rowCount} reservas` });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron reservas para el hora_final proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-// router.post('/delete_social', async (req, res) => {
-//   const hora_final = req.query.hora_final;
+router.post('/delete_social', async (req, res) => {
+  const hora_final = req.query.hora_final;
 
-//   if (!hora_final) {
-//     return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
-//   }
+  if (!hora_final) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
+  }
 
-//   try {
-//     const query = 'DELETE FROM android_mysql.trabajo_social WHERE cuando = $1';
-//     const result = await pool.query(query, [hora_final]);
+  try {
+    const query = 'DELETE FROM android_mysql.trabajo_social WHERE cuando = $1';
+    const result = await pool.query(query, [hora_final]);
 
-//     if (result.rows.length > 0) {
-//       res.json({ success: true, data: result.rows });
-//     } else {
-//       res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el hora_final proporcionado" });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, error: err.message });
-//   }
-// });
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el hora_final proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-// router.post('/deleteAll', async (req, res) => {
-//   const hora_final = req.query.hora_final;
+router.post('/deleteAll', async (req, res) => {
+  // Eliminado el parámetro hora_final ya que no se usa en la consulta
+  try {
+    const query = "DELETE FROM android_mysql.usuarios WHERE nivel='Coordinador' OR nivel='Profesor'";
+    const result = await pool.query(query);
 
-//   if (!hora_final) {
-//     return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
-//   }
-
-//   try {
-//     const query = "DELETE FROM usuarios WHERE nivel='Coordinador' OR nivel='Profesor'; ";
-//     const result = await pool.query(query, [hora_final]);
-
-//     if (result.rows.length > 0) {
-//       res.json({ success: true, data: result.rows });
-//     } else {
-//       res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el hora_final proporcionado" });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, error: err.message });
-//   }
-// });
+    if (result.rowCount > 0) {
+      res.json({ success: true, message: `Se eliminaron ${result.rowCount} usuarios` });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron usuarios para eliminar" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 module.exports = router;
