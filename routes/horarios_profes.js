@@ -167,7 +167,7 @@ router.get('/registro_horario', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({success: true, data: "No_hay_registros"});
         }
@@ -206,7 +206,7 @@ router.get('/ver_horario', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json({data: result.rows});
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({
                 data: "No_hay_registros"
