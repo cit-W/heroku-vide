@@ -13,6 +13,7 @@ const reservasRoutes = require('./routes/reservas');
 const signInRoutes = require('./routes/sign_in');
 const trabajoSocialRoutes = require('./routes/trabajo_social');
 const registroEst = require('./routes/registroEst');
+const asistencia = require('./routes/asistencia');
 
 const PORT = process.env.PORT || 5001;
 
@@ -62,5 +63,6 @@ app.use('/reservas', reservasRoutes);
 app.use('/sign_in', signInRoutes);
 app.use('/trabajo_social', trabajoSocialRoutes);
 app.use('/registroEst', registroEst);
+app.use('/asistencia', asistencia);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
