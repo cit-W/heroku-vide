@@ -3,6 +3,7 @@ const path = require('path');
 
 // Importar las rutas
 const general = require('./routes/general');
+const asistenciaRoutes = require('./routes/asistencia');
 const accountRoutes = require('./routes/account');
 const horariosCursosRoutes = require('./routes/horarios_cursos');
 const horariosProfesRoutes = require('./routes/horarios_profes');
@@ -13,7 +14,6 @@ const reservasRoutes = require('./routes/reservas');
 const signInRoutes = require('./routes/sign_in');
 const trabajoSocialRoutes = require('./routes/trabajo_social');
 const registroEst = require('./routes/registroEst');
-const asistenciaRoutes = require('./routes/asistencia');
 
 const PORT = process.env.PORT || 5001;
 
@@ -41,7 +41,7 @@ app.get('/', (req, res) => res.render('pages/index'));
 app.get('/db', async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM personas');
+    const result = await client.query('SELECT * FROM asistencia.asistencia_diaria');
     const personas = result.rows;
     res.render('pages/db', { personas });
     client.release();
@@ -53,6 +53,7 @@ app.get('/db', async (req, res) => {
 
 // Usar las rutas
 app.use('/general', general);
+app.use('/asistencia', asistenciaRoutes);
 app.use('/account', accountRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
@@ -63,6 +64,5 @@ app.use('/reservas', reservasRoutes);
 app.use('/sign_in', signInRoutes);
 app.use('/trabajo_social', trabajoSocialRoutes);
 app.use('/registroEst', registroEst);
-app.use('/asistencia', asistenciaRoutes);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
