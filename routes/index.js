@@ -3,7 +3,7 @@ const path = require('path');
 
 // Importar las rutas
 const general = require('./routes/general');
-const asistenciaRoutes = require('./routes/asistencia');
+const asistenciaRoutes = require('./asistencia');
 const accountRoutes = require('./routes/account');
 const horariosCursosRoutes = require('./routes/horarios_cursos');
 const horariosProfesRoutes = require('./routes/horarios_profes');
@@ -41,7 +41,7 @@ app.get('/', (req, res) => res.render('pages/index'));
 app.get('/db', async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM asistencia.asistencia_diaria');
+    const result = await client.query('SELECT * FROM personas');
     const personas = result.rows;
     res.render('pages/db', { personas });
     client.release();
@@ -51,16 +51,9 @@ app.get('/db', async (req, res) => {
   }
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
-
 // Usar las rutas
 app.use('/general', general);
-console.info('Loading asistencia routes------------------------------------------------------');
 app.use('/asistencia', asistenciaRoutes);
-console.info('Asistencia routes loaded-------------------------------------------------------');
 app.use('/account', accountRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
