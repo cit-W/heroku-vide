@@ -10,6 +10,24 @@ const pool = new Pool({
 });
 
 // GET - Obtener registros por ID del estudiante
+router.get('/all', async (req, res) => {
+
+  try {
+    const query = 'SELECT * FROM asistencia.asistencia_diaria';
+    const result = await pool.query(query);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron info para el id proporcionado" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET - Obtener registros por ID del estudiante
 router.get('/registro_diario', async (req, res) => {
   const id = req.query.id;
 
@@ -18,7 +36,7 @@ router.get('/registro_diario', async (req, res) => {
   }
 
   try {
-    const query = 'SELECT id FROM asistencia.asistencia_diaria WHERE id = $1 ORDER BY lugar';
+    const query = 'SELECT * FROM asistencia.asistencia_diaria WHERE id = $1 ORDER BY lugar';
     const result = await pool.query(query, [id]);
 
     if (result.rows.length > 0) {
