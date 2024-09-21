@@ -79,7 +79,7 @@ router.post('/marcar', async (req, res) => {
     const query = `
       INSERT INTO asistencia.asistencia_diaria 
       (id, fecha) 
-      VALUES ($1, $2)
+      VALUES ($1, '$2')
     `;
     const values = [id, fecha];
     await pool.query(query, values);
@@ -99,7 +99,7 @@ router.get('/registro_diario', async (req, res) => {
   }
 
   try {
-    const query = 'SELECT * FROM asistencia.asistencia_diaria WHERE id = $1 ORDER BY lugar';
+    const query = 'SELECT * FROM asistencia.asistencia_diaria WHERE id = $1';
     const result = await pool.query(query, [id]);
 
     if (result.rows.length > 0) {
