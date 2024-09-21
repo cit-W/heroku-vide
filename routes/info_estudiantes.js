@@ -14,24 +14,21 @@ router.get('/registro_estudiante_name', async (req, res) => {
   const nombre = req.query.nombre;
 
   if (!nombre) {
-      return res.status(400).json({ success: false, error: "No se proporcionó un nombre válido" });
+    return res.status(400).json({ success: false, error: "No se proporcionó un nombre válido" });
   }
 
-  // Sanitizar la entrada para prevenir inyecciones SQL
-  const nombreEscapado = pool.escape(nombre);
-
   try {
-      const query = "SELECT * FROM android_mysql.id2024sql WHERE nombre = ?";
-      const resultado = await pool.query(query, [nombreEscapado]);
+    const query = "SELECT * FROM android_mysql.id2024sql WHERE nombre = '$1'";
+    const result = await pool.query(query, [nombre]);
 
-      if (resultado.rows.length > 0) {
-          res.json({ success: true, data: resultado.rows });
-      } else {
-          res.status(404).json({ success: false, error: "No se encontró ningún estudiante con ese nombre" });
-      }
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.json({ success: true, message: "No se encontraron registros para el nombre proporcionado" });
+    }
   } catch (err) {
-      console.error(err);
-      res.status(500).json({ success: false, error: "Error al buscar al estudiante" });
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
