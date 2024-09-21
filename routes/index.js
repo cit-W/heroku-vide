@@ -51,9 +51,16 @@ app.get('/db', async (req, res) => {
   }
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
 // Usar las rutas
 app.use('/general', general);
+console.log('Loading asistencia routes------------------------------------------------------');
 app.use('/asistencia', asistenciaRoutes);
+console.log('Asistencia routes loaded-------------------------------------------------------');
 app.use('/account', accountRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
