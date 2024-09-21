@@ -76,17 +76,27 @@ router.post('/marcar', async (req, res) => {
   }
 
   try {
+    // Create a new Date object with the current date and time
+    const currentDate = new Date();
+    
+    // Parse the 'fecha' (which is likely just a time string) and set it to today's date
+    const [hours, minutes, seconds] = fecha.split(':');
+    currentDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), parseInt(seconds, 10));
+
+    // Format the date for PostgreSQL (YYYY-MM-DD HH:MM:SS)
+    const formattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+
     const query = `
       INSERT INTO asistencia.asistencia_diaria 
       (id, fecha) 
-      VALUES ($1, '$2')
+      VALUES ($1, $2)
     `;
-    const values = [id, fecha];
+    const values = [id, formattedDate];
     await pool.query(query, values);
     res.json({ success: true, message: "Asistencia registrada con éxito" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: "Error al registrar el reporte" });
+    res.status(500).json({ success: false, error: "Error al registrar el reporte: " + err.message });
   }
 });
 
