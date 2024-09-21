@@ -18,7 +18,7 @@ router.get('/registro_estudiante_name', async (req, res) => {
   }
 
   try {
-    const query = "SELECT * FROM android_mysql.id2024sql WHERE nombre = '$1'";
+    const query = "SELECT * FROM android_mysql.id2024sql WHERE nombre = $1"; // Sin comillas alrededor de $1
     const result = await pool.query(query, [nombre]);
 
     if (result.rows.length > 0) {
