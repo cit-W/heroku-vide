@@ -3,7 +3,6 @@ const path = require('path');
 
 // Importar las rutas
 const general = require('./routes/general');
-const asistenciaRoutes = require('./routes/asistencia');
 const accountRoutes = require('./routes/account');
 const horariosCursosRoutes = require('./routes/horarios_cursos');
 const horariosProfesRoutes = require('./routes/horarios_profes');
@@ -53,7 +52,6 @@ app.get('/db', async (req, res) => {
 
 // Usar las rutas
 app.use('/general', general);
-app.use('/asistencia', asistenciaRoutes);
 app.use('/account', accountRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
