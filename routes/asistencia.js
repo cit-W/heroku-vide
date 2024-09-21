@@ -10,9 +10,7 @@ const pool = new Pool({
 });
 
 // GET - Obtener registros por ID del estudiante
-console.log('Defining /all route');
-router.get('/all', async (req, res) => {
-  console.log('Handling /all route');
+router.get('/', async (req, res) => {
 
   try {
     const query = 'SELECT * FROM asistencia.asistencia_diaria';

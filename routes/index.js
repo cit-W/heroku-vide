@@ -3,7 +3,7 @@ const path = require('path');
 
 // Importar las rutas
 const general = require('./routes/general');
-const asistenciaRoutes = require('./asistencia');
+const asistenciaRoutes = require('./routes/asistencia');
 const accountRoutes = require('./routes/account');
 const horariosCursosRoutes = require('./routes/horarios_cursos');
 const horariosProfesRoutes = require('./routes/horarios_profes');
