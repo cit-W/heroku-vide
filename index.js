@@ -12,6 +12,7 @@ const reportesRoutes = require('./routes/reportes');
 const reservasRoutes = require('./routes/reservas');
 const signInRoutes = require('./routes/sign_in');
 const trabajoSocialRoutes = require('./routes/trabajo_social');
+const restauranteRoutes = require('./routes/restaurante');
 
 const PORT = process.env.PORT || 5001;
 
@@ -59,5 +60,6 @@ app.use('/reportes', reportesRoutes);
 app.use('/reservas', reservasRoutes);
 app.use('/sign_in', signInRoutes);
 app.use('/trabajo_social', trabajoSocialRoutes);
+app.use('/restaurante', restauranteRoutes);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
