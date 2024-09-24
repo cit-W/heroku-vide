@@ -25,6 +25,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+router.get('/db', async (req, res) => {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT * FROM restaurante.lista_general');
+      const personas = result.rows;
+      res.render('pages/db', { personas });
+      client.release();
+    } catch (err) {
+      console.error(err);
+      res.send("Error " + err);
+    }
+  });
+
 // Ruta para subir el archivo .xlsx
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
