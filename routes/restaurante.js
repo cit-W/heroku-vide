@@ -30,8 +30,14 @@ router.get('/db', async (req, res) => {
       const client = await pool.connect();
       const result = await client.query('SELECT * FROM restaurante.lista_general');
       const personas = result.rows;
-      res.render('pages/db', { personas });
       client.release();
+      
+      if (result.rows.length > 0) {
+            res.json(result.rows);
+        } else {
+            res.send("No_hay_tablas");
+        }
+
     } catch (err) {
       console.error(err);
       res.send("Error " + err);
