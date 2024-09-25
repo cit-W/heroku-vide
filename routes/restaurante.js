@@ -46,7 +46,7 @@ router.get('/db', async (req, res) => {
 
 // Ruta para mostrar el formulario de carga
 router.get('/upload', (req, res) => {
-  res.render('upload');
+  res.render('pages/upload');
 });
 
 // Ruta para subir el archivo XML
