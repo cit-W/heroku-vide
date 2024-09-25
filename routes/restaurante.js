@@ -14,6 +14,11 @@ const pool = new Pool({
   }
 });
 
+// Crear directorio 'uploads' si no existe
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
 // Configuración de multer para subir solo archivos .xlsx
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
