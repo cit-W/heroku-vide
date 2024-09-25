@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require('express'); 
 const multer = require('multer');
 const path = require('path');
-const xml2js = require('xml2js');
+const xlsx = require('xlsx');
 const fs = require('fs');
 
 const router = express.Router();
@@ -49,40 +49,44 @@ router.get('/upload', (req, res) => {
   res.render('pages/upload');
 });
 
-// Ruta para subir el archivo XML
+// Ruta para subir el archivo Excel
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No se subió ningún archivo.');
   }
-  
+
   try {
-    // Leer el archivo XML
-    const xmlData = fs.readFileSync(req.file.path, 'utf8');
-    
-    // Parsear XML a JSON
-    const parser = new xml2js.Parser();
-    const result = await parser.parseStringPromise(xmlData);
-    
-    // Asumimos que la estructura XML tiene un elemento raíz y elementos hijos para cada registro
-    const data = result.root.item; // Ajusta esto según la estructura de tu XML
-    
+    // Leer el archivo Excel
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+
+    // Acceder a la primera hoja de cálculo
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    // Convertir la hoja de cálculo a formato JSON
+    const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+
     // Insertar datos en la base de datos
     const client = await pool.connect();
     const insertQuery = 'INSERT INTO restaurante.lista_general(nombre, id, curso, pago_mensual) VALUES($1, $2, $3, $4)';
     
-    for (let row of data) {
-      const nombre = row.nombre[0];
-      const id = row.id[0];
-      const curso = row.curso[0];
-      const pago_mensual = row.pago_mensual[0];
+    // Iterar sobre las filas de datos (exceptuando la primera fila que tiene los encabezados)
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const nombre = row[0];  // Columna de nombres
+      const id = row[1];      // Columna de ID
+      const curso = row[2];   // Columna de curso
+      const pago_mensual = row[3];  // Columna de pago_mensual
+      
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
-    
+
     client.release();
-    
+
     // Eliminar el archivo temporal
-    fs.unlinkSync(req.file.path);
-    
+    fs.unlinkSync(filePath);
+
     res.send('Datos insertados correctamente en lista_general');
   } catch (error) {
     console.error(error);
@@ -96,13 +100,13 @@ router.post('/update-pago', async (req, res) => {
   if (!id || typeof pago_mensual === 'undefined') {
     return res.status(400).send('ID y pago_mensual son requeridos.');
   }
-  
+
   try {
     const client = await pool.connect();
     const updateQuery = 'UPDATE restaurante.lista_general SET pago_mensual = $1 WHERE id = $2';
     await client.query(updateQuery, [pago_mensual, id]);
     client.release();
-    
+
     res.send('Pago mensual actualizado correctamente');
   } catch (error) {
     console.error(error);
