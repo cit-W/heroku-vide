@@ -73,7 +73,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-router.post('/update-pago', async (req, res) => {
+router.get('/update-pago', async (req, res) => {
   const { id, pago_mensual } = req.query;  // Cambiado de req.query a req.body
   
   if (!id || typeof pago_mensual === 'undefined') {
