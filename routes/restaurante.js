@@ -14,17 +14,33 @@ const pool = new Pool({
   }
 });
 
-// Configuración de multer para subir archivos
+// Configuración de multer para subir solo archivos .xlsx
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');  // Directorio donde se almacenarán los archivos
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));  // Mantener la extensión .xlsx
   }
 });
 
-const upload = multer({ storage: storage });
+// Función para filtrar archivos .xlsx
+const fileFilter = (req, file, cb) => {
+  const filetypes = /xlsx/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  
+  if (extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Solo archivos .xlsx son permitidos!');
+  }
+};
+
+// Configuración de multer con el filtro para .xlsx
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter
+});
 
 router.get('/db', async (req, res) => {
   try {
@@ -49,14 +65,14 @@ router.get('/upload', (req, res) => {
   res.render('pages/upload');
 });
 
-// Ruta para subir el archivo Excel
+// Ruta para subir el archivo Excel (.xlsx)
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No se subió ningún archivo.');
   }
 
   try {
-    // Leer el archivo Excel
+    // Leer el archivo Excel (.xlsx)
     const filePath = req.file.path;
     const workbook = xlsx.readFile(filePath);
 
@@ -94,6 +110,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+// Ruta para actualizar el pago
 router.post('/update-pago', async (req, res) => {
   const { id, pago_mensual } = req.query;  // Cambiado de req.query a req.body
   
