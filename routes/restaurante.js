@@ -88,18 +88,29 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     // Convertir la hoja de cálculo a formato JSON
     const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
 
-    // Insertar datos en la base de datos
+    // Conexión a la base de datos
     const client = await pool.connect();
+
+    // Vaciar la tabla antes de insertar nuevos datos
+    await client.query('DELETE FROM restaurante.lista_general');
+
     const insertQuery = 'INSERT INTO restaurante.lista_general(nombre, id, curso, pago_mensual) VALUES($1, $2, $3, $4)';
-    
+
     // Iterar sobre las filas de datos (exceptuando la primera fila que tiene los encabezados)
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
+
+      // Verificar si hay algún valor nulo en la fila
+      if (row.includes(null)) {
+        console.log('Se detectó un valor nulo en la fila:', row);
+        break;  // Detener el bucle al detectar el primer valor nulo
+      }
+
       const nombre = row[0];  // Columna de nombres
       const id = row[1];      // Columna de ID
       const curso = row[2];   // Columna de curso
       const pago_mensual = row[3];  // Columna de pago_mensual
-      
+
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
 
