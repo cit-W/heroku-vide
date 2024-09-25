@@ -1,7 +1,8 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const xlsx = require('xlsx');
+const xml2js = require('xml2js');
+const fs = require('fs');
 
 const router = express.Router();
 const { Pool } = require('pg');
@@ -43,29 +44,45 @@ router.get('/db', async (req, res) => {
   }
 });
 
-// Ruta para subir el archivo .xlsx
+// Ruta para mostrar el formulario de carga
+router.get('/upload', (req, res) => {
+  res.render('upload');
+});
+
+// Ruta para subir el archivo XML
 router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No se subió ningún archivo.');
   }
   
   try {
-    // Leer el archivo .xlsx
-    const workbook = xlsx.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    // Leer el archivo XML
+    const xmlData = fs.readFileSync(req.file.path, 'utf8');
+    
+    // Parsear XML a JSON
+    const parser = new xml2js.Parser();
+    const result = await parser.parseStringPromise(xmlData);
+    
+    // Asumimos que la estructura XML tiene un elemento raíz y elementos hijos para cada registro
+    const data = result.root.item; // Ajusta esto según la estructura de tu XML
     
     // Insertar datos en la base de datos
     const client = await pool.connect();
     const insertQuery = 'INSERT INTO restaurante.lista_general(nombre, id, curso, pago_mensual) VALUES($1, $2, $3, $4)';
     
     for (let row of data) {
-      const { nombre, id, curso, pago_mensual } = row;
+      const nombre = row.nombre[0];
+      const id = row.id[0];
+      const curso = row.curso[0];
+      const pago_mensual = row.pago_mensual[0];
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
     
     client.release();
+    
+    // Eliminar el archivo temporal
+    fs.unlinkSync(req.file.path);
+    
     res.send('Datos insertados correctamente en lista_general');
   } catch (error) {
     console.error(error);
@@ -73,7 +90,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-router.get('/update-pago', async (req, res) => {
+router.post('/update-pago', async (req, res) => {
   const { id, pago_mensual } = req.query;  // Cambiado de req.query a req.body
   
   if (!id || typeof pago_mensual === 'undefined') {
