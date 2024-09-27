@@ -110,8 +110,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       const id = row[1];                  // Columna de ID
       const curso = row[2];               // Columna de curso
       const pago_mensual_basic = String(row[3].toLowerCase);
-      pago_mensual_basic = getCleanedString(pago_mensual_basic)
+      pago_mensual_basic = getCleanedString(pago_mensual_basic);
       const pago_mensual = pago_mensual_basic.replace("si", "TRUE").replace("no", "FALSE");              // Columna de pago_mensual
+      pago_mensual = Boolean(pago_mensual);
 
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
