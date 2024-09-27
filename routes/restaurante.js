@@ -177,4 +177,33 @@ router.post('/update-pago', async (req, res) => {
   }
 });
 
+router.get('/verificar_pago', async (req, res) => {
+  try {
+      const { ID } = req.query;
+
+      if (!ID) {
+          res.status(400).send("El parámetro 'ID' es requerido.");
+          return;
+      }
+
+      const client = await pool.connect();
+      const query = `
+          SELECT * 
+          FROM restaurante.lista_general 
+          WHERE id = $1
+      `;
+      const result = await client.query(query, [ID]);
+      client.release();
+
+      if (result.rows.length > 0) {
+          res.json(result.rows);
+      } else {
+          res.send("No_hay_tablas");
+      }
+  } catch (err) {
+      console.error("Error al consultar la tabla: ", err);
+      res.status(500).send("Error al consultar la tabla: " + err.message);
+  }
+});
+
 module.exports = router;
