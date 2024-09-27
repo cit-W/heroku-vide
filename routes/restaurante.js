@@ -106,10 +106,14 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         break;  // Detener el bucle al detectar el primer valor nulo
       }
 
-      const nombre = row[0];  // Columna de nombres
-      const id = row[1];      // Columna de ID
-      const curso = row[2];   // Columna de curso
-      const pago_mensual = row[3];  // Columna de pago_mensual
+      const nombre = row[0];              // Columna de nombres
+      const id = row[1];                  // Columna de ID
+      const curso = row[2];               // Columna de curso
+      const pago_mensual_basic = String(row[3].toLowerCase);
+      pago_mensual_basic = getCleanedString(pago_mensual_basic)
+      const pago_mensual = pago_mensual_basic.
+      replace("si", "TRUE").
+      replace("no", "FALSE")              // Columna de pago_mensual
 
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
@@ -125,6 +129,31 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.status(500).send('Error al procesar el archivo.');
   }
 });
+
+function getCleanedString(cadena){
+  // Definimos los caracteres que queremos eliminar
+  var specialChars = "!@#$^&%*()+=-[]\/{}|:<>?,.";
+
+  // Los eliminamos todos
+  for (var i = 0; i < specialChars.length; i++) {
+      cadena= cadena.replace(new RegExp("\\" + specialChars[i], 'gi'), '');
+  }   
+
+  // Lo queremos devolver limpio en minusculas
+  cadena = cadena.toLowerCase();
+
+  // Quitamos espacios y los sustituimos por _ porque nos gusta mas asi
+  cadena = cadena.replace(/ /g,"_");
+
+  // Quitamos acentos y "ñ". Fijate en que va sin comillas el primer parametro
+  cadena = cadena.replace(/á/gi,"a");
+  cadena = cadena.replace(/é/gi,"e");
+  cadena = cadena.replace(/í/gi,"i");
+  cadena = cadena.replace(/ó/gi,"o");
+  cadena = cadena.replace(/ú/gi,"u");
+  cadena = cadena.replace(/ñ/gi,"n");
+  return cadena;
+}
 
 // Ruta para actualizar el pago
 router.post('/update-pago', async (req, res) => {
