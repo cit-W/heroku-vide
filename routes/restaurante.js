@@ -97,7 +97,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const insertQuery = 'INSERT INTO restaurante.lista_general(nombre, id, curso, pago_mensual) VALUES($1, $2, $3, $4)';
 
     // Iterar sobre las filas de datos (exceptuando la primera fila que tiene los encabezados)
-    for (let i = 1; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
 
       // Verificar si hay algún valor nulo en la fila
