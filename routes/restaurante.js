@@ -101,20 +101,25 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       const row = data[i];
 
       // Verificar si hay algún valor nulo en la fila
-      if (row.includes(null)) {
+      if (row.some(cell => cell == null)) {
         console.log('Se detectó un valor nulo en la fila:', row);
-        break;  // Detener el bucle al detectar el primer valor nulo
+        continue;  // Saltar esta fila y continuar con la siguiente
       }
 
       const nombre = row[0];              // Columna de nombres
       const id = row[1];                  // Columna de ID
       const curso = row[2];               // Columna de curso
-      const pago_mensual_basic = String(row[3].toLowerCase);
-      pago_mensual_basic = getCleanedString(pago_mensual_basic);
-      const pago_mensual = pago_mensual_basic.replace("si", "TRUE").replace("no", "FALSE");              // Columna de pago_mensual
-      pago_mensual = Boolean(pago_mensual);
+      
+      // Procesar pago_mensual
+      let pago_mensual = String(row[3]).toLowerCase().trim();
+      pago_mensual = getCleanedString(pago_mensual);
+      pago_mensual = pago_mensual === 'si' ? true : pago_mensual === 'no' ? false : null;
 
-      await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
+      if (pago_mensual !== null) {
+        await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
+      } else {
+        console.log(`Valor inválido de pago_mensual en la fila ${i + 1}: ${row[3]}`);
+      }
     }
 
     client.release();
@@ -125,26 +130,23 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.send('Datos insertados correctamente en lista_general');
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error al procesar el archivo.', error);
+    res.status(500).send('Error al procesar el archivo: ' + error.message);
   }
 });
 
-function getCleanedString(cadena){
+function getCleanedString(cadena) {
   // Definimos los caracteres que queremos eliminar
   var specialChars = "!@#$^&%*()+=-[]\/{}|:<>?,.";
 
   // Los eliminamos todos
   for (var i = 0; i < specialChars.length; i++) {
-      cadena= cadena.replace(new RegExp("\\" + specialChars[i], 'gi'), '');
+    cadena = cadena.replace(new RegExp("\\" + specialChars[i], 'gi'), '');
   }   
 
-  // Lo queremos devolver limpio en minusculas
+  // Lo queremos devolver limpio en minúsculas
   cadena = cadena.toLowerCase();
 
-  // Quitamos espacios y los sustituimos por _ porque nos gusta mas asi
-  cadena = cadena.replace(/ /g,"_");
-
-  // Quitamos acentos y "ñ". Fijate en que va sin comillas el primer parametro
+  // Quitamos acentos y "ñ". Fíjate en que va sin comillas el primer parámetro
   cadena = cadena.replace(/á/gi,"a");
   cadena = cadena.replace(/é/gi,"e");
   cadena = cadena.replace(/í/gi,"i");
