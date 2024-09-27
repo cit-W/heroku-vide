@@ -111,9 +111,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       const curso = row[2];               // Columna de curso
       const pago_mensual_basic = String(row[3].toLowerCase);
       pago_mensual_basic = getCleanedString(pago_mensual_basic)
-      const pago_mensual = pago_mensual_basic.
-      replace("si", "TRUE").
-      replace("no", "FALSE")              // Columna de pago_mensual
+      const pago_mensual = pago_mensual_basic.replace("si", "TRUE").replace("no", "FALSE");              // Columna de pago_mensual
 
       await client.query(insertQuery, [nombre, id, curso, pago_mensual]);
     }
@@ -126,7 +124,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.send('Datos insertados correctamente en lista_general');
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error al procesar el archivo.');
+    res.status(500).send('Error al procesar el archivo.', error);
   }
 });
 
