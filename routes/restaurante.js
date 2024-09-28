@@ -196,14 +196,14 @@ router.get('/verificar_pago', async (req, res) => {
       client.release();
 
       if (result.rows.length > 0) {
-          res.json(result.rows);
+        res.json({ success: true, data: result.rows });
       } else {
-          res.send("No_hay_tablas");
+        res.status(404).json({ success: false, message: "No se encontraron registros para el ID proporcionado" });
       }
-  } catch (err) {
-      console.error("Error al consultar la tabla: ", err);
-      res.status(500).send("Error al consultar la tabla: " + err.message);
-  }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, error: err.message });
+    }
 });
 
 module.exports = router;
