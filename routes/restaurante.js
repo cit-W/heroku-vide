@@ -206,4 +206,74 @@ router.get('/verificar_pago', async (req, res) => {
     }
 });
 
+router.post('/registrar-asistencia', async (req, res) => {
+  const { id } = req.query;
+  
+  if (!id) {
+    return res.status(400).send('El ID es requerido.');
+  }
+
+  const fechaActual = format(new Date(), 'dd/MM/yyyy');
+  const horaActual = format(new Date(), 'HH:mm:ss');
+
+  try {
+    const client = await pool.connect();
+
+    // Verificar si la columna de la fecha actual existe
+    const checkColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'restaurante' 
+      AND table_name = 'registro_general' 
+      AND column_name = $1
+    `;
+    const columnCheck = await client.query(checkColumnQuery, [fechaActual]);
+
+    // Si la columna no existe, crearla
+    if (columnCheck.rows.length === 0) {
+      const createColumnQuery = `
+        ALTER TABLE restaurante.registro_general 
+        ADD COLUMN "${fechaActual}" TIME
+      `;
+      await client.query(createColumnQuery);
+    }
+
+    // Verificar si el ID ya existe
+    const checkIdQuery = `
+      SELECT id 
+      FROM restaurante.registro_general 
+      WHERE id = $1
+    `;
+    const idCheck = await client.query(checkIdQuery, [id]);
+
+    let query;
+    let values;
+
+    if (idCheck.rows.length === 0) {
+      // Si el ID no existe, insertarlo con la hora actual
+      query = `
+        INSERT INTO restaurante.registro_general (id, "${fechaActual}")
+        VALUES ($1, $2)
+      `;
+      values = [id, horaActual];
+    } else {
+      // Si el ID ya existe, actualizar la hora
+      query = `
+        UPDATE restaurante.registro_general 
+        SET "${fechaActual}" = $1
+        WHERE id = $2
+      `;
+      values = [horaActual, id];
+    }
+
+    await client.query(query, values);
+    client.release();
+
+    res.status(200).send('Asistencia registrada correctamente.');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error al registrar la asistencia: ' + error.message);
+  }
+});
+
 module.exports = router;
