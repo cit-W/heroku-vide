@@ -208,7 +208,7 @@ router.get('/verificar_pago', async (req, res) => {
 });
 
 router.post('/registrar-asistencia', async (req, res) => {
-  const { id } = req.query;
+  const { id, excepcion } = req.query;
   
   if (!id) {
     return res.status(400).send('El ID es requerido.');
@@ -220,21 +220,22 @@ router.post('/registrar-asistencia', async (req, res) => {
   try {
     const client = await pool.connect();
 
-    // Verificar si la columna de la fecha actual existe
+    // Verificar si las columnas de la fecha actual y excepción existen
     const checkColumnQuery = `
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_schema = 'restaurante' 
       AND table_name = 'registro_general' 
-      AND column_name = $1
+      AND column_name IN ($1, $2)
     `;
-    const columnCheck = await client.query(checkColumnQuery, [fechaActual]);
+    const columnCheck = await client.query(checkColumnQuery, [`${fechaActual}_hora`, `${fechaActual}_excepcion`]);
 
-    // Si la columna no existe, crearla
-    if (columnCheck.rows.length === 0) {
+    // Si las columnas no existen, crearlas
+    if (columnCheck.rows.length < 2) {
       const createColumnQuery = `
         ALTER TABLE restaurante.registro_general 
-        ADD COLUMN "${fechaActual}" TIME
+        ADD COLUMN IF NOT EXISTS "${fechaActual}_hora" TIME,
+        ADD COLUMN IF NOT EXISTS "${fechaActual}_excepcion" TEXT
       `;
       await client.query(createColumnQuery);
     }
@@ -251,20 +252,20 @@ router.post('/registrar-asistencia', async (req, res) => {
     let values;
 
     if (idCheck.rows.length === 0) {
-      // Si el ID no existe, insertarlo con la hora actual
+      // Si el ID no existe, insertarlo con la hora actual y la excepción
       query = `
-        INSERT INTO restaurante.registro_general (id, "${fechaActual}")
-        VALUES ($1, $2)
+        INSERT INTO restaurante.registro_general (id, "${fechaActual}_hora", "${fechaActual}_excepcion")
+        VALUES ($1, $2, $3)
       `;
-      values = [id, horaActual];
+      values = [id, horaActual, excepcion || null];
     } else {
-      // Si el ID ya existe, actualizar la hora
+      // Si el ID ya existe, actualizar la hora y la excepción
       query = `
         UPDATE restaurante.registro_general 
-        SET "${fechaActual}" = $1
-        WHERE id = $2
+        SET "${fechaActual}_hora" = $1, "${fechaActual}_excepcion" = $2
+        WHERE id = $3
       `;
-      values = [horaActual, id];
+      values = [horaActual, excepcion || null, id];
     }
 
     await client.query(query, values);
