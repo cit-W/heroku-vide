@@ -21,9 +21,9 @@ router.post('/crear_cronograma', async (req, res) => {
             return;
         }
 
-        // Construir los nombres de esquema de forma segura
-        const schemaCurrent = `"${year}"`;
-        const schemaBefore = `'${year_before}'`; // Comillas simples para usar en la consulta
+        // Definir los nombres de esquema sin comillas dobles en las variables
+        const schemaCurrent = `${year}`;
+        const schemaBefore = `${year_before}`;
 
         const client = await pool.connect();
 
@@ -32,7 +32,7 @@ router.post('/crear_cronograma', async (req, res) => {
             SELECT EXISTS(
                 SELECT 1
                 FROM information_schema.schemata 
-                WHERE schema_name = '${year_before}'
+                WHERE schema_name = '${schemaBefore}'
             );
         `;
         const result = await client.query(schemaExistsQuery);
@@ -45,10 +45,10 @@ router.post('/crear_cronograma', async (req, res) => {
                     r RECORD;
                 BEGIN
                     -- Selecciona todas las tablas dentro del esquema anterior
-                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year_before}') 
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${schemaBefore}') 
                     LOOP
                         -- Ejecuta un DROP TABLE para cada tabla en el esquema
-                        EXECUTE 'DROP TABLE IF EXISTS "${year_before}." || quote_ident(r.tablename) || ' CASCADE';
+                        EXECUTE 'DROP TABLE IF EXISTS "${schemaBefore}." || quote_ident(r.tablename) || ' CASCADE';
                     END LOOP;
                 END $$;
             `;
@@ -56,14 +56,14 @@ router.post('/crear_cronograma', async (req, res) => {
 
             // Luego, elimina el esquema anterior
             const dropSchemaQuery = `
-                DROP SCHEMA IF EXISTS "${year_before}" CASCADE;
+                DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE;
             `;
             await client.query(dropSchemaQuery);
         }
 
         // Crear el nuevo esquema para el año actual
         const queryYear = `
-            CREATE SCHEMA IF NOT EXISTS ${schemaCurrent}
+            CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
             AUTHORIZATION u9976s05mfbvrs;
         `;
         await client.query(queryYear);
@@ -95,7 +95,6 @@ router.post('/crear_cronograma', async (req, res) => {
         res.status(500).send("Error al registrar el cronograma: " + err.message);
     }
 });
-
 
 router.post('/create_event', async (req, res) => {
     try {
