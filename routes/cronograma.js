@@ -13,7 +13,7 @@ const pool = new Pool({
 router.post('/crear_cronograma', async (req, res) => {
     try {
         const { year } = req.query;
-        const year_before = Int32Array(year - 1);
+        const year_before = Number(year) - 1;
 
         // Verifica si el parámetro está presente
         if (!year) {
