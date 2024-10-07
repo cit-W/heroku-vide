@@ -21,9 +21,13 @@ router.post('/crear_cronograma', async (req, res) => {
             return;
         }
 
+        // Construir los nombres de esquema de forma segura
+        const schemaCurrent = `"${year}"`;
+        const schemaBefore = `"${year_before}"`;
+
         const queryYear = `
-            DROP SCHEMA IF EXISTS ${year_before};
-            CREATE SCHEMA IF NOT EXISTS ${year}
+            DROP SCHEMA IF EXISTS ${schemaBefore};
+            CREATE SCHEMA IF NOT EXISTS ${schemaCurrent}
             AUTHORIZATION u9976s05mfbvrs;
         `;
 
@@ -36,8 +40,9 @@ router.post('/crear_cronograma', async (req, res) => {
                         "DICIEMBRE"];
 
         for (let i = 0; i < months.length; i++) {
+            const tableName = `${schemaCurrent}.${months[i]}`;
             const queryMonths = `
-                CREATE TABLE ${months[i]} (
+                CREATE TABLE IF NOT EXISTS ${tableName} (
                     id INT NOT NULL,
                     tema VARCHAR(50) NOT NULL,
                     acargo VARCHAR(40),
