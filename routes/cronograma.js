@@ -81,7 +81,7 @@ router.post('/create_event', async (req, res) => {
             VALUES($1, $2, $3, $4, $5, $6, $7, $8);
         `;
         const values = [id, nombre, acargo, mediagroup_video, mediagroup_sonido,
-                        fecha, descripcion, lugar];
+                        formattedDate, descripcion, lugar];
 
         // Conecta al cliente y ejecuta la consulta
         const client = await pool.connect();
