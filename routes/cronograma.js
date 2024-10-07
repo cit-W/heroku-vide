@@ -25,22 +25,35 @@ router.post('/crear_cronograma', async (req, res) => {
         const schemaCurrent = `"${year}"`;
         const schemaBefore = `"${year_before}"`;
 
+        const client = await pool.connect();
+
+        // Elimina todas las tablas dentro del esquema anterior (schemaBefore) antes de eliminar el esquema
+        const dropTablesQuery = `
+            DO $$ 
+            DECLARE 
+                r RECORD;
+            BEGIN
+                -- Selecciona todas las tablas dentro del esquema anterior
+                FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = ${schemaBefore}) 
+                LOOP
+                    -- Ejecuta un DROP TABLE para cada tabla en el esquema
+                    EXECUTE 'DROP TABLE IF EXISTS ${schemaBefore}.' || quote_ident(r.tablename) || ' CASCADE';
+                END LOOP;
+            END $$;
+        `;
+        await client.query(dropTablesQuery);
+
+        // Luego, elimina el esquema anterior
         const queryYear = `
-            DROP SCHEMA IF EXISTS ${schemaBefore};
+            DROP SCHEMA IF EXISTS ${schemaBefore} CASCADE;
             CREATE SCHEMA IF NOT EXISTS ${schemaCurrent}
             AUTHORIZATION u9976s05mfbvrs;
         `;
-
-        // Conecta al cliente y ejecuta la consulta
-        const client = await pool.connect();
         await client.query(queryYear);
 
-        const months = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
-                        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE",
-                        "DICIEMBRE"];
-
-        for (let i = 0; i < months.length; i++) {
-            const tableName = `${schemaCurrent}.${months[i]}`;
+        // Crear nuevas tablas para los meses en el esquema actual
+        for (let i = 0; i < 12; i++) {
+            const tableName = `${schemaCurrent}.${i + 1}`; // Usa números del 1 al 12 para las tablas
             const queryMonths = `
                 CREATE TABLE IF NOT EXISTS ${tableName} (
                     id INT NOT NULL,
@@ -55,6 +68,7 @@ router.post('/crear_cronograma', async (req, res) => {
             `;
             await client.query(queryMonths);
         }
+
         client.release();
 
         res.json("cronograma_registrado");
@@ -63,6 +77,7 @@ router.post('/crear_cronograma', async (req, res) => {
         res.status(500).send("Error al registrar el cronograma: " + err.message);
     }
 });
+
 
 router.post('/create_event', async (req, res) => {
     try {
@@ -90,7 +105,7 @@ router.post('/create_event', async (req, res) => {
 
         res.json("SUCCES");
     } catch (err) {
-        console.error("Error al eliminar las tablas: ", err);
+        console.error("Error al crear el evento: ", err);
         res.status(500).send("Error al eliminar las tablas: " + err.message);
     }
 });
