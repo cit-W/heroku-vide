@@ -45,10 +45,10 @@ router.post('/crear_cronograma', async (req, res) => {
                     r RECORD;
                 BEGIN
                     -- Selecciona todas las tablas dentro del esquema anterior
-                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${schemaBefore}') 
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year_before}') 
                     LOOP
                         -- Ejecuta un DROP TABLE para cada tabla en el esquema
-                        EXECUTE 'DROP TABLE IF EXISTS "${schemaBefore}." || quote_ident(r.tablename) || ' CASCADE';
+                        EXECUTE 'DROP TABLE IF EXISTS "${year_before}".' || quote_ident(r.tablename) || ' CASCADE';
                     END LOOP;
                 END $$;
             `;
