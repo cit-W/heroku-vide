@@ -69,7 +69,10 @@ router.post('/create_event', async (req, res) => {
         const { id, nombre, acargo, mediagroup_video, mediagroup_sonido,
                 fecha, descripcion, lugar } = req.query;
 
-        const month = format(fecha, "MM");
+        // Asumiendo que la fecha viene en un formato de timestamp o date string válido
+        const formattedDate = format(new Date(fecha), 'yyyy-MM-dd HH:mm'); // Año-mes-día hora:minuto
+
+        const month = format(new Date(fecha), 'MM'); // Obtiene el mes
 
         const query_create_event = `
             INSERT INTO ${month}
