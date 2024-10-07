@@ -124,7 +124,7 @@ router.post('/create_event', async (req, res) => {
         res.json("SUCCES");
     } catch (err) {
         console.error("Error al crear el evento: ", err);
-        res.status(500).send("Error al eliminar las tablas: " + err.message);
+        res.status(500).send("Error al crear evento: " + err.message);
     }
 });
 
