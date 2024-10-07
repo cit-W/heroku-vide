@@ -23,29 +23,46 @@ router.post('/crear_cronograma', async (req, res) => {
 
         // Construir los nombres de esquema de forma segura
         const schemaCurrent = `"${year}"`;
-        const schemaBefore = `"${year_before}"`;
+        const schemaBefore = `'${year_before}'`; // Comillas simples para usar en la consulta
 
         const client = await pool.connect();
 
-        // Elimina todas las tablas dentro del esquema anterior (schemaBefore) antes de eliminar el esquema
-        const dropTablesQuery = `
-            DO $$ 
-            DECLARE 
-                r RECORD;
-            BEGIN
-                -- Selecciona todas las tablas dentro del esquema anterior
-                FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = ${schemaBefore}) 
-                LOOP
-                    -- Ejecuta un DROP TABLE para cada tabla en el esquema
-                    EXECUTE 'DROP TABLE IF EXISTS ${schemaBefore}.' || quote_ident(r.tablename) || ' CASCADE';
-                END LOOP;
-            END $$;
+        // Verifica si el esquema year_before existe
+        const schemaExistsQuery = `
+            SELECT EXISTS(
+                SELECT 1
+                FROM information_schema.schemata 
+                WHERE schema_name = '${year_before}'
+            );
         `;
-        await client.query(dropTablesQuery);
+        const result = await client.query(schemaExistsQuery);
 
-        // Luego, elimina el esquema anterior
+        if (result.rows[0].exists) {
+            // Elimina todas las tablas dentro del esquema anterior (schemaBefore) antes de eliminar el esquema
+            const dropTablesQuery = `
+                DO $$ 
+                DECLARE 
+                    r RECORD;
+                BEGIN
+                    -- Selecciona todas las tablas dentro del esquema anterior
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year_before}') 
+                    LOOP
+                        -- Ejecuta un DROP TABLE para cada tabla en el esquema
+                        EXECUTE 'DROP TABLE IF EXISTS "${year_before}." || quote_ident(r.tablename) || ' CASCADE';
+                    END LOOP;
+                END $$;
+            `;
+            await client.query(dropTablesQuery);
+
+            // Luego, elimina el esquema anterior
+            const dropSchemaQuery = `
+                DROP SCHEMA IF EXISTS "${year_before}" CASCADE;
+            `;
+            await client.query(dropSchemaQuery);
+        }
+
+        // Crear el nuevo esquema para el año actual
         const queryYear = `
-            DROP SCHEMA IF EXISTS ${schemaBefore} CASCADE;
             CREATE SCHEMA IF NOT EXISTS ${schemaCurrent}
             AUTHORIZATION u9976s05mfbvrs;
         `;
@@ -70,7 +87,6 @@ router.post('/crear_cronograma', async (req, res) => {
         }
 
         client.release();
-
         res.json("cronograma_registrado");
     } catch (err) {
         console.error("Error al registrar el cronograma: ", err);
