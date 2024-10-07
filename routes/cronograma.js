@@ -70,7 +70,9 @@ router.post('/crear_cronograma', async (req, res) => {
 
         // Crear nuevas tablas para los meses en el esquema actual
         for (let i = 0; i < 12; i++) {
-            const tableName = `${schemaCurrent}.${i + 1}`; // Usa números del 1 al 12 para las tablas
+            const month = String(i + 1).padStart(2, '0');
+            const tableName = `"${schemaCurrent}"."${month}"`;
+            
             const queryMonths = `
                 CREATE TABLE IF NOT EXISTS ${tableName} (
                     id INT NOT NULL,
