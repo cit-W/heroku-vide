@@ -8,8 +8,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node test.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon index.js",
+    "test": "node test.js"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
