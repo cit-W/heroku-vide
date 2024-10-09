@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
@@ -49,6 +50,8 @@ app.get('/db', async (req, res) => {
     res.send("Error " + err);
   }
 });
+
+console.log(process.env.DATABASE_URL)
 
 // Usar las rutas
 app.use('/general', general);
