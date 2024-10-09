@@ -108,11 +108,12 @@ router.post('/create_event', async (req, res) => {
         const month = format(new Date(fecha), 'MM'); // Obtiene el mes
 
         const query_create_event = `
-            INSERT INTO '${table_year}'.'${month}'
+            INSERT INTO "${table_year}"."${month}"
             (id, tema, acargo, mediagroup_video, 
             mediagroup_sonido, fecha, descripcion, lugar)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8);
         `;
+        
         const values = [id, nombre, acargo, mediagroup_video, mediagroup_sonido,
                         formattedDate, descripcion, lugar];
 
@@ -121,10 +122,10 @@ router.post('/create_event', async (req, res) => {
         await client.query(query_create_event, values);
         client.release();
 
-        res.json("SUCCES");
+        res.json("SUCCESS");
     } catch (err) {
         console.error("Error al crear el evento: ", err);
-        res.status(500).send("Error al eliminar las tablas: " + err.message);
+        res.status(500).send("Error al crear evento: " + err.message);
     }
 });
 
