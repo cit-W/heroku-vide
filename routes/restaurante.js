@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express'); 
 const multer = require('multer');
 const path = require('path');
@@ -159,7 +161,7 @@ function getCleanedString(cadena) {
 
 // Ruta para actualizar el pago
 router.post('/update-pago', async (req, res) => {
-  const { id, pago_mensual } = req.query;  // Cambiado de req.query a req.body
+  const { id, pago_mensual } = req.query;
   
   if (!id || typeof pago_mensual === 'undefined') {
     return res.status(400).send('ID y pago_mensual son requeridos.');
@@ -275,6 +277,212 @@ router.post('/registrar-asistencia', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al registrar la asistencia: ' + error.message);
+  }
+});
+
+// ESTADISTICAS Y DATOS
+
+async function obtenerTodasLasFechas(client) {
+  const query = `
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'restaurante'
+    AND table_name = 'registro_general'
+    AND column_name LIKE '%_hora'
+  `;
+  const result = await client.query(query);
+  return result.rows.map(row => row.column_name.replace('_hora', ''));
+}
+
+// 1. Días de asistencia y excepciones para un ID
+router.get('/estadisticas/asistencia/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const client = await pool.connect();
+    const fechas = await obtenerTodasLasFechas(client);
+    
+    let query = 'SELECT ';
+    fechas.forEach((fecha, index) => {
+      query += `"${fecha}_hora", "${fecha}_excepcion"${index < fechas.length - 1 ? ',' : ''}`;
+    });
+    query += ` FROM restaurante.registro_general WHERE id = $1`;
+    
+    const result = await client.query(query, [id]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
+    }
+    
+    const asistencia = fechas.map(fecha => ({
+      fecha,
+      asistio: result.rows[0][`${fecha}_hora`] !== null,
+      excepcion: result.rows[0][`${fecha}_excepcion`]
+    })).filter(dia => dia.asistio || dia.excepcion);
+    
+    res.json(asistencia);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener las estadísticas de asistencia" });
+  }
+});
+
+// 2. Asistencia y excepción para un ID y fecha específica
+router.get('/estadisticas/asistencia/:id/:fecha', async (req, res) => {
+  const { id, fecha } = req.params;
+  
+  if (!isValid(parse(fecha, 'dd/MM/yyyy', new Date()))) {
+    return res.status(400).json({ error: "Formato de fecha inválido. Use dd/MM/yyyy" });
+  }
+  
+  try {
+    const client = await pool.connect();
+    const query = `
+      SELECT "${fecha}_hora" as hora, "${fecha}_excepcion" as excepcion
+      FROM restaurante.registro_general
+      WHERE id = $1
+    `;
+    const result = await client.query(query, [id]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el ID y fecha proporcionados" });
+    }
+    
+    const { hora, excepcion } = result.rows[0];
+    res.json({
+      fecha,
+      asistio: hora !== null,
+      hora,
+      excepcion
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener la información de asistencia" });
+  }
+});
+
+// 3. Días de inasistencia para un ID
+router.get('/estadisticas/inasistencia/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const client = await pool.connect();
+    const fechas = await obtenerTodasLasFechas(client);
+    
+    let query = 'SELECT ';
+    fechas.forEach((fecha, index) => {
+      query += `"${fecha}_hora"${index < fechas.length - 1 ? ',' : ''}`;
+    });
+    query += ` FROM restaurante.registro_general WHERE id = $1`;
+    
+    const result = await client.query(query, [id]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
+    }
+    
+    const inasistencias = fechas.filter(fecha => result.rows[0][`${fecha}_hora`] === null);
+    
+    res.json(inasistencias);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener las estadísticas de inasistencia" });
+  }
+});
+
+// 4. Resumen mensual de asistencia
+router.get('/estadisticas/resumen-mensual/:id/:mes/:anio', async (req, res) => {
+  const { id, mes, anio } = req.params;
+  
+  try {
+    const client = await pool.connect();
+    const fechas = await obtenerTodasLasFechas(client);
+    
+    const fechasMes = fechas.filter(fecha => {
+      const [dia, mesStr, anioStr] = fecha.split('/');
+      return mesStr === mes && anioStr === anio;
+    });
+    
+    let query = 'SELECT ';
+    fechasMes.forEach((fecha, index) => {
+      query += `"${fecha}_hora", "${fecha}_excepcion"${index < fechasMes.length - 1 ? ',' : ''}`;
+    });
+    query += ` FROM restaurante.registro_general WHERE id = $1`;
+    
+    const result = await client.query(query, [id]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
+    }
+    
+    const resumen = {
+      diasAsistidos: 0,
+      diasFaltados: 0,
+      diasConExcepcion: 0
+    };
+    
+    fechasMes.forEach(fecha => {
+      if (result.rows[0][`${fecha}_hora`] !== null) {
+        resumen.diasAsistidos++;
+      } else {
+        resumen.diasFaltados++;
+      }
+      if (result.rows[0][`${fecha}_excepcion`] !== null) {
+        resumen.diasConExcepcion++;
+      }
+    });
+    
+    res.json(resumen);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener el resumen mensual" });
+  }
+});
+
+// 5. Porcentaje de asistencia en un rango de fechas
+router.get('/estadisticas/porcentaje-asistencia/:id/:fechaInicio/:fechaFin', async (req, res) => {
+  const { id, fechaInicio, fechaFin } = req.params;
+  
+  if (!isValid(parse(fechaInicio, 'dd/MM/yyyy', new Date())) || !isValid(parse(fechaFin, 'dd/MM/yyyy', new Date()))) {
+    return res.status(400).json({ error: "Formato de fecha inválido. Use dd/MM/yyyy" });
+  }
+  
+  try {
+    const client = await pool.connect();
+    const fechasRango = eachDayOfInterval({
+      start: parse(fechaInicio, 'dd/MM/yyyy', new Date()),
+      end: parse(fechaFin, 'dd/MM/yyyy', new Date())
+    }).map(date => format(date, 'dd/MM/yyyy'));
+    
+    let query = 'SELECT ';
+    fechasRango.forEach((fecha, index) => {
+      query += `"${fecha}_hora"${index < fechasRango.length - 1 ? ',' : ''}`;
+    });
+    query += ` FROM restaurante.registro_general WHERE id = $1`;
+    
+    const result = await client.query(query, [id]);
+    client.release();
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
+    }
+    
+    const diasAsistidos = fechasRango.filter(fecha => result.rows[0][`${fecha}_hora`] !== null).length;
+    const totalDias = fechasRango.length;
+    const porcentajeAsistencia = (diasAsistidos / totalDias) * 100;
+    
+    res.json({
+      porcentajeAsistencia: porcentajeAsistencia.toFixed(2) + '%',
+      diasAsistidos,
+      totalDias
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al calcular el porcentaje de asistencia" });
   }
 });
 
