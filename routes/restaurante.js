@@ -5,7 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const xlsx = require('xlsx');
 const fs = require('fs');
-const { format } = require('date-fns');
+const { parse, isValid, format, eachDayOfInterval } = require('date-fns');
 
 const router = express.Router();
 const { Pool } = require('pg');
@@ -216,7 +216,7 @@ router.post('/registrar-asistencia', async (req, res) => {
     return res.status(400).send('El ID es requerido.');
   }
 
-  const fechaActual = format(new Date(), 'dd/MM/yyyy');
+  const fechaActual = format(new Date(), 'dd-MM-yyyy');
   const horaActual = format(new Date(), 'HH:mm:ss');
 
   try {
@@ -273,7 +273,7 @@ router.post('/registrar-asistencia', async (req, res) => {
     await client.query(query, values);
     client.release();
 
-    res.status(200).send('Asistencia registrada correctamente.');
+    res.status(200).json('Asistencia registrada correctamente.');
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al registrar la asistencia: ' + error.message);
@@ -331,9 +331,13 @@ router.get('/estadisticas/asistencia/:id', async (req, res) => {
 // 2. Asistencia y excepción para un ID y fecha específica
 router.get('/estadisticas/asistencia/:id/:fecha', async (req, res) => {
   const { id, fecha } = req.params;
-  
-  if (!isValid(parse(fecha, 'dd/MM/yyyy', new Date()))) {
-    return res.status(400).json({ error: "Formato de fecha inválido. Use dd/MM/yyyy" });
+
+  // Cambia el formato de la fecha en la función parse
+  console.log("Fecha recibida:", fecha); // Para verificar la fecha que recibes
+
+  if (!isValid(parse(fecha, 'dd-MM-yyyy', new Date()))) { // Cambiar el formato a dd-MM-yyyy
+    console.log("Fecha inválida:", fecha);
+    return res.status(400).json({ error: "Formato de fecha inválido. Use dd-MM-yyyy" });
   }
   
   try {
@@ -394,18 +398,25 @@ router.get('/estadisticas/inasistencia/:id', async (req, res) => {
 });
 
 // 4. Resumen mensual de asistencia
-router.get('/estadisticas/resumen-mensual/:id/:mes/:anio', async (req, res) => {
-  const { id, mes, anio } = req.params;
+router.get('/estadisticas/resumen-mensual/:id/:mes', async (req, res) => {
+  const { id, mes } = req.params;  // Quitamos el año de los parámetros
   
   try {
     const client = await pool.connect();
-    const fechas = await obtenerTodasLasFechas(client);
+    const fechas = await obtenerTodasLasFechas(client);  // Obtener todas las fechas disponibles en la DB
     
+    // Filtrar las fechas del mes indicado
     const fechasMes = fechas.filter(fecha => {
-      const [dia, mesStr, anioStr] = fecha.split('/');
-      return mesStr === mes && anioStr === anio;
+      const [dia, mesStr] = fecha.split('/');  // Ajustamos para comparar solo con el mes
+      return mesStr === mes;  // Filtramos solo por el mes
     });
     
+    // Si no hay fechas en el mes, devolvemos un mensaje
+    if (fechasMes.length === 0) {
+      return res.status(404).json({ message: "No se encontraron registros para el mes proporcionado" });
+    }
+
+    // Armamos la consulta con las fechas del mes
     let query = 'SELECT ';
     fechasMes.forEach((fecha, index) => {
       query += `"${fecha}_hora", "${fecha}_excepcion"${index < fechasMes.length - 1 ? ',' : ''}`;
@@ -415,28 +426,45 @@ router.get('/estadisticas/resumen-mensual/:id/:mes/:anio', async (req, res) => {
     const result = await client.query(query, [id]);
     client.release();
     
+    // Si no se encuentran registros para el ID
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
     }
-    
+
+    // Inicializamos el resumen y arrays para almacenar detalles específicos de los días
     const resumen = {
       diasAsistidos: 0,
       diasFaltados: 0,
-      diasConExcepcion: 0
+      diasConExcepcion: 0,
+      detalles: []  // Agregamos un array para los detalles diarios
     };
-    
+
+    // Procesamos cada día del mes
     fechasMes.forEach(fecha => {
-      if (result.rows[0][`${fecha}_hora`] !== null) {
+      const asistencia = result.rows[0][`${fecha}_hora`];
+      const excepcion = result.rows[0][`${fecha}_excepcion`];
+      
+      // Si asistió ese día
+      if (asistencia !== null) {
         resumen.diasAsistidos++;
       } else {
         resumen.diasFaltados++;
       }
-      if (result.rows[0][`${fecha}_excepcion`] !== null) {
+
+      // Si hubo una excepción
+      if (excepcion !== null) {
         resumen.diasConExcepcion++;
       }
+
+      // Agregamos los detalles del día al array
+      resumen.detalles.push({
+        fecha,
+        asistio: asistencia !== null,
+        excepcion: excepcion || 'Ninguna'  // Mostrar 'Ninguna' si no hay excepción
+      });
     });
     
-    res.json(resumen);
+    res.json(resumen);  // Devolvemos el resumen con los detalles
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al obtener el resumen mensual" });
@@ -447,38 +475,83 @@ router.get('/estadisticas/resumen-mensual/:id/:mes/:anio', async (req, res) => {
 router.get('/estadisticas/porcentaje-asistencia/:id/:fechaInicio/:fechaFin', async (req, res) => {
   const { id, fechaInicio, fechaFin } = req.params;
   
-  if (!isValid(parse(fechaInicio, 'dd/MM/yyyy', new Date())) || !isValid(parse(fechaFin, 'dd/MM/yyyy', new Date()))) {
-    return res.status(400).json({ error: "Formato de fecha inválido. Use dd/MM/yyyy" });
+  // Validar formato de fecha
+  if (!isValid(parse(fechaInicio, 'dd-MM-yyyy', new Date())) || !isValid(parse(fechaFin, 'dd-MM-yyyy', new Date()))) {
+    return res.status(400).json({ error: "Formato de fecha inválido. Use dd-MM-yyyy" });
   }
   
   try {
     const client = await pool.connect();
-    const fechasRango = eachDayOfInterval({
-      start: parse(fechaInicio, 'dd/MM/yyyy', new Date()),
-      end: parse(fechaFin, 'dd/MM/yyyy', new Date())
-    }).map(date => format(date, 'dd/MM/yyyy'));
     
+    // Crear un rango de fechas
+    const fechasRango = eachDayOfInterval({
+      start: parse(fechaInicio, 'dd-MM-yyyy', new Date()),
+      end: parse(fechaFin, 'dd-MM-yyyy', new Date())
+    }).map(date => format(date, 'dd-MM-yyyy'));
+
+    // Obtener las columnas existentes de la tabla
+    const columnsResult = await client.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'registro_general' AND column_name LIKE '%_hora'
+    `);
+
+    // Crear una lista con los nombres de columnas existentes en la base de datos
+    const columnasExistentes = columnsResult.rows.map(row => row.column_name);
+
+    // Filtrar las fechas del rango que tienen una columna correspondiente en la base de datos
+    const fechasValidas = fechasRango.filter(fecha => columnasExistentes.includes(`${fecha}_hora`));
+
+    if (fechasValidas.length === 0) {
+      client.release();
+      return res.status(404).json({ message: "No se encontraron registros para las fechas proporcionadas" });
+    }
+
+    // Crear la consulta SQL solo con las fechas válidas
     let query = 'SELECT ';
-    fechasRango.forEach((fecha, index) => {
-      query += `"${fecha}_hora"${index < fechasRango.length - 1 ? ',' : ''}`;
+    fechasValidas.forEach((fecha, index) => {
+      query += `"${fecha}_hora"${index < fechasValidas.length - 1 ? ',' : ''}`;
     });
     query += ` FROM restaurante.registro_general WHERE id = $1`;
-    
+
+    // Ejecutar la consulta
     const result = await client.query(query, [id]);
     client.release();
-    
+
+    // Verificar si no hay resultados
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "No se encontraron registros para el ID proporcionado" });
     }
-    
-    const diasAsistidos = fechasRango.filter(fecha => result.rows[0][`${fecha}_hora`] !== null).length;
-    const totalDias = fechasRango.length;
+
+    // Inicializar variables para almacenar los días asistidos y no asistidos
+    let diasAsistidos = 0;
+    let totalDias = fechasValidas.length;
+    let diasAsistidosList = [];
+    let diasNoAsistidosList = [];
+
+    // Verificar asistencia en cada fecha válida
+    fechasValidas.forEach(fecha => {
+      if (result.rows[0][`${fecha}_hora`] !== null) {
+        diasAsistidos++;
+        diasAsistidosList.push(fecha); // Agregar a la lista de días asistidos
+      } else {
+        diasNoAsistidosList.push(fecha); // Agregar a la lista de días no asistidos
+      }
+    });
+
+    // Calcular el porcentaje de asistencia
     const porcentajeAsistencia = (diasAsistidos / totalDias) * 100;
-    
+
+    // Responder con los datos calculados
     res.json({
       porcentajeAsistencia: porcentajeAsistencia.toFixed(2) + '%',
       diasAsistidos,
-      totalDias
+      diasNoAsistidos: totalDias - diasAsistidos,
+      totalDias,
+      detalles: {
+        diasAsistidos: diasAsistidosList,
+        diasNoAsistidos: diasNoAsistidosList
+      }
     });
   } catch (error) {
     console.error(error);
