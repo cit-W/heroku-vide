@@ -124,6 +124,8 @@ router.post('/create_event', async (req, res) => {
             mediagroup_sonido, fecha, descripcion, lugar, n_semana)
             VALUES( $1, $2, $3, $4, $5, $6, $7, $8 );
         `;
+
+        console.log(result_week)
         
         const values = [tema, acargo, mediagroup_video, mediagroup_sonido,
                         formattedDate, descripcion, lugar, result_week];
@@ -131,6 +133,7 @@ router.post('/create_event', async (req, res) => {
         // Conecta al cliente y ejecuta la consulta
         const client = await pool.connect();
         await client.query(query_create_event, values);
+        
         client.release();
 
         res.json("SUCCESS");
@@ -211,7 +214,7 @@ router.get('/delete_event', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
         }
@@ -241,7 +244,7 @@ router.get('/month_events', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
 
@@ -273,7 +276,7 @@ router.get('/month_topic', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
         }
@@ -291,6 +294,8 @@ router.get('/week_events', async (req, res) => {
         var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
         var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
 
+        console.log(result_week)
+
         const yearActual = format(new Date(), 'yyyy');
         const monthActual = format(new Date(), 'MM');
 
@@ -307,7 +312,7 @@ router.get('/week_events', async (req, res) => {
         // fecha, descripcion, lugar, n_semana
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
         }
@@ -333,7 +338,7 @@ router.get('/event', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
         }
@@ -361,7 +366,7 @@ router.post('/mediagroup', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ message: "No_hay_tablas" });
         }
