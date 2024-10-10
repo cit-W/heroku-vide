@@ -213,7 +213,7 @@ router.get('/delete_event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json("No_hay_tablas");
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -243,7 +243,7 @@ router.get('/month_events', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json("No_hay_tablas");
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -274,7 +274,7 @@ router.get('/month_topic', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json("No_hay_tablas");
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -302,10 +302,13 @@ router.get('/week_events', async (req, res) => {
         const result = await client.query(query, [result_week]);
         client.release();
 
+        // id, tema, acargo, mediagroup_video, mediagroup_sonido,
+        // fecha, descripcion, lugar, n_semana
+
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json("No_hay_tablas");
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
