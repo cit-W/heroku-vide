@@ -213,7 +213,7 @@ router.get('/delete_event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.json("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -243,7 +243,8 @@ router.get('/month_events', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.json("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
+
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -274,7 +275,7 @@ router.get('/month_topic', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.json("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -308,7 +309,7 @@ router.get('/week_events', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.json("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -334,7 +335,7 @@ router.get('/event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -362,7 +363,7 @@ router.post('/mediagroup', async (req, res) => {
         if (result.rows.length > 0) {
             res.json(result.rows);
         } else {
-            res.send("No_hay_tablas");
+            res.json({ message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
