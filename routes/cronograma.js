@@ -3,14 +3,20 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 
+// Parametros para mefiagroup:
+//  innecesaario
+//  necesaario
+//  confirmado
+//  denegado
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
-router.post('/crear_cronograma', async (req, res) => {
+router.post('/create', async (req, res) => {
     try {
         const { year } = req.query;
         const year_before = Number(year) - 1;
@@ -75,14 +81,15 @@ router.post('/crear_cronograma', async (req, res) => {
             
             const queryMonths = `
                 CREATE TABLE IF NOT EXISTS ${tableName} (
-                    id INT NOT NULL,
+                    id SERIAL PRIMARY KEY,
                     tema VARCHAR(50) NOT NULL,
                     acargo VARCHAR(40),
                     mediagroup_video VARCHAR(20),
                     mediagroup_sonido VARCHAR(20),
                     fecha DATE NOT NULL,
                     descripcion VARCHAR(200),
-                    lugar VARCHAR(40)
+                    lugar VARCHAR(40),
+                    n_semana INT NOT NULL
                 );
             `;
             await client.query(queryMonths);
@@ -98,24 +105,28 @@ router.post('/crear_cronograma', async (req, res) => {
 
 router.post('/create_event', async (req, res) => {
     try {
-        const { id, nombre, acargo, mediagroup_video, mediagroup_sonido,
+        const { tema, acargo, mediagroup_video, mediagroup_sonido,
                 fecha, descripcion, lugar } = req.query;
 
-        // Asumiendo que la fecha viene en un formato de timestamp o date string válido
         const formattedDate = format(new Date(fecha), 'yyyy-MM-dd HH:mm'); // Año-mes-día hora:minuto
 
         const table_year = format(new Date(fecha), 'yyyy'); // Obtiene el año
         const month = format(new Date(fecha), 'MM'); // Obtiene el mes
 
+        currentdate = new Date();
+        var oneJan = new Date(currentdate.getFullYear(), 0, 1);
+        var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
+        var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
+
         const query_create_event = `
             INSERT INTO "${table_year}"."${month}"
-            (id, tema, acargo, mediagroup_video, 
-            mediagroup_sonido, fecha, descripcion, lugar)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8);
+            (tema, acargo, mediagroup_video, 
+            mediagroup_sonido, fecha, descripcion, lugar, n_semana)
+            VALUES( $1, $2, $3, $4, $5, $6, $7, $8 );
         `;
         
-        const values = [id, nombre, acargo, mediagroup_video, mediagroup_sonido,
-                        formattedDate, descripcion, lugar];
+        const values = [tema, acargo, mediagroup_video, mediagroup_sonido,
+                        formattedDate, descripcion, lugar, result_week];
 
         // Conecta al cliente y ejecuta la consulta
         const client = await pool.connect();
@@ -130,9 +141,10 @@ router.post('/create_event', async (req, res) => {
 });
 
 router.post('/delete', async (req, res) => {
+    const client = await pool.connect(); // Asegura que el client esté inicializado correctamente
+
     try {
         const { year } = req.query;
-        const year_before = year - 1;
 
         // Verifica si el parámetro está presente
         if (!year) {
@@ -140,37 +152,62 @@ router.post('/delete', async (req, res) => {
             return;
         }
 
-        const queryYear = 'DROP SCHEMA IF EXISTS ${queryYear};';
+        // Verifica si el esquema year existe
+        const schemaExistsQuery = `
+            SELECT EXISTS(
+                SELECT 1
+                FROM information_schema.schemata 
+                WHERE schema_name = '${year}'
+            );
+        `;
+        const result = await client.query(schemaExistsQuery);
 
-        const client = await pool.connect();
-        await client.query(queryYear);
-        client.release();
+        if (result.rows[0].exists) {
+            // Elimina todas las tablas dentro del esquema antes de eliminar el esquema
+            const dropTablesQuery = `
+                DO $$ 
+                DECLARE 
+                    r RECORD;
+                BEGIN
+                    -- Selecciona todas las tablas dentro del esquema
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year}') 
+                    LOOP
+                        -- Ejecuta un DROP TABLE para cada tabla en el esquema
+                        EXECUTE 'DROP TABLE IF EXISTS "${year}".' || quote_ident(r.tablename) || ' CASCADE';
+                    END LOOP;
+                END $$;
+            `;
+            await client.query(dropTablesQuery);
 
-        res.send("Borrado exitosamente");
+            // Luego, elimina el esquema
+            const dropSchemaQuery = `
+                DROP SCHEMA IF EXISTS "${year}" CASCADE;
+            `;
+            await client.query(dropSchemaQuery);
+        }
+
+        res.json("Borrado exitosamente");
     } catch (err) {
         console.error("Error al borrar la tabla: ", err);
         res.status(500).send("Error al borrar: " + err.message);
+    } finally {
+        client.release(); // Asegura liberar el client al final
     }
 });
 
-router.get('/registro_horario_account', async (req, res) => {
+router.get('/delete_event', async (req, res) => {
     try {
-        const { name } = req.query;
+        const { id, month } = req.query;
 
-        if (!name) {
-            res.status(400).send("El parámetro 'name' es requerido.");
-            return;
-        }
+        const yearActual = format(new Date(), 'yyyy');
 
         const client = await pool.connect();
         const query = `
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'horarios_profes' 
-            AND table_name = $1
-            ORDER BY table_name ASC;
+            DELETE 
+            FROM "${yearActual}"."${month}"
+            WHERE id = $1;
         `;
-        const result = await client.query(query, [name]);
+        const result = await client.query(query, [id]);
         client.release();
 
         if (result.rows.length > 0) {
@@ -184,70 +221,224 @@ router.get('/registro_horario_account', async (req, res) => {
     }
 });
 
-router.get('/registro_horario', async (req, res) => {
+router.get('/month_events', async (req, res) => {
     try {
-        const client = await pool.connect();
-        
-        const query = `
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'horarios_profes'
-            ORDER BY table_name ASC;
-        `;
-        const result = await client.query(query);
-        client.release();
+        const { id, month } = req.query;
 
-        if (result.rows.length > 0) {
-            res.json({ success: true, data: result.rows });
-        } else {
-            res.json({success: true, data: "No_hay_registros"});
-        }
-    } catch (err) {
-        console.error("Error al consultar las tablas: ", err);
-        res.status(500).send("Error al consultar las tablas: " + err.message);
-    }
-});
-
-router.get('/ver_horario', async (req, res) => {
-    try {
-        const { name } = req.query;
-
-        if (!name) {
-            res.status(400).send("El parámetro 'name' es requerido.");
+        if (!id) {
+            res.status(400).send("El parámetro 'id' es requerido.");
             return;
         }
 
-        const client = await pool.connect();
+        const yearActual = format(new Date(), 'yyyy');
 
-        // Consulta SQL para obtener y ordenar registros
-        // Nota: PostgreSQL no tiene SUBSTRING_INDEX, pero puedes usar funciones similares para manejar la lógica de conversión de tiempos
+        const client = await pool.connect();
         const query = `
             SELECT * 
-            FROM horarios_profes.${name} 
-            ORDER BY 
-                CASE 
-                    WHEN horas ~ '^[0-9]+:[0-9]+' THEN 
-                        -- Conversión de horas a formato TIME
-                        CAST(SPLIT_PART(horas, ' - ', 1) AS TIME)
-                    ELSE 
-                        '00:00:00' 
-                END;
+            FROM "${yearActual}"."${month}";
         `;
-        const result = await client.query(query);
+        const result = await client.query(query, [month]);
         client.release();
 
         if (result.rows.length > 0) {
-            res.json({ success: true, data: result.rows });
+            res.json(result.rows);
         } else {
-            res.json({
-                data: "No_hay_registros"
-            });
+            res.send("No_hay_tablas");
         }
     } catch (err) {
-        console.error("Error al consultar los registros: ", err);
-        res.json({
-            data: "No_hay_registros"
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
+router.get('/month_topic', async (req, res) => {
+    try {
+        const { month } = req.query;
+
+        if (!id) {
+            res.status(400).send("El parámetro 'month' es requerido.");
+            return;
+        }
+
+        const yearActual = format(new Date(), 'yyyy');
+
+        const client = await pool.connect();
+        const query = `
+            SELECT tema 
+            FROM "${yearActual}"."${month}"
+            WHERE id = 0;
+        `;
+        const result = await client.query(query, [month]);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json(result.rows);
+        } else {
+            res.send("No_hay_tablas");
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
+router.get('/week_events', async (req, res) => {
+    try {
+
+        currentdate = new Date();
+        var oneJan = new Date(currentdate.getFullYear(), 0, 1);
+        var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
+        var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
+
+        const yearActual = format(new Date(), 'yyyy');
+        const monthActual = format(new Date(), 'MM');
+
+        const client = await pool.connect();
+        const query = `
+            SELECT * 
+            FROM "${yearActual}"."${monthActual}"
+            WHERE n_semana = $1;
+        `;
+        const result = await client.query(query, [result_week]);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json(result.rows);
+        } else {
+            res.send("No_hay_tablas");
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
+router.get('/event', async (req, res) => {
+    try {
+        const { id, month } = req.query;
+
+        const yearActual = format(new Date(), 'yyyy');
+
+        const client = await pool.connect();
+        const query = `
+            SELECT  * 
+            FROM "${yearActual}"."${month}"
+            WHERE id = $1;
+        `;
+        const result = await client.query(query, [id]);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json(result.rows);
+        } else {
+            res.send("No_hay_tablas");
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
+router.post('/mediagroup', async (req, res) => {
+    try {
+        const { id, month, video, sonido } = req.query;
+
+        const yearActual = format(new Date(), 'yyyy');
+
+        const client = await pool.connect();
+        const query = `
+            UPDATE "${yearActual}"."${month}"
+            SET mediagroup_video = '$1',
+                mediagroup_sonido = '$2'
+            WHERE id = $3;
+        `;
+        const values = [video, sonido, id];
+        const result = await client.query(query, values);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json(result.rows);
+        } else {
+            res.send("No_hay_tablas");
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
+router.get('/list_mediagroup', async (req, res) => {
+    let client;
+    try {
+        // Obtener la fecha actual
+        const currentdate = new Date();
+        const oneJan = new Date(currentdate.getFullYear(), 0, 1);
+        
+        // Calcular el número de días y la semana actual
+        const numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
+        const result_week = Math.ceil((numberOfDays + currentdate.getDay() + 1) / 7);
+        
+        // Obtener el año y mes actuales en formato 'yyyy' y 'MM'
+        const yearActual = format(currentdate, 'yyyy');
+        const monthActual = format(currentdate, 'MM');
+
+        // Calcular el mes siguiente
+        const nextMonthDate = new Date(currentdate.getFullYear(), currentdate.getMonth() + 1, 1);
+        const monthNext = format(nextMonthDate, 'MM');
+
+        // Conectar a la base de datos
+        client = await pool.connect();
+
+        // Consulta SQL para el mes actual
+        const queryCurrentMonth = `
+            SELECT * 
+            FROM "${yearActual}"."${monthActual}"
+            WHERE n_semana IN ($1, $2, $3, $4);
+        `;
+        const values = [result_week, result_week + 1, result_week + 2, result_week + 3];
+
+        // Ejecutar la consulta en el mes actual
+        let resultCurrentMonth = await client.query(queryCurrentMonth, values);
+
+        // Arreglo para almacenar semanas faltantes
+        let semanasFaltantes = [];
+        const semanasBuscadas = [result_week, result_week + 1, result_week + 2, result_week + 3];
+
+        // Filtrar las semanas faltantes
+        semanasBuscadas.forEach(semana => {
+            if (!resultCurrentMonth.rows.some(row => row.n_semana === semana)) {
+                semanasFaltantes.push(semana);
+            }
         });
+
+        // Si hay semanas faltantes, buscar en el mes siguiente
+        if (semanasFaltantes.length > 0) {
+            const queryNextMonth = `
+                SELECT * 
+                FROM "${yearActual}"."${monthNext}"
+                WHERE n_semana IN (${semanasFaltantes.map((_, i) => `$${i + 1}`).join(", ")});
+            `;
+            const resultNextMonth = await client.query(queryNextMonth, semanasFaltantes);
+
+            // Combinar resultados del mes actual y el siguiente
+            resultCurrentMonth.rows = [...resultCurrentMonth.rows, ...resultNextMonth.rows];
+        }
+
+        // Verificar si se encontraron datos
+        if (resultCurrentMonth.rows.length > 0) {
+            res.json(resultCurrentMonth.rows);
+        } else {
+            // Si no hay datos en ninguna tabla, retornar un JSON indicando que no hay tablas
+            res.json({ message: "No_hay_tablas" });
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).json({ error: "Error al consultar la tabla: " + err.message });
+    } finally {
+        // Asegurarse de liberar el cliente de la base de datos
+        if (client) {
+            client.release();
+        }
     }
 });
 
