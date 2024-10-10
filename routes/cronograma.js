@@ -216,7 +216,7 @@ router.get('/delete_event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -246,7 +246,7 @@ router.get('/month_events', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
 
         }
     } catch (err) {
@@ -278,7 +278,7 @@ router.get('/month_topic', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -314,7 +314,7 @@ router.get('/week_events', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -340,7 +340,7 @@ router.get('/event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -368,7 +368,7 @@ router.post('/mediagroup', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
@@ -438,7 +438,7 @@ router.get('/list_mediagroup', async (req, res) => {
             res.json(resultCurrentMonth.rows);
         } else {
             // Si no hay datos en ninguna tabla, retornar un JSON indicando que no hay tablas
-            res.json({ message: "No_hay_tablas" });
+            res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
