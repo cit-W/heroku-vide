@@ -240,7 +240,7 @@ router.get('/month_events', async (req, res) => {
             SELECT * 
             FROM "${yearActual}"."${month}";
         `;
-        const result = await client.query(query, [month]);
+        const result = await client.query(query);
         client.release();
 
         if (result.rows.length > 0) {
