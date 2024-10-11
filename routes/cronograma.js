@@ -281,8 +281,7 @@ router.get('/month_topic', async (req, res) => {
             res.json({ success: false, data: "No_hay_tablas" });
         }
     } catch (err) {
-        console.error("Error al consultar la tabla: ", err);
-        res.status(500).send("Error al consultar la tabla: " + err.message);
+        res.json({ success: false, data: "No_hay_tablas" });
     }
 });
 
