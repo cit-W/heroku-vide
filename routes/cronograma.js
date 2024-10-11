@@ -226,10 +226,10 @@ router.get('/delete_event', async (req, res) => {
 
 router.get('/month_events', async (req, res) => {
     try {
-        const { id, month } = req.query;
+        const { month } = req.query;
 
-        if (!id) {
-            res.status(400).send("El parámetro 'id' es requerido.");
+        if (!month) {
+            res.status(400).send("El parámetro 'month' es requerido.");
             return;
         }
 
