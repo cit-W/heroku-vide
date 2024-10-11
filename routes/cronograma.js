@@ -96,7 +96,7 @@ router.post('/create', async (req, res) => {
         }
 
         client.release();
-        res.json("cronograma_registrado");
+        res.json({ success: true, data: "cronograma_registrado"});
     } catch (err) {
         console.error("Error al registrar el cronograma: ", err);
         res.status(500).send("Error al registrar el cronograma: " + err.message);
@@ -136,7 +136,7 @@ router.post('/create_event', async (req, res) => {
         
         client.release();
 
-        res.json("SUCCESS");
+        res.json({ success: true, data: "SUCCESS"});
     } catch (err) {
         console.error("Error al crear el evento: ", err);
         res.status(500).send("Error al crear evento: " + err.message);
@@ -189,7 +189,7 @@ router.post('/delete', async (req, res) => {
             await client.query(dropSchemaQuery);
         }
 
-        res.json("Borrado exitosamente");
+        res.json({ success: true, data: "Borrado exitosamente"});
     } catch (err) {
         console.error("Error al borrar la tabla: ", err);
         res.status(500).send("Error al borrar: " + err.message);
