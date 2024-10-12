@@ -31,7 +31,6 @@ router.post('/create_citation', async (req, res) => {
         const query_create_table = `
             CREATE TABLE IF NOT EXISTS citaciones."${person}" (
                 id SERIAL PRIMARY KEY,
-                person VARCHAR(40),
                 topic VARCHAR(50) NOT NULL,
                 tutor VARCHAR(35),
                 student_id INTEGER NOT NULL,
@@ -43,11 +42,11 @@ router.post('/create_citation', async (req, res) => {
 
         // SQL para insertar la cita
         const query_insert_event = `
-            INSERT INTO citaciones."${person}" (person, topic, tutor, student_id, date, notes)
-            VALUES ($1, $2, $3, $4, $5, $6);
+            INSERT INTO citaciones."${person}" ( topic, tutor, student_id, date, notes)
+            VALUES ($1, $2, $3, $4, $5);
         `;
 
-        const values = [person, topic, tutor, student_id, formattedDate, notes];
+        const values = [ topic, tutor, student_id, formattedDate, notes];
 
         const client = await pool.connect();
 

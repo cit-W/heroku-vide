@@ -29,12 +29,11 @@ router.post('/create_user', async (req, res) => {
 
       CREATE TABLE IF NOT EXISTS citaciones."${cedula}"
       (
-        id SERIAL PRIMARY KEY,
-        person VARCHAR(40),
+        id SERIAL PRIMARY KEY
         topic VARCHAR(50) NOT NULL,
         tutor VARCHAR(35),
         student_id INTEGER NOT NULL,
-        date DATE NOT NULL,
+        date TIMESTAMP NOT NULL,
         notes TEXT,
         status VARCHAR(20) NOT NULL DEFAULT 'pendiente'
         );
