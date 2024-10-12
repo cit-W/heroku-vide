@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 
 // Parametros para mefiagroup:
 //  innecesaario
-//  necesaario
+//  solicitado
 //  confirmado
 //  denegado
 

@@ -15,6 +15,7 @@ const signInRoutes = require('./routes/sign_in');
 const trabajoSocialRoutes = require('./routes/trabajo_social');
 const restauranteRoutes = require('./routes/restaurante');
 const cronogramaRoutes = require('./routes/cronograma');
+const citacionesRoutes = require('./routes/citaciones');
 
 const PORT = process.env.PORT || 5001;
 
@@ -66,5 +67,6 @@ app.use('/sign_in', signInRoutes);
 app.use('/trabajo_social', trabajoSocialRoutes);
 app.use('/restaurante', restauranteRoutes);
 app.use('/cronograma', cronogramaRoutes);
+app.use('/citaciones', citacionesRoutes);
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
