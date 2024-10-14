@@ -29,7 +29,7 @@ router.post('/create_user', async (req, res) => {
 
       CREATE TABLE IF NOT EXISTS citaciones."${cedula}"
       (
-        id SERIAL PRIMARY KEY
+        id SERIAL PRIMARY KEY,
         topic VARCHAR(50) NOT NULL,
         tutor VARCHAR(35),
         student_id INTEGER NOT NULL,
@@ -58,13 +58,13 @@ router.get('/obtener_nombres', async (req, res) => {
   }
 
   try {
-    const query = 'SELECT cedula FROM android_mysql.usuarios WHERE cedula = $1';
+    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
     const result = await pool.query(query, [cedula]);
 
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows }); // Devolver un objeto que contiene el array en un campo 'data'
     } else {
-      res.json({ success: true, message: "No se encontró un profesor con la cédula proporcionada", data: [] });
+      res.json({ success: false, data: "No se encontró un profesor con la cédula proporcionada"});
     }
   } catch (err) {
     console.error(err);
@@ -86,7 +86,7 @@ router.get('/info_user', async (req, res) => {
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
-      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el cedula proporcionado" });
+      res.status(404).json({ success: false, message: "No se encontraron items para el cedula proporcionado" });
     }
   } catch (err) {
     console.error(err);

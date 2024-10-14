@@ -15,7 +15,7 @@ router.get('/', (req, res) => res.json({ success: true, data: "SUCCESS"}));
 
 router.post('/create_citation', async (req, res) => {
     try {
-        const { person, topic, tutor, student_id, date, notes } = req.query;
+        const { person, topic, tutor, student_id, date, notes, status } = req.query;
 
         // Parsear la fecha desde el formato 'dd-MM-yyyy HH:mm' a un objeto Date
         const parsedDate = parse(date, 'dd-MM-yyyy HH:mm', new Date());
@@ -36,17 +36,17 @@ router.post('/create_citation', async (req, res) => {
                 student_id INTEGER NOT NULL,
                 date TIMESTAMP NOT NULL,
                 notes TEXT,
-                status VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+                status VARCHAR(20) NOT NULL DEFAULT 'Pendiente'
             );
         `;
 
         // SQL para insertar la cita
         const query_insert_event = `
-            INSERT INTO citaciones."${person}" ( topic, tutor, student_id, date, notes)
-            VALUES ($1, $2, $3, $4, $5);
+            INSERT INTO citaciones."${person}" ( topic, tutor, student_id, date, notes, status)
+            VALUES ($1, $2, $3, $4, $5, $6);
         `;
 
-        const values = [ topic, tutor, student_id, formattedDate, notes];
+        const values = [ topic, tutor, student_id, formattedDate, notes, status ];
 
         const client = await pool.connect();
 
