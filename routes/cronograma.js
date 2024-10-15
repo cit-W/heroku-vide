@@ -198,7 +198,7 @@ router.post('/delete', async (req, res) => {
     }
 });
 
-router.get('/delete_event', async (req, res) => {
+router.post('/delete_event', async (req, res) => {
     try {
         const { id, month } = req.query;
 
@@ -213,11 +213,7 @@ router.get('/delete_event', async (req, res) => {
         const result = await client.query(query, [id]);
         client.release();
 
-        if (result.rows.length > 0) {
-            res.json({ success: true, data: result.rows });
-        } else {
-            res.json({ success: false, data: "No_hay_tablas" });
-        }
+        res.json({ success: true, data: "success" });
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
         res.status(500).send("Error al consultar la tabla: " + err.message);
