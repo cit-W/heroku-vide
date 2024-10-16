@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./db.js');
+const NodeCache = require('node-cache');
+
+// Inicializar el caché
+const cache = new NodeCache({ stdTTL: 300, checkperiod: 120 });
 
 router.get('/conexion_verification', async (req, res) => {
   try {
@@ -20,14 +24,30 @@ router.get('/info_user', async (req, res) => {
     return res.status(400).json({ success: false, error: "No se proporcionó un cedula válido" });
   }
 
-  try {
-    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
-    const result = await pool.query(query, [cedula]);
+  let isCached = false;
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
+  try {
+    // Intentar obtener datos del caché
+    let result = cache.get("info_users");
+
+    if (result == undefined) {
+      // Si no está en caché, consultar la base de datos
+      const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
+      const dbResult = await pool.query(query, [cedula]);
+      result = dbResult.rows;
+
+      // Guardar en caché
+      cache.set("info_users", result);
     } else {
-      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el cedula proporcionado" });
+      isCached = true;
+    }
+
+    if (result.length > 0) {
+      res.json({ success: true, data: result, 
+        isCached: isCached });
+    } else {
+      res.status(404).json({ success: false, data: "No se encontraron trabajos sociales para el cedula proporcionado", 
+        isCached: isCached });
     }
   } catch (err) {
     console.error(err);

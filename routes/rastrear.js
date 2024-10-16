@@ -1,11 +1,11 @@
 const express = require('express'); //1271.30ms / 1189.63ms / 
 const router = express.Router();
 const pool = require('./db.js');
-const NodeCache = require('node-cache');
 const now = require('performance-now');
+const NodeCache = require('node-cache');
 
 // Inicializar el caché
-const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // Cache por 10 minutos
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 // GET - Obtener nombres
 router.get('/obtener_nombres', async (req, res) => {
