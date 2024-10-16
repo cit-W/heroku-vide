@@ -8,14 +8,7 @@ const fs = require('fs');
 const { parse, isValid, format, eachDayOfInterval } = require('date-fns');
 
 const router = express.Router();
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool = require('./db.js');
 
 // Crear directorio 'uploads' si no existe
 if (!fs.existsSync('uploads')) {

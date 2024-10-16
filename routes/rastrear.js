@@ -1,24 +1,66 @@
-const express = require('express');
+const express = require('express'); //1271.30ms / 1189.63ms / 
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('./db.js');
+const NodeCache = require('node-cache');
+const now = require('performance-now');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+// Inicializar el caché
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // Cache por 10 minutos
 
 // GET - Obtener nombres
 router.get('/obtener_nombres', async (req, res) => {
-  try {
-    const query = 'SELECT nombre FROM android_mysql.id2024sql';
-    const result = await pool.query(query);
+  const startTime = now();
+  let isCached = false;
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
+  try {
+    // Intentar obtener datos del caché
+    let result = cache.get("nombres");
+
+    if (result == undefined) {
+      // Si no está en caché, consultar la base de datos
+      const query = 'SELECT * FROM android_mysql.id2024sql';
+      const dbResult = await pool.query(query);
+      result = dbResult.rows;
+
+      // Guardar en caché
+      cache.set("nombres", result);
     } else {
-      res.json({ success: true, message: "No se encontraron nombres" });
+      isCached = true;
+    }
+
+    // Obtener estadísticas del caché
+    const cacheStats = cache.getStats();
+    const usedCacheSize = cacheStats.keys; // Número de entradas en el caché
+    const hits = cacheStats.hits; // Número de veces que se ha usado el caché
+    const misses = cacheStats.misses; // Número de veces que no se encontró en el caché
+
+    const endTime = now();
+    const duration = (endTime - startTime).toFixed(2);
+
+    if (result.length > 0) {
+      res.json({ 
+        success: true, 
+        data: result, 
+        isCached: isCached
+        // ,duration: `${duration}ms`,
+        // cache: {
+        //   totalKeys: usedCacheSize, 
+        //   hits: hits, 
+        //   misses: misses
+        // }
+      });
+    } else {
+      res.json({ 
+        success: true, 
+        message: "No se encontraron nombres",
+        isCached: isCached
+        // ,duration: `${duration}ms`,
+        // cache: {
+        //   totalKeys: usedCacheSize, 
+        //   hits: hits, 
+        //   misses: misses
+        // }
+      });
     }
   } catch (err) {
     console.error(err);

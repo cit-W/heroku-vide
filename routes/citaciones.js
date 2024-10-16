@@ -1,14 +1,7 @@
 const { format, parse } = require('date-fns');
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
+const pool = require('./db.js');
 
 // Ruta principal
 router.get('/', (req, res) => res.json({ success: true, data: "SUCCESS"}));

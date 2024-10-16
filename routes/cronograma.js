@@ -1,20 +1,13 @@
 const { format } = require('date-fns');
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('./db.js');
 
 // Parametros para mefiagroup:
 //  innecesaario
 //  solicitado
 //  confirmado
 //  denegado
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
 
 router.post('/create', async (req, res) => {
     try {

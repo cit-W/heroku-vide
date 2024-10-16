@@ -1,13 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool = require('./db.js');
 
 // GET - Obtener estudiante por nombre
 router.get('/registro_estudiante_name', async (req, res) => {

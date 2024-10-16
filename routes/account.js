@@ -1,13 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool = require('./db.js');
 
 // DELETE - Eliminar reserva personal
 router.delete('/delete_reserva_personal', async (req, res) => {
