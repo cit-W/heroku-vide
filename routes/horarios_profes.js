@@ -136,9 +136,9 @@ router.get('/registro_horario_account', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json(result.rows);
+            res.json({ success: true, message: "Asistencia registrada con éxito" });
         } else {
-            res.send("No_hay_tablas");
+            res.json({ success: false, message: "No_hay_tablas" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);

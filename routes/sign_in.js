@@ -11,15 +11,23 @@ router.post('/create_user', async (req, res) => {
   }
 
   try {
-    const query = `
+    // Query 1: Insert new user
+    const insertUserQuery = `
       INSERT INTO android_mysql.usuarios 
       (name, cedula, nivel, curso) 
-      VALUES ($1, $2, $3, $4);
+      VALUES ($1, $2, $3, $4)
+    `;
+    await pool.query(insertUserQuery, [name, cedula, nivel, curso]);
 
+    // Query 2: Create schema
+    const createSchemaQuery = `
       CREATE SCHEMA IF NOT EXISTS "citaciones"
+      AUTHORIZATION u9976s05mfbvrs
+    `;
+    await pool.query(createSchemaQuery);
 
-      AUTHORIZATION u9976s05mfbvrs;
-
+    // Query 3: Create table
+    const createTableQuery = `
       CREATE TABLE IF NOT EXISTS citaciones."${cedula}"
       (
         id SERIAL PRIMARY KEY,
@@ -29,16 +37,14 @@ router.post('/create_user', async (req, res) => {
         date TIMESTAMP NOT NULL,
         notes TEXT,
         status VARCHAR(20) NOT NULL DEFAULT 'pendiente'
-        );
-
+      )
     `;
-    const values = [name, cedula, nivel, curso];
-    await pool.query(query, values);
+    await pool.query(createTableQuery);
 
     res.json({ success: true, data: "Usuario registrado con éxito" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: "Error al registrar el usuario" });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
