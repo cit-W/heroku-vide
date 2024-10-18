@@ -31,6 +31,8 @@ router.get('/info_user', async (req, res) => {
     }
   } catch (err) {
     console.error(err);
+  }
+})
 
 router.post('/delete_reservas', async (req, res) => {
   const hora_final = req.query.hora_final;
