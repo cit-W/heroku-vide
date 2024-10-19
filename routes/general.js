@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./db.js');
+const NodeCache = require('node-cache');
 
 router.get('/conexion_verification', async (req, res) => {
   try {
@@ -13,26 +14,46 @@ router.get('/conexion_verification', async (req, res) => {
   }
 });
 
-router.get('/info_user', async (req, res) => {
-  const cedula = req.query.cedula;
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-  if (!cedula) {
-    return res.status(400).json({ success: false, error: "No se proporcionó un cedula válido" });
+router.get('/info_user', async (req, res) => {
+  const id = req.query.id;
+
+  if (!id) {
+    return res.status(400).json({ success: false, error: "No se proporcionó una cédula válida" });
   }
 
   try {
-    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
-    const result = await pool.query(query, [cedula]);
+    // Intentar obtener usuarios del caché
+    let usuarios = cache.get("usuarios");
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el cedula proporcionado" });
+    if (usuarios == undefined) {
+      // Si no está en caché, consultar la base de datos
+      const query = 'SELECT * FROM android_mysql.usuarios';
+      const dbResult = await pool.query(query);
+      usuarios = dbResult.rows;
+
+      // Guardar en caché
+      cache.set("usuarios", usuarios);
     }
+
+    // Buscar usuario con la cédula proporcionada
+    const usuarioEncontrado = usuarios.filter(user => user.cedula === id);
+
+    if (usuarioEncontrado.length > 0) {
+      res.json({ success: true, data: usuarioEncontrado });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        message: "No se encontró usuario con la cédula proporcionada" 
+      });
+    }
+
   } catch (err) {
     console.error(err);
+    res.status(500).json({ success: false, error: err.message });
   }
-})
+});
 
 router.post('/delete_reservas', async (req, res) => {
   const hora_final = req.query.hora_final;
