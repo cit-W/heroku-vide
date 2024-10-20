@@ -7,7 +7,6 @@ const general = require('./routes/general');
 const accountRoutes = require('./routes/account');
 const horariosCursosRoutes = require('./routes/horarios_cursos');
 const horariosProfesRoutes = require('./routes/horarios_profes');
-const infoEstudiantesRoutes = require('./routes/info_estudiantes');
 const rastrearRoutes = require('./routes/rastrear');
 const reportesRoutes = require('./routes/reportes');
 const reservasRoutes = require('./routes/reservas');
