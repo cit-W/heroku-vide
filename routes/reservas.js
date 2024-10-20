@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./db.js');
+const { ValidationError, DatabaseError, NotFoundError } = require('../middleware/errorHandler');
 
 // GET - Obtener todos los IDs ordenados por lugar
-router.get('/ids', async (req, res) => {
+router.get('/ids', async (req, res, next) => {
   try {
     const query = "SELECT id FROM android_mysql.reservar_areas ORDER BY lugar;";
     const result = await pool.query(query);
@@ -11,11 +12,11 @@ router.get('/ids', async (req, res) => {
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
-      res.json({ success: true, message: "No se encontraron IDs" });
+      throw new NotFoundError("No se encontraron reservas");
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    next(err);
   }
 });
 

@@ -1,6 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./db.js');
+const { ValidationError, DatabaseError, NotFoundError } = require('../middleware/errorHandler');
+
+router.get('/', async (req, res) => {
+  res.send("Hola")
+})
+
+// GET - Obtener todas las reservas ordenadas por lugar
+router.get('/registro_reservas', async (req, res, next) => {
+  try {
+    const query = 'SELECT * FROM android_mysql.reservar_areas ORDER BY lugar ASC';
+    const result = await pool.query(query);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      throw new NotFoundError("No se encontraron reservas");
+    }
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET - Obtener estudiante por nombre
 router.get('/registro_estudiante_name', async (req, res) => {
@@ -41,23 +62,6 @@ router.get('/registro_estudiante', async (req, res) => {
       res.json({ success: true, data: result.rows });
     } else {
       res.status(404).json({ success: false, data: "No se encontraron registros para el ID proporcionado" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// GET - Obtener todas las reservas ordenadas por lugar
-router.get('/registro_reservas', async (req, res) => {
-  try {
-    const query = 'SELECT * FROM android_mysql.reservar_areas ORDER BY lugar ASC';
-    const result = await pool.query(query);
-
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
-    } else {
-      res.json({ success: true, message: "No se encontraron reservas" });
     }
   } catch (err) {
     console.error(err);

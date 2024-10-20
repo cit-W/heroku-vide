@@ -1,7 +1,19 @@
 const { format } = require('date-fns');
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const { ValidationError, DatabaseError } = require('../middleware/errorHandler.js');
+const pool = require('../db.js');
+const helmet = require('helmet');
+
+router.use(helmet());
+router.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'"]
+    }
+}));
 
 // Parametros para mefiagroup:
 //  innecesaario
@@ -9,90 +21,73 @@ const pool = require('./db.js');
 //  confirmado
 //  denegado
 
-router.post('/create', async (req, res) => {
+router.post('/create', async (req, res, next) => {
     try {
         const { year } = req.query;
-        const year_before = Number(year) - 1;
-
-        // Verifica si el parámetro está presente
+        
         if (!year) {
-            res.status(400).send("El parámetro 'year' es requerido.");
-            return;
+            throw new ValidationError('El año es requerido');
         }
 
-        // Definir los nombres de esquema sin comillas dobles en las variables
+        const year_before = Number(year) - 1;
         const schemaCurrent = `${year}`;
         const schemaBefore = `${year_before}`;
 
         const client = await pool.connect();
 
-        // Verifica si el esquema year_before existe
-        const schemaExistsQuery = `
-            SELECT EXISTS(
-                SELECT 1
-                FROM information_schema.schemata 
-                WHERE schema_name = '${schemaBefore}'
-            );
-        `;
-        const result = await client.query(schemaExistsQuery);
+        try {
+            // Verificar esquema existente
+            const schemaExists = await client.query(`
+                SELECT EXISTS(
+                    SELECT 1
+                    FROM information_schema.schemata 
+                    WHERE schema_name = $1
+                )
+            `, [schemaBefore]);
 
-        if (result.rows[0].exists) {
-            // Elimina todas las tablas dentro del esquema anterior (schemaBefore) antes de eliminar el esquema
-            const dropTablesQuery = `
-                DO $$ 
-                DECLARE 
-                    r RECORD;
-                BEGIN
-                    -- Selecciona todas las tablas dentro del esquema anterior
-                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year_before}') 
-                    LOOP
-                        -- Ejecuta un DROP TABLE para cada tabla en el esquema
-                        EXECUTE 'DROP TABLE IF EXISTS "${year_before}".' || quote_ident(r.tablename) || ' CASCADE';
-                    END LOOP;
-                END $$;
-            `;
-            await client.query(dropTablesQuery);
+            if (schemaExists.rows[0].exists) {
+                await client.query('BEGIN');
+                
+                try {
+                    // Eliminar tablas y esquema anterior
+                    await client.query(`DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE`);
+                    
+                    // Crear nuevo esquema
+                    await client.query(`
+                        CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
+                        AUTHORIZATION u9976s05mfbvrs
+                    `);
 
-            // Luego, elimina el esquema anterior
-            const dropSchemaQuery = `
-                DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE;
-            `;
-            await client.query(dropSchemaQuery);
+                    // Crear tablas mensuales
+                    for (let i = 0; i < 12; i++) {
+                        const month = String(i + 1).padStart(2, '0');
+                        await client.query(`
+                            CREATE TABLE IF NOT EXISTS "${schemaCurrent}"."${month}" (
+                                id SERIAL PRIMARY KEY,
+                                tema VARCHAR(50) NOT NULL,
+                                acargo VARCHAR(40),
+                                mediagroup_video VARCHAR(20),
+                                mediagroup_sonido VARCHAR(20),
+                                fecha DATE NOT NULL,
+                                descripcion VARCHAR(200),
+                                lugar VARCHAR(40),
+                                n_semana INT NOT NULL
+                            )
+                        `);
+                    }
+
+                    await client.query('COMMIT');
+                    res.json({ success: true, data: "cronograma_registrado" });
+                } catch (err) {
+                    await client.query('ROLLBACK');
+                    throw new DatabaseError(`Error en la transacción: ${err.message}`);
+                }
+            }
+        } finally {
+            client.release();
         }
-
-        // Crear el nuevo esquema para el año actual
-        const queryYear = `
-            CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
-            AUTHORIZATION u9976s05mfbvrs;
-        `;
-        await client.query(queryYear);
-
-        // Crear nuevas tablas para los meses en el esquema actual
-        for (let i = 0; i < 12; i++) {
-            const month = String(i + 1).padStart(2, '0');
-            const tableName = `"${schemaCurrent}"."${month}"`;
-            
-            const queryMonths = `
-                CREATE TABLE IF NOT EXISTS ${tableName} (
-                    id SERIAL PRIMARY KEY,
-                    tema VARCHAR(50) NOT NULL,
-                    acargo VARCHAR(40),
-                    mediagroup_video VARCHAR(20),
-                    mediagroup_sonido VARCHAR(20),
-                    fecha DATE NOT NULL,
-                    descripcion VARCHAR(200),
-                    lugar VARCHAR(40),
-                    n_semana INT NOT NULL
-                );
-            `;
-            await client.query(queryMonths);
-        }
-
-        client.release();
-        res.json({ success: true, data: "cronograma_registrado"});
     } catch (err) {
-        console.error("Error al registrar el cronograma: ", err);
-        res.status(500).send("Error al registrar el cronograma: " + err.message);
+        next(err);
     }
 });
 
