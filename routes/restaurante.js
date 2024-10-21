@@ -266,7 +266,7 @@ router.post('/registrar-asistencia', async (req, res) => {
     await client.query(query, values);
     client.release();
 
-    res.status(200).json('Asistencia registrada correctamente.');
+    res.json({ success: true, data: 'Asistencia registrada correctamente.' });
   } catch (error) {
     console.error(error);
     res.status(500).send('Error al registrar la asistencia: ' + error.message);
