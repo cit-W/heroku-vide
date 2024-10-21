@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 router.post('/add_student', async (req, res) => {
   const id = req.query.id;

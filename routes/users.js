@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // GET - Obtener todos los IDs ordenados por lugar
 router.get('/ids', async (req, res) => {

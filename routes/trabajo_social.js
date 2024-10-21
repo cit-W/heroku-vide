@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // POST - Agregar trabajo social
 router.post('/add_trabajo_social', async (req, res) => {

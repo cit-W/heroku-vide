@@ -1,7 +1,7 @@
 const { format, parse } = require('date-fns');
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // Ruta principal
 router.get('/', (req, res) => res.json({ success: true, data: "SUCCESS"}));
@@ -159,4 +159,30 @@ router.put('/update_citation', async (req, res) => {
     }
 });
 
+
+router.get('/ids_citaciones', async (req, res) => {
+    
+    try {
+        // Consulta para obtener las tablas que coincidan con el nombre proporcionado
+        const query = `
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'citaciones'
+            ORDER BY table_name ASC;
+        `;
+        
+        const result = await pool.query(query);
+    
+        if (result.rows.length > 0) {
+            // Formateamos los resultados en un array de objetos
+            const tables = result.rows.map(row => ({ name: row.table_name }));
+            res.json({ success: true, data: tables });
+        } else {
+            res.status(404).json({ success: false, message: "No hay tablas que coincidan con el nombre proporcionado" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 module.exports = router;

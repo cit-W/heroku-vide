@@ -1,6 +1,6 @@
 const express = require('express'); //1271.30ms / 1189.63ms / 
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 const now = require('performance-now');
 const NodeCache = require('node-cache');
 

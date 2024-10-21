@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // POST - Crear un nuevo usuario
 router.post('/create_user', async (req, res) => {

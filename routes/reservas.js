@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 const { ValidationError, DatabaseError, NotFoundError } = require('../middleware/errorHandler');
 
 // GET - Obtener todos los IDs ordenados por lugar

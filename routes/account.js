@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // DELETE - Eliminar reserva personal
 router.delete('/delete_reserva_personal', async (req, res) => {

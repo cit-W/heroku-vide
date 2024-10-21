@@ -8,7 +8,7 @@ const fs = require('fs');
 const { parse, isValid, format, eachDayOfInterval } = require('date-fns');
 
 const router = express.Router();
-const pool = require('./db.js');
+const pool = require('../db.js');
 
 // Crear directorio 'uploads' si no existe
 if (!fs.existsSync('uploads')) {
