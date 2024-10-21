@@ -194,7 +194,7 @@ router.get('/verificar_pago', async (req, res) => {
       if (result.rows.length > 0) {
         res.json({ success: true, data: result.rows });
       } else {
-        res.status(404).json({ success: false, message: "No se encontraron registros para el ID proporcionado" });
+        res.json({ success: false, message: "No se encontraron registros para el ID proporcionado" });
       }
     } catch (err) {
       console.error(err);
