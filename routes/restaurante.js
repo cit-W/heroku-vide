@@ -624,13 +624,14 @@ router.get('/estadisticas/asistencia-hoy', async (req, res) => {
 });
 
 // 7. Estudiantes que asistieron en el mes, organizados por día
-router.get('/estadisticas/asistencia-mes/:mes', async (req, res) => {
-  const { mes } = req.params;
-  
+router.get('/estadisticas/asistencia-mes', async (req, res) => {
+  const fechaActual = new Date();
+  const mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0'); // Asegura que el mes tenga dos dígitos
+
   try {
     const client = await pool.connect();
     
-    // Obtener todas las columnas de fechas del mes especificado
+    // Obtener todas las columnas de fechas del mes actual
     const queryColumnas = `
       SELECT column_name
       FROM information_schema.columns
@@ -667,7 +668,7 @@ router.get('/estadisticas/asistencia-mes/:mes', async (req, res) => {
             id: row.id,
             nombre: row.nombre,
             curso: row.curso,
-            hora_asistencia: format(parse(row.hora_asistencia, 'HH:mm:ss', new Date()), 'HH:mm:ss'),
+            hora_asistencia: format(new Date(row.hora_asistencia), 'HH:mm:ss'),
             excepcion: row.excepcion
           }))
         };
