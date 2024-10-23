@@ -152,24 +152,43 @@ function getCleanedString(cadena) {
   return cadena;
 }
 
-// Ruta para actualizar el pago
+// Ruta para mostrar el formulario
+router.get('/update-pago-form', async (req, res) => {
+  res.render('pages/update-pago', { 
+      message: req.query.message,
+      error: req.query.error 
+  });
+});
+
 router.post('/update-pago', async (req, res) => {
-  const { id, pago_mensual } = req.query;
-  
+  const { id, pago_mensual } = req.body;
+
   if (!id || typeof pago_mensual === 'undefined') {
-    return res.status(400).send('ID y pago_mensual son requeridos.');
+      return res.render('payment-update-form', {
+          message: 'ID y pago_mensual son requeridos.',
+          error: true
+      });
   }
 
   try {
-    const client = await pool.connect();
-    const updateQuery = 'UPDATE restaurante.lista_general SET pago_mensual = $1 WHERE id = $2';
-    await client.query(updateQuery, [pago_mensual, id]);
-    client.release();
+      const client = await pool.connect();
+      // Convierte el valor del formulario a booleano
+      const pagoBoolean = pago_mensual === 'true';
+      
+      const updateQuery = 'UPDATE restaurante.lista_general SET pago_mensual = $1 WHERE id = $2';
+      await client.query(updateQuery, [pagoBoolean, id]);
+      client.release();
 
-    res.send('Pago mensual actualizado correctamente');
+      res.render('payment-update-form', {
+          message: `Pago mensual actualizado correctamente a ${pagoBoolean ? 'Pagado' : 'No Pagado'}`,
+          error: false
+      });
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al actualizar el pago mensual.');
+      console.error(error);
+      res.render('payment-update-form', {
+          message: 'Error al actualizar el pago mensual.',
+          error: true
+      });
   }
 });
 
