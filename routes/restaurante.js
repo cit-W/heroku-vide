@@ -9,6 +9,7 @@ const { parse, isValid, format, eachDayOfInterval } = require('date-fns');
 
 const router = express.Router();
 const pool = require('../db.js');
+const { render } = require('ejs');
 
 // Crear directorio 'uploads' si no existe
 if (!fs.existsSync('uploads')) {
@@ -41,6 +42,10 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ 
   storage: storage,
   fileFilter: fileFilter
+});
+
+router.get('/', async (req, res) => {
+  res.render('pages/restaurante')
 });
 
 router.get('/db', async (req, res) => {
@@ -164,7 +169,7 @@ router.post('/update-pago', async (req, res) => {
   const { id, pago_mensual } = req.body;
 
   if (!id || typeof pago_mensual === 'undefined') {
-      return res.render('payment-update-form', {
+      return res.render('pages/update-pago', {
           message: 'ID y pago_mensual son requeridos.',
           error: true
       });
@@ -172,20 +177,19 @@ router.post('/update-pago', async (req, res) => {
 
   try {
       const client = await pool.connect();
-      // Convierte el valor del formulario a booleano
-      const pagoBoolean = pago_mensual === 'true';
+      const pagoBoolean = Boolean(pago_mensual === 'true');
       
       const updateQuery = 'UPDATE restaurante.lista_general SET pago_mensual = $1 WHERE id = $2';
       await client.query(updateQuery, [pagoBoolean, id]);
       client.release();
 
-      res.render('payment-update-form', {
+      res.render('pages/update-pago', {
           message: `Pago mensual actualizado correctamente a ${pagoBoolean ? 'Pagado' : 'No Pagado'}`,
           error: false
       });
   } catch (error) {
       console.error(error);
-      res.render('payment-update-form', {
+      res.render('pages/update-pago', {
           message: 'Error al actualizar el pago mensual.',
           error: true
       });
@@ -568,6 +572,123 @@ router.get('/estadisticas/porcentaje-asistencia/:id/:fechaInicio/:fechaFin', asy
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al calcular el porcentaje de asistencia" });
+  }
+});
+
+// 6. Estudiantes que asistieron hoy
+router.get('/estadisticas/asistencia-hoy', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const fechaActual = format(new Date(), 'dd-MM-yyyy');
+    
+    // Primero, obtener la lista completa de estudiantes
+    const queryEstudiantes = `
+      SELECT lg.id, lg.nombre, lg.curso, rg."${fechaActual}_hora" as hora_asistencia, rg."${fechaActual}_excepcion" as excepcion
+      FROM restaurante.lista_general lg
+      LEFT JOIN restaurante.registro_general rg ON lg.id = rg.id
+      WHERE rg."${fechaActual}_hora" IS NOT NULL
+      ORDER BY lg.curso, lg.nombre
+    `;
+
+    console.log(client.query(queryEstudiantes))
+    
+    const result = await client.query(queryEstudiantes);
+    client.release();
+
+    if (result.rows.length === 0) {
+      return res.json({
+        fecha: fechaActual,
+        totalAsistencias: 0,
+        estudiantes: []
+      });
+    }
+
+    // Formatear la respuesta
+    const respuesta = {
+      fecha: fechaActual,
+      totalAsistencias: result.rows.length,
+      estudiantes: result.rows.map(row => ({
+        id: row.id,
+        nombre: row.nombre,
+        curso: row.curso,
+        hora_asistencia: format(parse(row.hora_asistencia, 'HH:mm:ss', new Date()), 'HH:mm:ss'),
+        excepcion: row.excepcion
+      }))
+    };
+
+    res.json(respuesta);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener la asistencia del día" });
+  }
+});
+
+// 7. Estudiantes que asistieron en el mes, organizados por día
+router.get('/estadisticas/asistencia-mes/:mes', async (req, res) => {
+  const { mes } = req.params;
+  
+  try {
+    const client = await pool.connect();
+    
+    // Obtener todas las columnas de fechas del mes especificado
+    const queryColumnas = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'restaurante'
+      AND table_name = 'registro_general'
+      AND column_name LIKE '%-${mes}-%_hora'
+      ORDER BY column_name
+    `;
+    
+    const columnasResult = await client.query(queryColumnas);
+    const fechasColumnas = columnasResult.rows.map(row => row.column_name.replace('_hora', ''));
+
+    // Objeto para almacenar los resultados por día
+    const asistenciasPorDia = {};
+
+    // Para cada fecha, obtener los estudiantes que asistieron
+    for (const fecha of fechasColumnas) {
+      const queryAsistencia = `
+        SELECT lg.id, lg.nombre, lg.curso, 
+                rg."${fecha}_hora" as hora_asistencia,
+                rg."${fecha}_excepcion" as excepcion
+        FROM restaurante.lista_general lg
+        LEFT JOIN restaurante.registro_general rg ON lg.id = rg.id
+        WHERE rg."${fecha}_hora" IS NOT NULL
+        ORDER BY lg.curso, lg.nombre
+      `;
+      
+      const result = await client.query(queryAsistencia);
+      
+      if (result.rows.length > 0) {
+        asistenciasPorDia[fecha] = {
+          totalAsistencias: result.rows.length,
+          estudiantes: result.rows.map(row => ({
+            id: row.id,
+            nombre: row.nombre,
+            curso: row.curso,
+            hora_asistencia: format(parse(row.hora_asistencia, 'HH:mm:ss', new Date()), 'HH:mm:ss'),
+            excepcion: row.excepcion
+          }))
+        };
+      }
+    }
+
+    client.release();
+
+    // Preparar resumen mensual
+    const resumenMensual = {
+      mes,
+      totalDias: Object.keys(asistenciasPorDia).length,
+      promedioAsistenciasDiarias: Object.values(asistenciasPorDia)
+        .reduce((acc, dia) => acc + dia.totalAsistencias, 0) / Object.keys(asistenciasPorDia).length,
+      asistenciasPorDia
+    };
+
+    res.json(resumenMensual);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener las asistencias del mes" });
   }
 });
 
