@@ -575,79 +575,88 @@ router.get('/estadisticas/porcentaje-asistencia/:id/:fechaInicio/:fechaFin', asy
   }
 });
 
-// 6. Estudiantes que asistieron hoy
-router.get('/estadisticas/asistencia-hoy', async (req, res) => {
+router.get('/estadisticas/asistencia-dia', async (req, res) => {
+  let fechaActual = "";
+  
   try {
-    const client = await pool.connect();
-    const fechaActual = format(new Date(), 'dd-MM-yyyy');
-    
-    // Primero, obtener la lista completa de estudiantes
-    const queryEstudiantes = `
-      SELECT lg.id, lg.nombre, lg.curso, rg."${fechaActual}_hora" as hora_asistencia, rg."${fechaActual}_excepcion" as excepcion
-      FROM restaurante.lista_general lg
-      LEFT JOIN restaurante.registro_general rg ON lg.id = rg.id
-      WHERE rg."${fechaActual}_hora" IS NOT NULL
-      ORDER BY lg.curso, lg.nombre
-    `;
+      const { hoy, date } = req.query;
+      
+      if(hoy === 'true') {
+          fechaActual = format(new Date(), 'dd-MM-yyyy');
+      } else if(hoy === 'false' && date) {
+          const fecha = parse(date, 'dd-MM-yyyy', new Date());
+          fechaActual = format(fecha, 'dd-MM-yyyy');
+      } else {
+          return res.status(400).json({ error: "Fecha inválida" });
+      }
 
-    console.log(client.query(queryEstudiantes))
-    
-    const result = await client.query(queryEstudiantes);
-    client.release();
+      const client = await pool.connect();
+      
+      const queryEstudiantes = `
+          SELECT lg.id, lg.nombre, lg.curso, 
+          rg."${fechaActual}_hora" as hora_asistencia, 
+          rg."${fechaActual}_excepcion" as excepcion
+          FROM restaurante.lista_general lg
+          LEFT JOIN restaurante.registro_general rg ON lg.id = rg.id
+          WHERE rg."${fechaActual}_hora" IS NOT NULL
+          ORDER BY lg.curso, lg.nombre
+      `;
 
-    if (result.rows.length === 0) {
-      return res.json({
-        fecha: fechaActual,
-        totalAsistencias: 0,
-        estudiantes: []
+      const result = await client.query(queryEstudiantes);
+      client.release();
+
+      const estudiantes = result.rows.map(row => ({
+          id: row.id,
+          name: row.nombre,
+          grade: row.curso,
+          hora_asistencia: format(parse(row.hora_asistencia, 'HH:mm:ss', new Date()), 'HH:mm:ss'),
+          excepcion: row.excepcion
+      }));
+
+      res.render('pages/asistencia_dia', {
+          title: fechaActual,
+          totalAsistencias: result.rows.length,
+          estudiantes: estudiantes
       });
-    }
 
-    // Formatear la respuesta
-    const respuesta = {
-      fecha: fechaActual,
-      totalAsistencias: result.rows.length,
-      estudiantes: result.rows.map(row => ({
-        id: row.id,
-        nombre: row.nombre,
-        curso: row.curso,
-        hora_asistencia: format(parse(row.hora_asistencia, 'HH:mm:ss', new Date()), 'HH:mm:ss'),
-        excepcion: row.excepcion
-      }))
-    };
-
-    res.json(respuesta);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al obtener la asistencia del día" });
+      res.render('pages/asistencia_dia', {
+          title: fechaActual,
+          totalAsistencias: 0,
+          estudiantes: []
+      });
   }
 });
 
 // 7. Estudiantes que asistieron en el mes, organizados por día
 router.get('/estadisticas/asistencia-mes', async (req, res) => {
-  const fechaActual = new Date();
-  const mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0'); // Asegura que el mes tenga dos dígitos
+  const mes = (new Date().getMonth() + 1).toString().padStart(2, '0');
+  const anio = new Date().getFullYear();
 
   try {
     const client = await pool.connect();
     
-    // Obtener todas las columnas de fechas del mes actual
     const queryColumnas = `
       SELECT column_name
       FROM information_schema.columns
       WHERE table_schema = 'restaurante'
       AND table_name = 'registro_general'
-      AND column_name LIKE '%-${mes}-%_hora'
+      AND column_name LIKE '%-${mes}-${anio}_hora'
       ORDER BY column_name
     `;
-    
+
     const columnasResult = await client.query(queryColumnas);
     const fechasColumnas = columnasResult.rows.map(row => row.column_name.replace('_hora', ''));
 
-    // Objeto para almacenar los resultados por día
-    const asistenciasPorDia = {};
+    const asistenciasPorMes = {
+      mes: `${mes}-${anio}`,
+      totalAsistencias: 0,
+      fechas: []
+    };
 
-    // Para cada fecha, obtener los estudiantes que asistieron
+    console.log(columnasResult)
+
+    // Para cada fecha, obtenemos los estudiantes que asistieron
     for (const fecha of fechasColumnas) {
       const queryAsistencia = `
         SELECT lg.id, lg.nombre, lg.curso, 
@@ -658,35 +667,31 @@ router.get('/estadisticas/asistencia-mes', async (req, res) => {
         WHERE rg."${fecha}_hora" IS NOT NULL
         ORDER BY lg.curso, lg.nombre
       `;
-      
+
       const result = await client.query(queryAsistencia);
       
       if (result.rows.length > 0) {
-        asistenciasPorDia[fecha] = {
-          totalAsistencias: result.rows.length,
-          estudiantes: result.rows.map(row => ({
+        // Formatear el resultado para la fecha actual
+        const asistenciaFecha = {
+          fecha: fecha.replace(/_/g, '-'), // Formateamos la fecha de columna
+          asistidos: result.rows.map(row => ({
             id: row.id,
             nombre: row.nombre,
             curso: row.curso,
-            hora_asistencia: format(new Date(row.hora_asistencia), 'HH:mm:ss'),
-            excepcion: row.excepcion
+            hora_asistencia: row.hora_asistencia,
+            excepcion: row.excepcion || null
           }))
         };
+
+        // Agregar la asistencia de la fecha al array de fechas
+        asistenciasPorMes.fechas.push(asistenciaFecha);
+        asistenciasPorMes.totalAsistencias += result.rows.length;
       }
     }
 
     client.release();
 
-    // Preparar resumen mensual
-    const resumenMensual = {
-      mes,
-      totalDias: Object.keys(asistenciasPorDia).length,
-      promedioAsistenciasDiarias: Object.values(asistenciasPorDia)
-        .reduce((acc, dia) => acc + dia.totalAsistencias, 0) / Object.keys(asistenciasPorDia).length,
-      asistenciasPorDia
-    };
-
-    res.json(resumenMensual);
+    res.json(asistenciasPorMes);  // Devolvemos el resultado en el formato esperado
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al obtener las asistencias del mes" });

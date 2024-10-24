@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Personas</title>
+        <link rel="stylesheet" href="/stylesheets/database.css">
+    </head>
+    <body>
+        
+        <h1>Fecha: <%= title %></h1>
+        <p>Total Asistencias: <%= totalAsistencias %></p>
+        
+        <% if (estudiantes && estudiantes.length > 0) { %>
+            <ul>
+                <% estudiantes.forEach(function(estudiantes) { %>
+                    <li>
+                        <strong><%= estudiantes.name %></strong>
+                        <p>Grado: <%= estudiantes.grade %>, Hora de llegada: <%= estudiantes.hora_asistencia %></p>
+                    </li>
+                <% }); %>
+            </ul>
+        <% } else { %>
+            <p>No hay estudiantes en la base de datos.</p>
+        <% } %>
+    </body>
+</html>

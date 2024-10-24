@@ -6,7 +6,7 @@ const pool = new Pool({
     },
     max: 20,
     idleTimeoutMillis: 15000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
 });
 
 module.exports = pool;
