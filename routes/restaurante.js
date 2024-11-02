@@ -583,6 +583,7 @@ router.get('/estadisticas/asistencia-dia', async (req, res) => {
       
       if(hoy === 'true') {
           fechaActual = format(new Date(), 'dd-MM-yyyy');
+          console.log(fechaActual)
       } else if(hoy === 'false' && date) {
           const fecha = parse(date, 'dd-MM-yyyy', new Date());
           fechaActual = format(fecha, 'dd-MM-yyyy');
@@ -604,6 +605,8 @@ router.get('/estadisticas/asistencia-dia', async (req, res) => {
 
       const result = await client.query(queryEstudiantes);
       client.release();
+
+      console.log( {estudiantes: estudiantes}.toString )
 
       const estudiantes = result.rows.map(row => ({
           id: row.id,
@@ -649,47 +652,22 @@ router.get('/estadisticas/asistencia-mes', async (req, res) => {
     const fechasColumnas = columnasResult.rows.map(row => row.column_name.replace('_hora', ''));
 
     const asistenciasPorMes = {
-      mes: `${mes}-${anio}`,
-      totalAsistencias: 0,
       fechas: []
     };
 
-    console.log(columnasResult)
-
-    // Para cada fecha, obtenemos los estudiantes que asistieron
     for (const fecha of fechasColumnas) {
-      const queryAsistencia = `
-        SELECT lg.id, lg.nombre, lg.curso, 
-                rg."${fecha}_hora" as hora_asistencia,
-                rg."${fecha}_excepcion" as excepcion
-        FROM restaurante.lista_general lg
-        LEFT JOIN restaurante.registro_general rg ON lg.id = rg.id
-        WHERE rg."${fecha}_hora" IS NOT NULL
-        ORDER BY lg.curso, lg.nombre
-      `;
-
-      const result = await client.query(queryAsistencia);
-      
-      if (result.rows.length > 0) {
         // Formatear el resultado para la fecha actual
         const asistenciaFecha = {
-          fecha: fecha.replace(/_/g, '-'), // Formateamos la fecha de columna
-          asistidos: result.rows.map(row => ({
-            id: row.id,
-            nombre: row.nombre,
-            curso: row.curso,
-            hora_asistencia: row.hora_asistencia,
-            excepcion: row.excepcion || null
-          }))
+          fecha: fecha.replace(/_/g, '-'),
         };
 
         // Agregar la asistencia de la fecha al array de fechas
         asistenciasPorMes.fechas.push(asistenciaFecha);
-        asistenciasPorMes.totalAsistencias += result.rows.length;
-      }
     }
 
     client.release();
+
+    console.log()
 
     res.json(asistenciasPorMes);  // Devolvemos el resultado en el formato esperado
   } catch (error) {

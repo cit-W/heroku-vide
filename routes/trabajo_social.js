@@ -26,15 +26,16 @@ router.post('/add_trabajo_social', async (req, res) => {
 });
 
 // GET - Obtener todos los IDs de trabajo social
-router.get('/ids_trabajo_social', async (req, res) => {
+router.get('/ids', async (req, res) => {
   try {
     const query = 'SELECT id FROM android_mysql.trabajo_social';
     const result = await pool.query(query);
     
-    res.json({
-      success: true,
-      data: result.rows
-    });
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      res.status(404).json({ success: false, message: "No se encontraron reservas para el ID proporcionado" });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });

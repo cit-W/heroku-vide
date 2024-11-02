@@ -78,6 +78,10 @@ router.post('/delete_reservas', async (req, res) => {
   }
 });
 
+// cursos - codigo----------------------------------------------------------
+
+
+
 // asistencia---------------------------------------------------------------
 
 // POST - Registrar asistencia
