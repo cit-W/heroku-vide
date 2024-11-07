@@ -162,11 +162,11 @@ router.get('/registro_horario', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows });
         } else {
-            res.json({success: true, data: "No_hay_registros"});
+            res.json({ success: false, message: "No se encontraron reservas para el ID proporcionado" });
         }
     } catch (err) {
-        console.error("Error al consultar las tablas: ", err);
-        res.status(500).send("Error al consultar las tablas: " + err.message);
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
