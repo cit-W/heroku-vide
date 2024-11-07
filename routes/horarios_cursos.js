@@ -164,20 +164,16 @@ router.get('/registro_horario', async (req, res) => {
         
         const result = await client.query(query);
         
-        // Si hay tablas, las devolvemos en un array JSON
-        if (result.rows.length > 0) {
-            const tables = result.rows.map(row => ({ name: row.table_name }));
-            res.json({ success: true, data: tables });
-        } else {
-            res.status(404).json({ success: false, message: "No hay tablas en el esquema 'horarios_cursos'" });
-        }
 
-        // Liberar la conexión
-        client.release();
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, error: err.message });
-    }
+        if (result.rows.length > 0) {
+          res.json({ success: true, data: result.rows });
+      } else {
+          res.json({ success: false, message: "No se encontraron reservas para el ID proporcionado" });
+      }
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 router.get('/ver_horario', async (req, res) => {
