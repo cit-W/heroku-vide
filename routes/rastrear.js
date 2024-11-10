@@ -100,11 +100,9 @@ router.get('/fuzzy_search', async (req, res) => {
       // Configuración de Fuse para la búsqueda fuzzy
       const fuseOptions = {
         includeScore: true,
-        threshold: 0.3, // Ajusta este valor (0-1) para controlar la precisión de la búsqueda
+        threshold: 0.4,
         keys: [
-          // Aquí debes especificar las columnas en las que quieres buscar
-          "nombre", // Ajusta estos campos según tu esquema de base de datos
-          "descripcion"
+          "nombre"
         ]
       };
 
