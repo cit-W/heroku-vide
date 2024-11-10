@@ -211,4 +211,39 @@ router.get('/ver_horario', async (req, res) => {
     }
 });
 
+router.get('/horario_personal', async (req, res) => {
+  const name = req.query.name;
+  if (!name) {
+      return res.status(400).json({ success: false, error: "No se proporcionó un nombre válido" });
+  }
+
+  try {
+      const client = await pool.connect();
+      
+      // Usamos un nombre de tabla validado
+      const query = `
+          SELECT * 
+          FROM horarios_cursos."${name}" 
+          ORDER BY CAST(SUBSTRING(horas, 1, POSITION(' - ' IN horas) - 1) AS TIME);
+      `;
+      
+      const result = await client.query(query);
+      
+      if (result.rows.length > 0) {
+          res.json({ success: true, data: result.rows });
+      } else {
+          res.json({
+          success: true, data: "No_hay_registros"
+          });
+      }
+      
+      client.release();
+  } catch (err) {
+      console.error(err);
+      res.json({
+          success: true, data: "No_hay_registros"
+      });
+  }
+});
+
 module.exports = router;

@@ -58,11 +58,10 @@ router.get('/crear_tabla_profe', async (req, res) => {
         client.release();
 
         // Respuesta de éxito
-        res.json({ success: 1, message: "La tabla se creó correctamente." });
+        res.json({ success: true, message: "La tabla se creó correctamente." });
     } catch (err) {
         console.error("Error al crear la tabla: ", err);
-        // Respuesta de error
-        res.status(500).json({ success: 0, message: "Error al crear la tabla: " + err.message });
+        res.status(500).json({ success: false, message: "Error al crear la tabla: " + err.message });
     }
 });
 
@@ -210,6 +209,37 @@ router.get('/ver_horario', async (req, res) => {
         res.json({
             data: "No_hay_registros"
         });
+    }
+});
+
+router.get('/verificar_existencia', async (req, res) => {
+    try {
+        const { profe } = req.query;
+
+        if (!profe) {
+            res.status(400).send("El parámetro 'name' es requerido.");
+            return;
+        }
+        const client = await pool.connect();
+        
+        const query = `
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'horarios_profes'
+			AND table_name = '$1'
+            ORDER BY table_name ASC;
+        `;
+        const result = await client.query(query, [ IdProfe ]);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json({ success: true, data: result.rows });
+        } else {
+            res.json({ success: false, message: "No se encontraron reservas para el ID proporcionado" });
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

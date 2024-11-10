@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db.js');
 const now = require('performance-now');
 const NodeCache = require('node-cache');
+const Fuse = require('fuse.js');
 
 // Inicializar el caché
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
@@ -60,6 +61,73 @@ router.get('/obtener_nombres', async (req, res) => {
         //   hits: hits, 
         //   misses: misses
         // }
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET - Obtener nombres
+router.get('/fuzzy_search', async (req, res) => {
+  let isCached = false;
+
+  try {
+    const search = req.query.search;
+
+    if (!search) {
+      res.status(400).send("El parámetro 'search' es requerido.");
+      return;
+    }
+
+    // Intentar obtener datos del caché
+    let result = cache.get("nombres");
+
+    if (result == undefined) {
+      // Si no está en caché, consultar la base de datos
+      const query = 'SELECT * FROM android_mysql.id2024sql';
+      const dbResult = await pool.query(query);
+      result = dbResult.rows;
+
+      // Guardar en caché
+      cache.set("nombres", result);
+    } else {
+      isCached = true;
+    }
+
+    if (result.length > 0) {
+      // Configuración de Fuse para la búsqueda fuzzy
+      const fuseOptions = {
+        includeScore: true,
+        threshold: 0.3, // Ajusta este valor (0-1) para controlar la precisión de la búsqueda
+        keys: [
+          // Aquí debes especificar las columnas en las que quieres buscar
+          "nombre", // Ajusta estos campos según tu esquema de base de datos
+          "descripcion"
+        ]
+      };
+
+      // Crear instancia de Fuse con los datos y opciones
+      const fuse = new Fuse(result, fuseOptions);
+
+      // Realizar búsqueda fuzzy
+      const searchResults = fuse.search(search);
+
+      // Extraer solo los items (sin las puntuaciones)
+      const matchedItems = searchResults.map(result => result.item);
+
+      res.json({ 
+        success: true, 
+        data: matchedItems, 
+        isCached: isCached,
+        totalResults: matchedItems.length
+      });
+    } else {
+      res.json({ 
+        success: true, 
+        message: "No se encontraron nombres",
+        isCached: isCached
       });
     }
   } catch (err) {
