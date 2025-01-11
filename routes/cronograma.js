@@ -24,7 +24,7 @@ router.use(helmet.contentSecurityPolicy({
 router.post('/create', async (req, res, next) => {
     try {
         const { year } = req.query;
-        
+
         if (!year) {
             throw new ValidationError('El año es requerido');
         }
@@ -36,8 +36,8 @@ router.post('/create', async (req, res, next) => {
         const client = await pool.connect();
 
         try {
-            // Verificar esquema existente
-            const schemaExists = await client.query(`
+            // Verificar si el esquema anterior existe
+            const schemaExistsResult = await client.query(`
                 SELECT EXISTS(
                     SELECT 1
                     FROM information_schema.schemata 
@@ -45,43 +45,45 @@ router.post('/create', async (req, res, next) => {
                 )
             `, [schemaBefore]);
 
-            if (schemaExists.rows[0].exists) {
-                await client.query('BEGIN');
-                
-                try {
-                    // Eliminar tablas y esquema anterior
+            const schemaExists = schemaExistsResult.rows[0].exists;
+
+            await client.query('BEGIN');
+
+            try {
+                if (schemaExists) {
+                    // Si el esquema anterior existe, eliminarlo
                     await client.query(`DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE`);
-                    
-                    // Crear nuevo esquema
-                    await client.query(`
-                        CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
-                        AUTHORIZATION u9976s05mfbvrs
-                    `);
-
-                    // Crear tablas mensuales
-                    for (let i = 0; i < 12; i++) {
-                        const month = String(i + 1).padStart(2, '0');
-                        await client.query(`
-                            CREATE TABLE IF NOT EXISTS "${schemaCurrent}"."${month}" (
-                                id SERIAL PRIMARY KEY,
-                                tema VARCHAR(50) NOT NULL,
-                                acargo VARCHAR(40),
-                                mediagroup_video VARCHAR(20),
-                                mediagroup_sonido VARCHAR(20),
-                                fecha DATE NOT NULL,
-                                descripcion VARCHAR(200),
-                                lugar VARCHAR(40),
-                                n_semana INT NOT NULL
-                            )
-                        `);
-                    }
-
-                    await client.query('COMMIT');
-                    res.json({ success: true, data: "cronograma_registrado" });
-                } catch (err) {
-                    await client.query('ROLLBACK');
-                    throw new DatabaseError(`Error en la transacción: ${err.message}`);
                 }
+
+                // Crear nuevo esquema
+                await client.query(`
+                    CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
+                    AUTHORIZATION u9976s05mfbvrs
+                `);
+
+                // Crear tablas mensuales en el nuevo esquema
+                for (let i = 0; i < 12; i++) {
+                    const month = String(i + 1).padStart(2, '0');
+                    await client.query(`
+                        CREATE TABLE IF NOT EXISTS "${schemaCurrent}"."${month}" (
+                            id SERIAL PRIMARY KEY,
+                            tema VARCHAR(50) NOT NULL,
+                            acargo VARCHAR(40),
+                            mediagroup_video VARCHAR(20),
+                            mediagroup_sonido VARCHAR(20),
+                            fecha DATE NOT NULL,
+                            descripcion VARCHAR(200),
+                            lugar VARCHAR(40),
+                            n_semana INT NOT NULL
+                        )
+                    `);
+                }
+
+                await client.query('COMMIT');
+                res.json({ success: true, data: "cronograma_registrado" });
+            } catch (err) {
+                await client.query('ROLLBACK');
+                throw new DatabaseError(`Error en la transacción: ${err.message}`);
             }
         } finally {
             client.release();
