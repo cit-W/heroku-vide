@@ -7,7 +7,7 @@ const pool = new Pool({
     max: 20,
     idleTimeoutMillis: 15000,
     connectionTimeoutMillis: 10000,
-    application_name: 'MyApp-RutaCronograma'
+    application_name: 'Vide-Heroku'
 });
 
 module.exports = pool;
