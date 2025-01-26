@@ -9,7 +9,7 @@ router.get('/ids', async (req, res, next) => {
     const query = "SELECT id FROM android_mysql.reservar_areas ORDER BY lugar;";
     const result = await pool.query(query);
 
-    if (result.rows.length > 0) {
+    if (result.rows.length >= 0) {
       res.json({ success: true, data: result.rows });
     } else {
       throw new NotFoundError("No se encontraron reservas");

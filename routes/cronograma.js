@@ -213,10 +213,13 @@ router.post('/delete_event', async (req, res) => {
 router.get('/month_events', async (req, res) => {
     try {
         const { month } = req.query;
+        var monthFormmated = month;
 
         if (!month) {
             res.status(400).send("El parámetro 'month' es requerido.");
             return;
+        } else if (month.length != 2) {
+            monthFormmated = "0" + month;
         }
 
         const yearActual = format(new Date(), 'yyyy');
@@ -224,7 +227,7 @@ router.get('/month_events', async (req, res) => {
         const client = await pool.connect();
         const query = `
             SELECT * 
-            FROM "${yearActual}"."${month}";
+            FROM "${yearActual}"."${monthFormmated}";
         `;
         const result = await client.query(query);
         client.release();
