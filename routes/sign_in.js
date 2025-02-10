@@ -5,8 +5,9 @@ const pool = require('../db.js');
 // POST - Crear un nuevo usuario
 router.post('/create_user', async (req, res) => {
   const { name, cedula, nivel, curso } = req.query;
+  nameCorrect = name.toLowerCase()
 
-  if (!name || !cedula || !nivel || !curso) {
+  if (!nameCorrect || !cedula || !nivel || !curso) {
     return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
   }
 
@@ -17,7 +18,7 @@ router.post('/create_user', async (req, res) => {
       (name, cedula, nivel, curso) 
       VALUES ($1, $2, $3, $4)
     `;
-    await pool.query(insertUserQuery, [name, cedula, nivel, curso]);
+    await pool.query(insertUserQuery, [nameCorrect, cedula, nivel, curso]);
 
     // Query 2: Create schema
     const createSchemaQuery = `

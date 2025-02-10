@@ -116,9 +116,10 @@ router.post('/delete_horario', async (req, res) => {
 
 router.get('/registro_horario_account', async (req, res) => {
     try {
-        const { name } = req.query;
+        const { name } = req.query.toLowerCase();
+        nameCorrect = name.toLowerCase()
 
-        if (!name) {
+        if (!nameCorrect) {
             res.status(400).send("El parámetro 'name' es requerido.");
             return;
         }
@@ -131,11 +132,11 @@ router.get('/registro_horario_account', async (req, res) => {
             AND table_name = $1
             ORDER BY table_name ASC;
         `;
-        const result = await client.query(query, [name]);
+        const result = await client.query(query, [nameCorrect]);
         client.release();
 
         if (result.rows.length > 0) {
-            res.json({ success: true, message: "Asistencia registrada con éxito" });
+            res.json({ success: true, data: result.rows });
         } else {
             res.json({ success: false, message: "No_hay_tablas" });
         }

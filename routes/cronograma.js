@@ -310,6 +310,42 @@ router.get('/week_events', async (req, res) => {
     }
 });
 
+router.get('/next_events', async (req, res) => {
+    try {
+
+        currentdate = new Date();
+        var oneJan = new Date(currentdate.getFullYear(), 0, 1);
+        var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
+        var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
+
+        console.log(result_week)
+
+        const yearActual = format(new Date(), 'yyyy');
+        const monthActual = format(new Date(), 'MM');
+
+        const client = await pool.connect();
+        const query = `
+            SELECT * 
+            FROM "${yearActual}"."${monthActual}"
+            WHERE n_semana = $1;
+        `;
+        const result = await client.query(query, [result_week]);
+        client.release();
+
+        // id, tema, acargo, mediagroup_video, mediagroup_sonido,
+        // fecha, descripcion, lugar, n_semana
+
+        if (result.rows.length > 0) {
+            res.json({ success: true, data: result.rows });
+        } else {
+            res.json({ success: false, data: "No_hay_tablas" });
+        }
+    } catch (err) {
+        console.error("Error al consultar la tabla: ", err);
+        res.status(500).send("Error al consultar la tabla: " + err.message);
+    }
+});
+
 router.get('/event', async (req, res) => {
     try {
         const { id, month } = req.query;

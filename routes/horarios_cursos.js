@@ -119,14 +119,14 @@ router.get('/delete_horarios_all', async (req, res) => {
 });
 
 router.get('/registro_horario_account', async (req, res) => {
-  const name = req.query.name;
+  const { name } = req.query;
+  nameCorrect = name.toLowerCase()
 
-  if (!name) {
+  if (!nameCorrect) {
     return res.status(400).json({ success: false, error: "No se proporcionó un nombre válido" });
   }
 
   try {
-    // Consulta para obtener las tablas que coincidan con el nombre proporcionado
     const query = `
       SELECT table_name 
       FROM information_schema.tables 
@@ -134,10 +134,9 @@ router.get('/registro_horario_account', async (req, res) => {
       ORDER BY table_name ASC;
     `;
     
-    const result = await pool.query(query, [name]);
+    const result = await pool.query(query, [nameCorrect]);
 
     if (result.rows.length > 0) {
-      // Formateamos los resultados en un array de objetos
       const tables = result.rows.map(row => ({ name: row.table_name }));
       res.json({ success: true, data: tables });
     } else {
