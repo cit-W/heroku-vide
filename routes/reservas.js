@@ -109,7 +109,7 @@ router.post('/eliminarExpiradas', async (req, res, next) => {
     // y que se almacena en UTC
     const query = `
       DELETE FROM android_mysql.reservar_areas
-      WHERE hora_final < NOW()  -- NOW() retorna la hora actual en UTC
+      WHERE hora_final < (NOW() AT TIME ZONE 'America/Bogota')
       RETURNING id;
     `;
     const result = await pool.query(query);
