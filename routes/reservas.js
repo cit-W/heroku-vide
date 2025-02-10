@@ -102,4 +102,23 @@ router.post("/reservar_lugar", async (req, res) => {
   }
 });
 
+// Endpoint para eliminar reservas expiradas (según la hora del servidor en UTC)
+router.post('/eliminarExpiradas', async (req, res, next) => {
+  try {
+    // Supongamos que la columna hora_final es de tipo TIMESTAMP WITH TIME ZONE
+    // y que se almacena en UTC
+    const query = `
+      DELETE FROM android_mysql.reservar_areas
+      WHERE hora_final < NOW()  -- NOW() retorna la hora actual en UTC
+      RETURNING id;
+    `;
+    const result = await pool.query(query);
+    res.json({ success: true, deletedCount: result.rowCount, deletedIds: result.rows });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+});
+
+
 module.exports = router;
