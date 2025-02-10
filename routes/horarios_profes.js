@@ -91,26 +91,24 @@ router.post('/delete_horarios_all', async (req, res) => {
     }
 });
 
-router.post('/delete_horario', async (req, res) => {
+router.post('/delete_horario/:name', async (req, res) => {
+    const name = req.params.name;
+
+    if (!name) {
+        return res.status(400).json({ success: false, error: "Nombre de tabla inválido" });
+    }
+
     try {
-        const { name } = req.body;
+        // Construimos la consulta de forma dinámica, ya que no se pueden usar parámetros en nombres de tabla
+        const query = `DROP TABLE IF EXISTS horarios_profes."${name}"`;
+        
+        // Ejecutamos la consulta (DROP TABLE no devuelve filas, así que no usamos result.rows)
+        await pool.query(query);
 
-        if (!name) {
-            res.status(400).send("El parámetro 'name' es requerido.");
-            return;
-        }
-
-        // Crea la consulta SQL para eliminar la tabla
-        const query = `DROP TABLE IF EXISTS horarios_profes.${name}`;
-
-        const client = await pool.connect();
-        await client.query(query);
-        client.release();
-
-        res.send("Borrado exitosamente");
+        res.json({ success: true, message: `Tabla '${name}' eliminada exitosamente` });
     } catch (err) {
-        console.error("Error al borrar la tabla: ", err);
-        res.status(500).send("Error al borrar: " + err.message);
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

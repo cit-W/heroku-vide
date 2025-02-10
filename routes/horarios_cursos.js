@@ -56,22 +56,21 @@ router.get('/crear_tabla_cursos', async (req, res) => {
   }
 });
 
-router.post('/delete_horario', async (req, res) => {
-  const name = req.query.name;
+router.post('/delete_horario/:id', async (req, res) => {
+  const name = req.params.name;
 
   if (!name) {
     return res.status(400).json({ success: false, error: "No se proporcionó un cedula válido" });
   }
 
   try {
-    const query = 'DROP TABLE IF EXISTS horarios_curso.$name';
-    const result = await pool.query(query, [name]);
+    // Construimos la consulta de forma dinámica, ya que no se pueden usar parámetros en nombres de tabla
+    const query = `DROP TABLE IF EXISTS horarios_profes."${name}"`;
+    
+    // Ejecutamos la consulta (DROP TABLE no devuelve filas, así que no usamos result.rows)
+    await pool.query(query);
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron trabajos sociales para el cedula proporcionado" });
-    }
+    res.json({ success: true, message: `Tabla '${name}' eliminada exitosamente` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });
