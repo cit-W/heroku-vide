@@ -116,7 +116,7 @@ router.post('/delete_horario', async (req, res) => {
 
 router.get('/registro_horario_account', async (req, res) => {
     try {
-        const { name } = req.query.toLowerCase();
+        const { name } = req.query;
         nameCorrect = name.toLowerCase()
 
         if (!nameCorrect) {
