@@ -136,9 +136,10 @@ router.get('/registro_horario_account', async (req, res) => {
         client.release();
 
         if (result.rows.length > 0) {
-            res.json({ success: true, data: result.rows });
+            const tables = result.rows.map(row => ({ name: row.table_name }));
+            res.json({ success: true, data: tables });
         } else {
-            res.json({ success: false, message: "No_hay_tablas" });
+            res.status(404).json({ success: false, message: "No hay tablas que coincidan con el nombre proporcionado" });
         }
     } catch (err) {
         console.error("Error al consultar la tabla: ", err);
