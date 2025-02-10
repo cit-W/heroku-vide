@@ -3,8 +3,9 @@ const router = express.Router();
 const pool = require('../db.js');
 
 // DELETE - Eliminar reserva personal
-router.delete('/delete_reserva_personal', async (req, res) => {
-  const id = req.query.id;
+router.delete('/delete_reserva_personal/:id', async (req, res) => {
+  // Se obtiene el ID desde los parámetros de la ruta
+  const id = req.params.id;
 
   if (!id) {
     return res.status(400).json({ success: false, error: "No se proporcionó un ID válido" });
