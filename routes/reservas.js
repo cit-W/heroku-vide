@@ -120,5 +120,68 @@ router.post('/eliminarExpiradas', async (req, res, next) => {
   }
 });
 
+// 📌 POST - Verificar disponibilidad de reserva y evitar conflictos de lugar y curso
+router.post("/verificar_reserva", async (req, res) => {
+  const { lugar, clase, hora_inicio, hora_final } = req.body;
+
+  if (!lugar || !clase || !hora_inicio || !hora_final) {
+    return res.status(400).json({ 
+      success: false, 
+      error: "Faltan datos para la verificación (lugar, clase, hora_inicio y hora_final son obligatorios)" 
+    });
+  }
+
+  try {
+    // 1. Verificar si el lugar ya está reservado en ese intervalo
+    const queryLugar = `
+      SELECT id, profesor, clase, lugar, 
+             hora_inicio AT TIME ZONE 'UTC' AS hora_inicio, 
+             hora_final AT TIME ZONE 'UTC' AS hora_final
+      FROM android_mysql.reservar_areas
+      WHERE lugar = $1 
+        AND (hora_inicio < $3::TIMESTAMPTZ AND hora_final > $2::TIMESTAMPTZ);
+    `;
+    const valuesLugar = [lugar, hora_inicio, hora_final];
+    const resultLugar = await pool.query(queryLugar, valuesLugar);
+
+    if (resultLugar.rows.length > 0) {
+      return res.json({
+        success: false,
+        message: "El lugar ya está reservado en ese intervalo de tiempo.",
+        conflicts: resultLugar.rows,
+      });
+    }
+
+    // 2. Verificar que el mismo curso no tenga reserva en otro lugar durante ese intervalo
+    const queryClase = `
+      SELECT id, profesor, clase, lugar, 
+             hora_inicio AT TIME ZONE 'UTC' AS hora_inicio, 
+             hora_final AT TIME ZONE 'UTC' AS hora_final
+      FROM android_mysql.reservar_areas
+      WHERE clase = $1 
+        AND lugar <> $2 
+        AND (hora_inicio < $4::TIMESTAMPTZ AND hora_final > $3::TIMESTAMPTZ);
+    `;
+    const valuesClase = [clase, lugar, hora_inicio, hora_final];
+    const resultClase = await pool.query(queryClase, valuesClase);
+
+    if (resultClase.rows.length > 0) {
+      return res.json({
+        success: false,
+        message: "El curso ya tiene una reserva en otro lugar en ese intervalo de tiempo.",
+        conflicts: resultClase.rows,
+      });
+    }
+
+    // Si no hay conflictos, el lugar y el curso están disponibles
+    return res.json({
+      success: true,
+      message: "El lugar y el curso están disponibles para reservar en ese intervalo de tiempo.",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 module.exports = router;
