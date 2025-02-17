@@ -348,6 +348,44 @@ router.get('/next_events', async (req, res) => {
     }
 });
 
+router.get('/closest_event', async (req, res) => {
+    try {
+        const yearActual = format(new Date(), 'yyyy');
+
+        // Construir cada SELECT incluyendo la diferencia en segundos entre fecha y ahora
+        let unionQueries = [];
+        for (let i = 1; i <= 12; i++) {
+            const month = String(i).padStart(2, '0');
+            unionQueries.push(`
+                SELECT *, abs(extract(epoch from (fecha - now()))) as diff 
+                FROM "${yearActual}"."${month}"
+            `);
+        }
+
+        // Encapsular el UNION ALL en una subconsulta para ordenar sobre 'diff'
+        const finalQuery = `
+            SELECT * FROM (
+                ${unionQueries.join(" UNION ALL ")}
+            ) AS combined
+            ORDER BY diff ASC
+            LIMIT 1
+        `;
+
+        const client = await pool.connect();
+        const result = await client.query(finalQuery);
+        client.release();
+
+        if (result.rows.length > 0) {
+            res.json({ success: true, data: result.rows[0] });
+        } else {
+            res.json({ success: false, data: "No se encontró ningún evento" });
+        }
+    } catch (err) {
+        console.error("Error al obtener el evento más cercano: ", err);
+        res.status(500).send("Error al obtener el evento: " + err.message);
+    }
+});
+
 router.get('/event', async (req, res) => {
     try {
         const { id, month } = req.query;
