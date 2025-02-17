@@ -352,17 +352,19 @@ router.get('/closest_event', async (req, res) => {
     try {
         const yearActual = format(new Date(), 'yyyy');
 
-        // Construir cada SELECT incluyendo la diferencia en segundos entre fecha y ahora
+        // Construir cada SELECT incluyendo la diferencia en segundos entre fecha y now()
+        // y filtrando solo los eventos futuros.
         let unionQueries = [];
         for (let i = 1; i <= 12; i++) {
             const month = String(i).padStart(2, '0');
             unionQueries.push(`
-                SELECT *, abs(extract(epoch from (fecha - now()))) as diff 
+                SELECT *, extract(epoch from (fecha - now())) as diff 
                 FROM "${yearActual}"."${month}"
+                WHERE fecha >= now()
             `);
         }
 
-        // Encapsular el UNION ALL en una subconsulta para ordenar sobre 'diff'
+        // Encapsular el UNION ALL en una subconsulta para ordenar por 'diff' de forma ascendente
         const finalQuery = `
             SELECT * FROM (
                 ${unionQueries.join(" UNION ALL ")}
@@ -378,10 +380,10 @@ router.get('/closest_event', async (req, res) => {
         if (result.rows.length > 0) {
             res.json({ success: true, data: result.rows[0] });
         } else {
-            res.json({ success: false, data: "No se encontró ningún evento" });
+            res.json({ success: false, data: "No se encontró ningún evento futuro" });
         }
     } catch (err) {
-        console.error("Error al obtener el evento más cercano: ", err);
+        console.error("Error al obtener el evento futuro más cercano: ", err);
         res.status(500).send("Error al obtener el evento: " + err.message);
     }
 });
