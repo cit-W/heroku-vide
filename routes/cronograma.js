@@ -21,6 +21,7 @@ router.use(helmet.contentSecurityPolicy({
 //  confirmado
 //  denegado
 
+// Endpoint para crear el esquema y las tablas mensuales
 router.post('/create', async (req, res, next) => {
     try {
         const { year } = req.query;
@@ -61,7 +62,7 @@ router.post('/create', async (req, res, next) => {
                     AUTHORIZATION u9976s05mfbvrs
                 `);
 
-                // Crear tablas mensuales en el nuevo esquema
+                // Crear tablas mensuales en el nuevo esquema con columna fecha como TIMESTAMPTZ
                 for (let i = 0; i < 12; i++) {
                     const month = String(i + 1).padStart(2, '0');
                     await client.query(`
@@ -71,7 +72,7 @@ router.post('/create', async (req, res, next) => {
                             acargo VARCHAR(40),
                             mediagroup_video VARCHAR(20),
                             mediagroup_sonido VARCHAR(20),
-                            fecha DATE NOT NULL,
+                            fecha TIMESTAMPTZ NOT NULL,
                             descripcion VARCHAR(200),
                             lugar VARCHAR(40),
                             n_semana INT NOT NULL
@@ -93,40 +94,41 @@ router.post('/create', async (req, res, next) => {
     }
 });
 
+// Endpoint para crear un evento en el cronograma
 router.post('/create_event', async (req, res) => {
     try {
         const { tema, acargo, mediagroup_video, mediagroup_sonido,
                 fecha, descripcion, lugar } = req.query;
 
-        const formattedDate = format(new Date(fecha), 'yyyy-MM-dd HH:mm'); // Año-mes-día hora:minuto
+        // Convertir la fecha recibida a un objeto Date
+        const eventDate = new Date(fecha);
+        // Convertir a formato ISO para incluir la zona horaria
+        const isoDate = eventDate.toISOString();
 
-        const table_year = format(new Date(fecha), 'yyyy'); // Obtiene el año
-        const month = format(new Date(fecha), 'MM'); // Obtiene el mes
+        // Calcular la semana del evento basándose en la fecha del evento
+        const oneJan = new Date(eventDate.getFullYear(), 0, 1);
+        const numberOfDays = Math.floor((eventDate - oneJan) / (24 * 60 * 60 * 1000));
+        const result_week = Math.ceil((eventDate.getDay() + 1 + numberOfDays) / 7);
 
-        currentdate = new Date();
-        var oneJan = new Date(currentdate.getFullYear(), 0, 1);
-        var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
-        var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
+        const table_year = eventDate.getFullYear().toString();
+        // Obtener el mes en formato de dos dígitos
+        const month = eventDate.toLocaleString('en-US', { month: '2-digit' });
 
         const query_create_event = `
             INSERT INTO "${table_year}"."${month}"
-            (tema, acargo, mediagroup_video, 
-            mediagroup_sonido, fecha, descripcion, lugar, n_semana)
-            VALUES( $1, $2, $3, $4, $5, $6, $7, $8 );
+            (tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, lugar, n_semana)
+            VALUES( $1, $2, $3, $4, $5::TIMESTAMPTZ, $6, $7, $8 );
         `;
 
-        console.log(result_week)
-        
         const values = [tema, acargo, mediagroup_video, mediagroup_sonido,
-                        formattedDate, descripcion, lugar, result_week];
+                        isoDate, descripcion, lugar, result_week];
 
-        // Conecta al cliente y ejecuta la consulta
         const client = await pool.connect();
         await client.query(query_create_event, values);
         
         client.release();
 
-        res.json({ success: true, data: "SUCCESS"});
+        res.json({ success: true, data: "SUCCESS" });
     } catch (err) {
         console.error("Error al crear el evento: ", err);
         res.status(500).send("Error al crear evento: " + err.message);
