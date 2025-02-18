@@ -60,11 +60,9 @@ router.post('/register-user', async (req, res) => {
 // POST - Enviar notificación (opcionalmente filtrada por rol)
 router.post('/send-notification', async (req, res) => {
   try {
-    // title: Título de la notificación
-    // body: Cuerpo de la notificación
-    // role: (opcional) para filtrar por tag => 'profesor', 'estudiante', etc.
-    // Si no envías 'role', enviará a todos los usuarios
-    const { title, body, role } = req.body;
+    const { title, body, role, departamento, nivel } = req.body;
+
+    // Validar título y body
     if (!title || !body) {
       return res.status(400).json({
         success: false,
@@ -72,23 +70,46 @@ router.post('/send-notification', async (req, res) => {
       });
     }
 
-    // Si se envía un 'role', armamos el filtro. Si no, dejamos vacío para enviar a todos.
+    // Construir array de filtros dinámicamente
     let filters = [];
-    if (role) {
+
+    // Helper para añadir un filtro con operador AND entre cada uno
+    const addTagFilter = (tagKey, tagValue) => {
+      if (filters.length > 0) {
+        filters.push({ operator: 'AND' });
+      }
       filters.push({
         field: 'tag',
-        key: 'role',
+        key: tagKey,
         relation: '=',
-        value: role
+        value: tagValue
       });
+    };
+
+    // Si 'role' tiene valor, agregamos el filtro
+    if (role && role.trim() !== '') {
+      addTagFilter('role', role);
     }
 
+    // Si 'departamento' tiene valor, agregamos el filtro
+    if (departamento && departamento.trim() !== '') {
+      addTagFilter('departamento', departamento);
+    }
+
+    // Si 'nivel' tiene valor, agregamos el filtro
+    if (nivel && nivel.trim() !== '') {
+      addTagFilter('nivel', nivel);
+    }
+
+    // Si no hay filtros, enviamos a todos (filters = undefined)
+    const filtersToUse = (filters.length > 0) ? filters : undefined;
+
+    // Llamada a OneSignal
     const response = await axios.post(
       'https://onesignal.com/api/v1/notifications',
       {
         app_id: ONE_SIGNAL_APP_ID,
-        // Usamos 'filters' si está definido; si no, OneSignal enviará a todos
-        filters: filters.length > 0 ? filters : undefined,
+        filters: filtersToUse,
         contents: {
           en: body,
           es: body
@@ -97,7 +118,7 @@ router.post('/send-notification', async (req, res) => {
           en: title,
           es: title
         },
-        // Puedes configurar más opciones:
+        // Opciones de prioridad y visibilidad
         android_channel_id: '5fc000b3-506f-4dd6-8f97-88e0f3b0c9c7',
         priority: 'high',
         visibility: 1
@@ -115,6 +136,7 @@ router.post('/send-notification', async (req, res) => {
       message: 'Notificación enviada correctamente',
       data: response.data
     });
+
   } catch (error) {
     console.error('Error al enviar notificación:', error.message);
     return res.status(500).json({
