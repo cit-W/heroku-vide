@@ -53,6 +53,29 @@ router.post('/create_user', async (req, res) => {
   }
 });
 
+// GET - Obtener nombres por cédula
+router.get('/obtener_nombres', async (req, res) => {
+  const { cedula } = req.query;
+
+  if (!cedula) {
+    return res.status(400).json({ success: false, error: "No se proporcionó un profesor válido" });
+  }
+
+  try {
+    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
+    const result = await pool.query(query, [cedula]);
+
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows }); // Devolver un objeto que contiene el array en un campo 'data'
+    } else {
+      res.json({ success: false, data: "No se encontró un profesor con la cédula proporcionada"});
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get('/info_user', async (req, res) => {
   const cedula = req.query.cedula;
 
