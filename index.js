@@ -47,6 +47,7 @@ const trabajoSocialRoutes = require('./routes/trabajo_social');
 const restauranteRoutes = require('./routes/restaurante');
 const cronogramaRoutes = require('./routes/cronograma');
 const citacionesRoutes = require('./routes/citaciones');
+const notificationsRoutes = require('./routes/notifications');
 
 // Use routes
 app.use('/general', general);
@@ -62,6 +63,7 @@ app.use('/trabajo_social', trabajoSocialRoutes);
 app.use('/restaurante', restauranteRoutes);
 app.use('/cronograma', cronogramaRoutes);
 app.use('/citaciones', citacionesRoutes);
+app.use('/notifications', notificationsRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -80,6 +82,25 @@ app.get('/db', async (req, res) => {
     res.send("Error " + err);
   }
 });
+
+async function createUsersTableIfNotExists() {
+  const createQuery = `
+    CREATE TABLE IF NOT EXISTS android_mysql.usersNotifications (
+      user_id VARCHAR(100) PRIMARY KEY,
+      player_id VARCHAR(200) NOT NULL,
+      role VARCHAR(50) NOT NULL
+    );
+  `;
+  try {
+    await pool.query(createQuery);
+    console.log('Tabla users verificada/creada correctamente.');
+  } catch (error) {
+    console.error('Error al crear/verificar la tabla users:', error.message);
+  }
+}
+
+// Llamamos a la función al iniciar el servidor
+createUsersTableIfNotExists();
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));

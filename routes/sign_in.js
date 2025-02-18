@@ -4,71 +4,52 @@ const pool = require('../db.js');
 
 // POST - Crear un nuevo usuario
 router.post('/create_user', async (req, res) => {
-  const { name, cedula, nivel, curso } = req.query;
-  nameCorrect = name.toLowerCase()
-
-  if (!nameCorrect || !cedula || !nivel || !curso) {
-    return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
-  }
-
   try {
-    // Query 1: Insert new user
-    const insertUserQuery = `
-      INSERT INTO android_mysql.usuarios 
-      (name, cedula, nivel, curso) 
-      VALUES ($1, $2, $3, $4)
-    `;
-    await pool.query(insertUserQuery, [nameCorrect, cedula, nivel, curso]);
+      // Extraer datos del body
+      const { name, cedula, role, nivel, dep, curso } = req.body;
 
-    // Query 2: Create schema
-    const createSchemaQuery = `
-      CREATE SCHEMA IF NOT EXISTS "citaciones"
-      AUTHORIZATION u9976s05mfbvrs
-    `;
-    await pool.query(createSchemaQuery);
+      // Normalizar nombre
+      const nameCorrect = name ? name.toLowerCase() : null;
 
-    // Query 3: Create table
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS citaciones."${cedula}"
-      (
-        id SERIAL PRIMARY KEY,
-        topic VARCHAR(50) NOT NULL,
-        tutor VARCHAR(35),
-        student_id INTEGER NOT NULL,
-        date TIMESTAMP NOT NULL,
-        notes TEXT,
-        status VARCHAR(20) NOT NULL DEFAULT 'pendiente'
-      )
-    `;
-    await pool.query(createTableQuery);
+      // Validar que no falten datos
+      if (!nameCorrect || !cedula || !role || !nivel || !dep || !curso) {
+          return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
+      }
 
-    res.json({ success: true, data: "Usuario registrado con éxito" });
+      // Query 1: Insertar nuevo usuario
+      const insertUserQuery = `
+          INSERT INTO android_mysql.usuarios 
+          (name, cedula, role, nivel, departamento, curso) 
+          VALUES ($1, $2, $3, $4, $5, $6)
+      `;
+      await pool.query(insertUserQuery, [nameCorrect, cedula, role, nivel, dep, curso]);
+
+      // Query 2: Crear esquema si no existe
+      const createSchemaQuery = `
+          CREATE SCHEMA IF NOT EXISTS citaciones
+          AUTHORIZATION u9976s05mfbvrs
+      `;
+      await pool.query(createSchemaQuery);
+
+      // Query 3: Crear tabla para citaciones del usuario si no existe
+      const createTableQuery = `
+          CREATE TABLE IF NOT EXISTS citaciones."${cedula}"
+          (
+              id SERIAL PRIMARY KEY,
+              topic VARCHAR(50) NOT NULL,
+              tutor VARCHAR(35),
+              student_id INTEGER NOT NULL,
+              date TIMESTAMP NOT NULL,
+              notes TEXT,
+              status VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+          )
+      `;
+      await pool.query(createTableQuery);
+
+      res.json({ success: true, message: "Usuario registrado con éxito" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// GET - Obtener nombres por cédula
-router.get('/obtener_nombres', async (req, res) => {
-  const { cedula } = req.query;
-
-  if (!cedula) {
-    return res.status(400).json({ success: false, error: "No se proporcionó un profesor válido" });
-  }
-
-  try {
-    const query = 'SELECT * FROM android_mysql.usuarios WHERE cedula = $1';
-    const result = await pool.query(query, [cedula]);
-
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows }); // Devolver un objeto que contiene el array en un campo 'data'
-    } else {
-      res.json({ success: false, data: "No se encontró un profesor con la cédula proporcionada"});
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+      console.error("Error en /create_user:", err);
+      res.status(500).json({ success: false, error: err.message });
   }
 });
 
