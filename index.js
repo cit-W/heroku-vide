@@ -35,18 +35,18 @@ app.get('/', (req, res) => res.render('pages/index'));
 
 // Import routes
 const general = require('./routes/general');
-const accountRoutes = require('./routes/account');
-const horariosCursosRoutes = require('./routes/horarios_cursos');
-const horariosProfesRoutes = require('./routes/horarios_profes');
-const infoEstudiantesRoutes = require('./routes/info_estudiantes');
+const accountRoutes = require('./routes/auth/account');
+const horariosCursosRoutes = require('./routes/horarios/horarios_cursos.js');
+const horariosProfesRoutes = require('./routes/horarios/horarios_profes.js');
+const infoEstudiantesRoutes = require('./routes/students/estudiantes.js');
 const rastrearRoutes = require('./routes/rastrear');
-const reportesRoutes = require('./routes/reportes');
-const reservasRoutes = require('./routes/reservas');
-const signInRoutes = require('./routes/sign_in');
+const reportesRoutes = require('./routes/reports/reportes');
+const reservasRoutes = require('./routes/reservas/reservas.js');
+const signInRoutes = require('./routes/auth/usuarios.js');
 const trabajoSocialRoutes = require('./routes/trabajo_social');
 const restauranteRoutes = require('./routes/restaurante');
 const cronogramaRoutes = require('./routes/cronograma');
-const citacionesRoutes = require('./routes/citaciones');
+const citacionesRoutes = require('./routes/reservas/citaciones.js');
 const notificationsRoutes = require('./routes/notifications');
 
 // Use routes

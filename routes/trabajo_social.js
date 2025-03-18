@@ -1,66 +1,44 @@
-const express = require('express');
+const express = require("express");
+const TrabajoSocial = require("../models/TrabajoSocial");
 const router = express.Router();
-const pool = require('../db.js');
 
-// POST - Agregar trabajo social
-router.post('/add_trabajo_social', async (req, res) => {
+router.post("/add_trabajo_social", async (req, res) => {
   const { profesor, descripcion, cantidad_horas, cuando } = req.body;
-
   if (!profesor || !descripcion || !cantidad_horas || !cuando) {
-    return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
+    return res.status(400).json({ error: "Faltan datos" });
   }
 
   try {
-    const query = `
-      INSERT INTO android_mysql.trabajo_social 
-      (profesor, descripcion, cantidad_horas, cuando) 
-      VALUES ($1, $2, $3, $4)
-    `;
-    const values = [profesor, descripcion, cantidad_horas, cuando];
-    await pool.query(query, values);
-    res.json({ success: true, data: "Trabajo social registrado con éxito" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Error al registrar el trabajo social" });
+    await TrabajoSocial.agregar(profesor, descripcion, cantidad_horas, cuando);
+    res.json({ message: "Trabajo social registrado" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al registrar el trabajo social" });
   }
 });
 
-// GET - Obtener todos los IDs de trabajo social
-router.get('/ids', async (req, res) => {
+router.get("/ids", async (req, res) => {
   try {
-    const query = 'SELECT id FROM android_mysql.trabajo_social';
-    const result = await pool.query(query);
-    
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron reservas para el ID proporcionado" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    const data = await TrabajoSocial.obtenerIDs();
+    res.json(data ? { success: true, data } : { success: false, message: "No se encontraron registros" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener los IDs" });
   }
 });
 
-// GET - Obtener registros de trabajo social por ID
-router.get('/registro_trabajo_social', async (req, res) => {
-  const id = req.query.id;
-
+router.get("/registro_trabajo_social", async (req, res) => {
+  const { id } = req.query;
   if (!id) {
-    return res.status(400).json({ success: false, error: "No se proporcionó un ID válido" });
+    return res.status(400).json({ error: "No se proporcionó un ID válido" });
   }
 
   try {
-    const query = 'SELECT * FROM android_mysql.trabajo_social WHERE id = $1 ORDER BY descripcion ASC';
-    const result = await pool.query(query, [id]);
-
-    res.json({
-      success: true,
-      data: result.rows
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    const data = await TrabajoSocial.obtenerPorID(id);
+    res.json(data ? { success: true, data } : { success: false, message: "No se encontraron registros" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener los registros" });
   }
 });
 

@@ -1,142 +1,112 @@
-const express = require('express');
+const express = require("express");
+const Organizacion = require("../models/Organizacion");
+const Usuario = require("../models/Usuario");
+const Grado = require("../models/Grado");
+const General = require("../models/General");
+const Espacio = require("../models/Espacio");
 const router = express.Router();
-const pool = require('../db.js');
-const NodeCache = require('node-cache');
 
-router.get('/conexion_verification', async (req, res) => {
+router.get("/conexion_verification", async (req, res) => {
   try {
-    const query = 'SELECT * FROM android_mysql.usuarios';
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    const data = await General.verificarConexion();
+    res.json({success: true});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error en la verificación de conexión" });
   }
 });
 
-const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
+router.post("/crear_organizacion", async (req, res) => {
+  try {
+    await Organizacion.crearOrganizacion(req.body);
+    res.json({ success: true, message: "Organización creada con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al crear la organización" });
+  }
+});
 
-router.get('/info_user', async (req, res) => {
-  const id = req.query.id;
+router.get("/obtener_organizaciones", async (req, res) => {
+  try {
+    const data = await Organizacion.obtenerOrganizaciones();
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener organizaciones" });
+  }
+});
 
+router.post("/crear_usuario", async (req, res) => {
+  try {
+    await Usuario.crearUsuario(req.body);
+    res.json({ success: true, message: "Usuario creado con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al crear usuario" });
+  }
+});
+
+router.get("/obtener_usuarios", async (req, res) => {
+  try {
+    const data = await Usuario.obtenerUsuariosPorOrganizacion(req.query.organizacion_id);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener usuarios" });
+  }
+});
+
+router.post("/crear_grado", async (req, res) => {
+  try {
+    await Grado.crearGrado(req.body);
+    res.json({ success: true, message: "Grado creado con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al crear grado" });
+  }
+});
+
+router.get("/obtener_grados", async (req, res) => {
+  try {
+    const data = await Grado.obtenerGradosPorOrganizacion(req.query.organizacion_id);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener grados" });
+  }
+});
+
+router.post("/crear_espacio", async (req, res) => {
+  try {
+    await Espacio.crearEspacio(req.body);
+    res.json({ success: true, message: "Espacio creado con éxito" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al crear espacio" });
+  }
+});
+
+router.get("/obtener_espacios", async (req, res) => {
+  try {
+    const data = await Espacio.obtenerEspaciosPorOrganizacion(req.query.organizacion_id);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+  }
+});
+
+router.get("/info_user", async (req, res) => {
+  const { id } = req.query;
   if (!id) {
-    return res.status(400).json({ success: false, error: "No se proporcionó una cédula válida" });
+    return res.status(400).json({ error: "No se proporcionó una cédula válida" });
   }
-
   try {
-    // Intentar obtener usuarios del caché
-    let usuarios = cache.get("usuarios");
-
-    if (usuarios == undefined) {
-      // Si no está en caché, consultar la base de datos
-      const query = 'SELECT * FROM android_mysql.usuarios';
-      const dbResult = await pool.query(query);
-      usuarios = dbResult.rows;
-
-      // Guardar en caché
-      cache.set("usuarios", usuarios);
-    }
-
-    // Buscar usuario con la cédula proporcionada
-    const usuarioEncontrado = usuarios.filter(user => user.cedula === id);
-
-    if (usuarioEncontrado.length > 0) {
-      res.json({ success: true, data: usuarioEncontrado });
-    } else {
-      res.status(404).json({ 
-        success: false, 
-        message: "No se encontró usuario con la cédula proporcionada" 
-      });
-    }
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-router.post('/delete_reservas', async (req, res) => {
-  const hora_final = req.query.hora_final;
-
-  if (!hora_final) {
-    return res.status(400).json({ success: false, error: "No se proporcionó un hora_final válido" });
-  }
-
-  try {
-    const query = 'DELETE FROM android_mysql.reservar_areas WHERE hora_final = $1';
-    const result = await pool.query(query, [hora_final]);
-
-    // Mejora: Verificar el número de filas afectadas en lugar de las filas devueltas
-    if (result.rowCount > 0) {
-      res.json({ success: true, message: `Se eliminaron ${result.rowCount} reservas` });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron reservas para el hora_final proporcionado" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// cursos - codigo----------------------------------------------------------
-
-
-
-// asistencia---------------------------------------------------------------
-
-// POST - Registrar asistencia
-router.post('/marcar', async (req, res) => {
-  const { id, fecha } = req.query;
-
-  if (!id || !fecha) {
-    return res.status(400).json({ success: false, error: "Faltan datos para completar el registro" });
-  }
-
-  try {
-    // Create a new Date object with the current date and time
-    const currentDate = new Date();
-    
-    // Parse the 'fecha' (which is likely just a time string) and set it to today's date
-    const [hours, minutes, seconds] = fecha.split(':');
-    currentDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), parseInt(seconds, 10));
-
-    // Format the date for PostgreSQL (YYYY-MM-DD HH:MM:SS)
-    const formattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
-
-    const query = `
-      INSERT INTO asistencia.asistencia_diaria 
-      (id, fecha) 
-      VALUES ($1, $2)
-    `;
-    const values = [id, formattedDate];
-    await pool.query(query, values);
-    res.json({ success: true, message: "Asistencia registrada con éxito" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: "Error al registrar el reporte: " + err.message });
-  }
-});
-
-// GET - Obtener registros por ID del estudiante
-router.get('/registro_diario', async (req, res) => {
-  const id = req.query.id;
-
-  if (!id) {
-    return res.status(400).json({ success: false, error: "No se proporcionó un id válido" });
-  }
-
-  try {
-    const query = 'SELECT * FROM asistencia.asistencia_diaria WHERE id = $1';
-    const result = await pool.query(query, [id]);
-
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
-    } else {
-      res.status(404).json({ success: false, message: "No se encontraron info para el id proporcionado" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, error: err.message });
+    const data = await General.obtenerInfoUsuario(id);
+    res.json(data.length > 0 ? { success: true, data } : { success: false, message: "No se encontró usuario" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener la información del usuario" });
   }
 });
 
