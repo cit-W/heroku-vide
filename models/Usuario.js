@@ -10,7 +10,7 @@ const Usuario = {
         const query = `
         INSERT INTO users (personal_id, name, email, password, organizacion_id, role, departamento, escuela, curso)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        ON CONFLICT (personal_id or email) DO UPDATE 
+        ON CONFLICT (personal_id) DO UPDATE 
         SET name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, departamento = EXCLUDED.departamento, 
             escuela = EXCLUDED.escuela, curso = EXCLUDED.curso;
         `;

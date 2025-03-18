@@ -97,13 +97,26 @@ router.get("/obtener_espacios", async (req, res) => {
 });
 
 router.get("/info_user", async (req, res) => {
-  const { id } = req.query;
-  if (!id) {
+  const { email } = req.query;
+  if (!email) {
     return res.status(400).json({ error: "No se proporcionó una cédula válida" });
   }
   try {
-    const data = await General.obtenerInfoUsuario(id);
-    res.json(data.length > 0 ? { success: true, data } : { success: false, message: "No se encontró usuario" });
+    const data = await General.obtenerInfoUsuario(email);
+    
+    // Verifica si data es nulo, un objeto único o un array
+    if (!data) {
+      return res.json({ success: false, message: "No se encontró usuario" });
+    } 
+    
+    // Si es un array, verifica si tiene elementos
+    if (Array.isArray(data) && data.length === 0) {
+      return res.json({ success: false, message: "No se encontró usuario" });
+    }
+    
+    // En cualquier otro caso, hay datos para devolver
+    res.json({ success: true, data });
+    
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error al obtener la información del usuario" });

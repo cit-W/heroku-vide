@@ -1,21 +1,22 @@
-// database/setup.js
 const pool = require("./db");
 
 const setupDatabase = async () => {
     try {
         console.log("🔄 Verificando y creando tablas necesarias...");
 
+        // Crear la tabla de organizaciones primero
         await pool.query(`
         CREATE TABLE IF NOT EXISTS organizaciones (
             id VARCHAR(16) PRIMARY KEY,
             name TEXT NOT NULL,
             contact TEXT UNIQUE NOT NULL,
-            status VARCHAR(10) CHECK (estado IN ('free', 'premium')),
+            estado VARCHAR(10) CHECK (estado IN ('free', 'premium')), -- Corregido
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             fecha_vencimiento TIMESTAMP
         );
         `);
 
+        // Crear la tabla de usuarios
         await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -31,6 +32,7 @@ const setupDatabase = async () => {
         );
         `);
 
+        // Crear la tabla de grados
         await pool.query(`
         CREATE TABLE IF NOT EXISTS grades (
             id SERIAL PRIMARY KEY,
@@ -39,6 +41,7 @@ const setupDatabase = async () => {
         );
         `);
 
+        // Crear la tabla de lugares
         await pool.query(`
         CREATE TABLE IF NOT EXISTS places (
             id SERIAL PRIMARY KEY,
