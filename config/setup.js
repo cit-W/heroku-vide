@@ -57,6 +57,36 @@ const setupDatabase = async () => {
             );
         `);
 
+        // Crear la tabla de grados
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS role (
+                id SERIAL PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
+                UNIQUE (nombre, organizacion_id)
+            );
+        `);
+
+        // Crear la tabla de grados
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS departamento (
+                id SERIAL PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
+                UNIQUE (nombre, organizacion_id)
+            );
+        `);
+
+        // Crear la tabla de grados
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS escuela (
+                id SERIAL PRIMARY KEY,
+                nombre TEXT NOT NULL,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
+                UNIQUE (nombre, organizacion_id)
+            );
+        `);
+
         // Crear la tabla de lugares
         await pool.query(`
             CREATE TABLE IF NOT EXISTS places (
