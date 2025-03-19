@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 
 const Reserva = {
+
     async obtenerIDs() {
         const query = "SELECT id FROM android_mysql.reservar_areas ORDER BY lugar;";
         const { rows } = await pool.query(query);
@@ -70,6 +71,7 @@ const Reserva = {
 
         return { disponible: true };
     }
+
 };
 
 module.exports = Reserva;

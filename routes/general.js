@@ -88,8 +88,18 @@ router.post("/crear_espacio", async (req, res) => {
 
 router.get("/obtener_espacios", async (req, res) => {
   try {
-    const data = await Espacio.obtenerEspaciosPorOrganizacion(req.query.organizacion_id);
-    res.json({ success: true, data });
+    const orgData = await Usuario.obtenerOrgId(req.query.email);
+
+    if (orgData.length > 0) {
+        const orgId = orgData[0].organizacion_id;
+        const data = await Espacio.obtenerEspaciosPorOrganizacion(orgId);
+        res.json({ success: true, data });
+
+    } else {
+        console.error("❌ No se encontró la organización para el email proporcionado.");
+        res.json({ success: false, error: "Error en las consultas." });
+    }
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Error al obtener espacios" });

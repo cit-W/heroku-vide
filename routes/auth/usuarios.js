@@ -12,6 +12,16 @@ router.post("/create_user", async (req, res) => {
   }
 });
 
+router.post("/save_user_devides", async (req, res) => {
+  try {
+    await Usuario.crearUsuario(req.body);
+    res.json({ success: true, message: "Usuario registrado con éxito" });
+  } catch (error) {
+    console.error("Error en /create_user:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 router.get("/obtener_nombres", async (req, res) => {
   try {
     const data = await Usuario.obtenerPorCedula(req.query.cedula);

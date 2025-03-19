@@ -1,3 +1,5 @@
+const pool = require("../config/db");
+
 const Espacio = {
     async crearEspacio({ id, nombre, organizacion_id }) {
         const query = `
@@ -9,7 +11,7 @@ const Espacio = {
     },
 
     async obtenerEspaciosPorOrganizacion(organizacion_id) {
-        const query = "SELECT * FROM places WHERE organizacion_id = $1 ORDER BY nombre";
+        const query = "SELECT nombre FROM places WHERE organizacion_id = $1 ORDER BY nombre";
         const { rows } = await pool.query(query, [organizacion_id]);
         return rows;
     }

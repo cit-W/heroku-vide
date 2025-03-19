@@ -18,6 +18,16 @@ const Usuario = {
         await pool.query(query, [personal_id, name, email, hashedPassword, organizacion_id, role, departamento, escuela, curso]);
     },
 
+    async saveUserDevices({ personal_id, player_id, device_type }) {
+        const query = `
+            INSERT INTO user_devices (personal_id, player_id, device_type, last_active)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+            ON CONFLICT (player_id) DO UPDATE 
+            SET last_active = CURRENT_TIMESTAMP, device_type = EXCLUDED.device_type;
+        `;
+        await pool.query(query, [personal_id, player_id, device_type]);
+    },    
+
     async obtenerUsuariosPorOrganizacion(organizacion_id) {
         const query = "SELECT * FROM users WHERE organizacion_id = $1 ORDER BY name";
         const { rows } = await pool.query(query, [organizacion_id]);
@@ -35,6 +45,12 @@ const Usuario = {
         const hashedPassword = rows[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
         return isMatch;
+    },
+    
+    async obtenerOrgId(email) {
+        const query = "SELECT organizacion_id FROM users WHERE email = $1";
+        const { rows } = await pool.query(query, [email]);
+        return rows;
     }
 };
 
