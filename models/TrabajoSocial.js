@@ -8,7 +8,7 @@ export async function agregar(profesor, descripcion, cantidad_horas, cuando) {
 
 export async function obtenerIDs() {
         const query = "SELECT id FROM android_mysql.trabajo_social";
-        const { rows } = await pool(query);
+        const { rows } = await pool.query(query);
         return rows.length > 0 ? rows : null;
 }
 

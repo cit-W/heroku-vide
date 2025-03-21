@@ -279,7 +279,7 @@ router.get('/month_topic', async (req, res) => {
 router.get('/week_events', async (req, res) => {
     try {
 
-        currentdate = new Date();
+        var currentdate = new Date();
         var oneJan = new Date(currentdate.getFullYear(), 0, 1);
         var numberOfDays = Math.floor((currentdate - oneJan) / (24 * 60 * 60 * 1000));
         var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
