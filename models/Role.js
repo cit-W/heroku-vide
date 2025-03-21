@@ -3,7 +3,7 @@ const pool = require("../config/db");
 const Role = {
     async crearRole({ id, nombre, organizacion_id }) {
         const query = `
-        INSERT INTO role (id, nombre, organizacion_id)
+        INSERT INTO roles (id, nombre, organizacion_id)
         VALUES ($1, $2, $3)
         ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre;
         `;
@@ -11,7 +11,7 @@ const Role = {
     },
 
     async obtenerRolePorOrganizacion(organizacion_id) {
-        const query = "SELECT nombre FROM role WHERE organizacion_id = $1 ORDER BY nombre";
+        const query = "SELECT nombre FROM roles WHERE organizacion_id = $1 ORDER BY nombre";
         const { rows } = await pool.query(query, [organizacion_id]);
         return rows;
     }

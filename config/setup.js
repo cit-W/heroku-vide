@@ -10,6 +10,10 @@ const setupDatabase = async () => {
             -- DROP TABLE places CASCADE;
             -- DROP TABLE users CASCADE;
             -- DROP TABLE organizaciones CASCADE;
+            -- DROP TABLE role CASCADE;
+            -- DROP TABLE escuela CASCADE;
+            -- DROP TABLE departamento CASCADE;
+            -- DROP TABLE roles CASCADE;
             CREATE TABLE IF NOT EXISTS organizaciones (
                 id VARCHAR(16) PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -57,9 +61,9 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de grados
+        // Crear la tabla de roles
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS role (
+            CREATE TABLE IF NOT EXISTS roles (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
                 organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
@@ -67,7 +71,7 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de grados
+        // Crear la tabla de departamentos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS departamento (
                 id SERIAL PRIMARY KEY,
@@ -77,7 +81,7 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de grados
+        // Crear la tabla de escuelas
         await pool.query(`
             CREATE TABLE IF NOT EXISTS escuela (
                 id SERIAL PRIMARY KEY,
@@ -93,7 +97,45 @@ const setupDatabase = async () => {
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
                 organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
-                UNIQUE (nombre, organizacion_id) -- Permite nombres repetidos en diferentes organizaciones
+                UNIQUE (nombre, organizacion_id)
+            );
+        `);
+
+        // Crear la tabla de reserva
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS reserva (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                place TEXT NOT NULL,
+                start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                finish TIMESTAMP,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
+            );
+        `);
+
+        // Crear la tabla de trabajo_social
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS trabajo_social (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                hours TEXT NOT NULL,
+                date TIMESTAMP,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
+            );
+        `);
+
+        // Crear la tabla de reporte_lugar
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS reporte_lugar (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                place TEXT NOT NULL,
+                start TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                finish TIMESTAMP,
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
             );
         `);
 

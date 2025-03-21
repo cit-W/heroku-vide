@@ -34,4 +34,16 @@ router.get("/obtener_grados", async (req, res) => {
   }
 });
 
+router.get("/obtener_grado_single", async (req, res) => {
+  try {
+
+    const data = await Grado.obtenerGradosPorOrganizacion(req.query.orgId);
+    res.json({ success: true, data });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+  }
+});
+
 module.exports = router;

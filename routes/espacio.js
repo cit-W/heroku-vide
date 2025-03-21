@@ -36,4 +36,16 @@ router.get("/obtener_espacios", async (req, res) => {
   }
 });
 
+router.get("/obtener_espacio_single", async (req, res) => {
+  try {
+
+    const data = await Espacio.obtenerEspaciosPorOrganizacion(req.query.orgId);
+    res.json({ success: true, data });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+  }
+});
+
 module.exports = router;

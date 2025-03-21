@@ -3,7 +3,7 @@ const pool = require("../config/db");
 const TrabajoSocial = {
     async agregar(profesor, descripcion, cantidad_horas, cuando) {
         const query = `INSERT INTO android_mysql.trabajo_social (profesor, descripcion, cantidad_horas, cuando) 
-                    VALUES ($1, $2, $3, $4)`;
+                        VALUES ($1, $2, $3, $4)`;
         await pool.query(query, [profesor, descripcion, cantidad_horas, cuando]);
     },
 

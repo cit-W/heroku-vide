@@ -33,4 +33,16 @@ router.get("/obtener_role", async (req, res) => {
   }
 });
 
+router.get("/obtener_role_single", async (req, res) => {
+  try {
+
+    const data = await Role.obtenerRolePorOrganizacion(req.query.orgId);
+    res.json({ success: true, data });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+  }
+});
+
 module.exports = router;
