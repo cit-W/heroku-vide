@@ -1,12 +1,12 @@
-const express = require("express");
-const Usuario = require("../models/Usuario");
-const Departamento = require("../models/Departamento");
-const Escuela = require("../models/Escuela");
-const router = express.Router();
+import { Router } from "express";
+import Usuario from "../models/Usuario.js";
+import { crearDepartamento } from "../models/Departamento.js";
+import { obtenerEscuelasPorOrganizacion } from "../models/Escuela.js";
+const router = Router();
 
 router.post("/crear_escuela", async (req, res) => {
   try {
-    await Departamento.crearDepartamento(req.body);
+    await crearDepartamento(req.body);
     res.json({ success: true, message: "Espacio creado con éxito" });
   } catch (error) {
     console.error(error);
@@ -20,7 +20,7 @@ router.get("/obtener_escuela", async (req, res) => {
 
     if (orgData.length > 0) {
         const orgId = orgData[0].organizacion_id;
-        const data = await Escuela.obtenerEscuelasPorOrganizacion(orgId);
+        const data = await obtenerEscuelasPorOrganizacion(orgId);
         res.json({ success: true, data });
 
     } else {
@@ -37,7 +37,7 @@ router.get("/obtener_escuela", async (req, res) => {
 router.get("/obtener_escuela_single", async (req, res) => {
   try {
 
-    const data = await Escuela.obtenerEscuelasPorOrganizacion(req.query.orgId);
+    const data = await obtenerEscuelasPorOrganizacion(req.query.orgId);
     res.json({ success: true, data });
 
   } catch (error) {
@@ -46,4 +46,4 @@ router.get("/obtener_escuela_single", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

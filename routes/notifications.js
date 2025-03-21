@@ -1,5 +1,5 @@
-const express = require("express");
-const Notification = require("../models/Notification");
+import express from "express";
+import {registerUser, sendNotification} from "../models/Notification.js";
 const router = express.Router();
 
 router.post("/register-user", async (req, res) => {
@@ -8,7 +8,7 @@ router.post("/register-user", async (req, res) => {
     if (!player_id || !user_id || !role) {
       return res.status(400).json({ error: "Faltan datos (player_id, user_id, role)" });
     }
-    await Notification.registerUser(user_id, player_id, role);
+    await registerUser(user_id, player_id, role);
     res.json({ success: true, message: "Usuario registrado y tag asignado correctamente." });
   } catch (error) {
     console.error("Error al registrar usuario:", error.message);
@@ -22,7 +22,7 @@ router.post("/send-notification", async (req, res) => {
     if (!title || !body) {
       return res.status(400).json({ error: "Faltan datos (title, body)" });
     }
-    const response = await Notification.sendNotification(title, body, role, departamento, nivel);
+    const response = await sendNotification(title, body, role, departamento, nivel);
     res.json({ success: true, message: "Notificación enviada correctamente", data: response.data });
   } catch (error) {
     console.error("Error al enviar notificación:", error.message);
@@ -30,4 +30,4 @@ router.post("/send-notification", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

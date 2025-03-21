@@ -1,4 +1,4 @@
-const pool = require("./db");
+import pool from "../config/db.js";
 
 const Reserva = {
     async obtenerReservasPorOrganizacion(organizacion_id) {
@@ -32,33 +32,46 @@ const Reserva = {
 
     async eliminarExpiradas() {
         const query = `
-        DELETE FROM reserva
-        WHERE finish < (NOW() AT TIME ZONE 'America/Bogota')
-        RETURNING id;
+            DELETE FROM reserva
+            WHERE finish < NOW()
+            RETURNING id;
         `;
         const { rows, rowCount } = await pool.query(query);
         return { deletedCount: rowCount, deletedIds: rows };
-    },
+    },      
 
-    async verificarDisponibilidad(place, grade, start, finish, organizacion_id) {
+    async verificarDisponibilidad(place, grade, hora_inicio, hora_final, organizacion_id) {
         const queryLugar = `
-        SELECT * FROM reserva
-        WHERE place = $1 AND (start < $3::TIMESTAMPTZ AND finish > $2::TIMESTAMPTZ) AND organizacion_id = $4;
+            SELECT * FROM reserva
+            WHERE place = $1
+            AND organizacion_id = $2
+            AND (
+                start < $3::TIMESTAMPTZ AND finish > $4::TIMESTAMPTZ
+            );
         `;
-        const resultLugar = await pool.query(queryLugar, [place, start, finish, organizacion_id]);
-        if (resultLugar.rows.length > 0)
-        return { disponible: false, conflictos: resultLugar.rows };
+        const resultLugar = await pool.query(queryLugar, [place, organizacion_id, hora_final, hora_inicio]);
+
+        if (resultLugar.rows.length > 0) {
+            return { disponible: false, conflictos: resultLugar.rows };
+        }
 
         const queryClase = `
-        SELECT * FROM reserva
-        WHERE grade = $1 AND place <> $2 AND (start < $4::TIMESTAMPTZ AND finish > $3::TIMESTAMPTZ) AND organizacion_id = $4;
+            SELECT * FROM reserva
+            WHERE grade = $1
+            AND place <> $2
+            AND organizacion_id = $3
+            AND (
+                start < $4::TIMESTAMPTZ AND finish > $5::TIMESTAMPTZ
+            );
         `;
-        const resultClase = await pool.query(queryClase, [grade, place, start, finish, organizacion_id]);
-        if (resultClase.rows.length > 0)
-        return { disponible: false, conflictos: resultClase.rows };
+        const resultClase = await pool.query(queryClase, [grade, place, organizacion_id, hora_final, hora_inicio]);
+
+        if (resultClase.rows.length > 0) {
+            return { disponible: false, conflictos: resultClase.rows };
+        }
 
         return { disponible: true };
-    },
+    }
 };
 
-module.exports = Reserva;
+export default Reserva;

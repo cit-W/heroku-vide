@@ -1,11 +1,14 @@
-const express = require("express");
-const Usuario = require("../models/Usuario");
-const Departamento = require("../models/Departamento");
+import express from "express";
+import Usuario from "../models/Usuario.js";
+import {
+  crearDepartamento, 
+  obtenerDepartamentosPorOrganizacion
+} from "../models/Departamento.js";
 const router = express.Router();
 
 router.post("/crear_departamento", async (req, res) => {
   try {
-    await Departamento.crearDepartamento(req.body);
+    await crearDepartamento(req.body);
     res.json({ success: true, message: "Espacio creado con éxito" });
   } catch (error) {
     console.error(error);
@@ -19,7 +22,7 @@ router.get("/obtener_departamento", async (req, res) => {
 
     if (orgData.length > 0) {
         const orgId = orgData[0].organizacion_id;
-        const data = await Departamento.obtenerDepartamentosPorOrganizacion(orgId);
+        const data = await obtenerDepartamentosPorOrganizacion(orgId);
         res.json({ success: true, data });
 
     } else {
@@ -36,7 +39,7 @@ router.get("/obtener_departamento", async (req, res) => {
 router.get("/obtener_departamento_single", async (req, res) => {
   try {
 
-    const data = await Departamento.obtenerDepartamentosPorOrganizacion(req.query.orgId);
+    const data = await obtenerDepartamentosPorOrganizacion(req.query.orgId);
     res.json({ success: true, data });
 
   } catch (error) {
@@ -45,4 +48,4 @@ router.get("/obtener_departamento_single", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -52,11 +52,11 @@ class UnauthorizedError extends CustomError {
     }
 }
 
-module.exports = { 
-    errorHandler, 
-    CustomError, 
-    ValidationError, 
-    DatabaseError, 
-    NotFoundError, 
-    UnauthorizedError 
-};
+export {
+    errorHandler,
+    CustomError,
+    ValidationError,
+    DatabaseError,
+    NotFoundError,
+    UnauthorizedError
+}; 

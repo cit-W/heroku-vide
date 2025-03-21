@@ -1,14 +1,13 @@
-const express = require("express");
-const Organizacion = require("../models/Organizacion");
-const Usuario = require("../models/Usuario");
-const Grado = require("../models/Grado");
-const General = require("../models/General");
-const Espacio = require("../models/Espacio");
+import express from "express";
+import Usuario from "../models/Usuario.js";
+import {crearEspacio, 
+  obtenerEspaciosPorOrganizacion
+} from "../models/Espacio.js";
 const router = express.Router();
 
 router.post("/crear_espacio", async (req, res) => {
   try {
-    await Espacio.crearEspacio(req.body);
+    await crearEspacio(req.body);
     res.json({ success: true, message: "Espacio creado con éxito" });
   } catch (error) {
     console.error(error);
@@ -22,7 +21,7 @@ router.get("/obtener_espacios", async (req, res) => {
 
     if (orgData.length > 0) {
         const orgId = orgData[0].organizacion_id;
-        const data = await Espacio.obtenerEspaciosPorOrganizacion(orgId);
+        const data = await obtenerEspaciosPorOrganizacion(orgId);
         res.json({ success: true, data });
 
     } else {
@@ -39,7 +38,7 @@ router.get("/obtener_espacios", async (req, res) => {
 router.get("/obtener_espacio_single", async (req, res) => {
   try {
 
-    const data = await Espacio.obtenerEspaciosPorOrganizacion(req.query.orgId);
+    const data = await obtenerEspaciosPorOrganizacion(req.query.orgId);
     res.json({ success: true, data });
 
   } catch (error) {
@@ -48,4 +47,4 @@ router.get("/obtener_espacio_single", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

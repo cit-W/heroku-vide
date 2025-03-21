@@ -1,14 +1,12 @@
-const express = require("express");
-const Organizacion = require("../models/Organizacion");
-const Usuario = require("../models/Usuario");
-const Grado = require("../models/Grado");
-const General = require("../models/General");
-const Espacio = require("../models/Espacio");
+import express from "express";
+import {crearOrganizacion, obtenerOrganizaciones} from "../models/Organizacion.js";
+import Usuario from "../models/Usuario.js";
+import {verificarConexion, obtenerInfoUsuario} from "../models/General.js";
 const router = express.Router();
 
 router.get("/conexion_verification", async (req, res) => {
   try {
-    const data = await General.verificarConexion();
+    const data = await verificarConexion();
     res.json({success: true});
   } catch (error) {
     console.error(error);
@@ -18,7 +16,7 @@ router.get("/conexion_verification", async (req, res) => {
 
 router.post("/crear_organizacion", async (req, res) => {
   try {
-    await Organizacion.crearOrganizacion(req.body);
+    await crearOrganizacion(req.body);
     res.json({ success: true, message: "Organización creada con éxito" });
   } catch (error) {
     console.error(error);
@@ -28,21 +26,11 @@ router.post("/crear_organizacion", async (req, res) => {
 
 router.get("/obtener_organizaciones", async (req, res) => {
   try {
-    const data = await Organizacion.obtenerOrganizaciones();
+    const data = await obtenerOrganizaciones();
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: "Error al obtener organizaciones" });
-  }
-});
-
-router.post("/crear_usuario", async (req, res) => {
-  try {
-    await Usuario.crearUsuario(req.body);
-    res.json({ success: true, message: "Usuario creado con éxito" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al crear usuario" });
   }
 });
 
@@ -62,7 +50,7 @@ router.get("/info_user", async (req, res) => {
     return res.status(400).json({ error: "No se proporcionó una cédula válida" });
   }
   try {
-    const data = await General.obtenerInfoUsuario(email);
+    const data = await obtenerInfoUsuario(email);
     
     // Verifica si data es nulo, un objeto único o un array
     if (!data) {
@@ -83,4 +71,4 @@ router.get("/info_user", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

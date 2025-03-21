@@ -1,9 +1,9 @@
-const { format } = require('date-fns');
-const express = require('express');
+import { format } from 'date-fns';
+import express from 'express';
 const router = express.Router();
-const { ValidationError, DatabaseError } = require('../middleware/errorHandler.js');
-const pool = require('../db.js');
-const helmet = require('helmet');
+import { ValidationError, DatabaseError } from '../middleware/errorHandler.js';
+import pool from '../config/db.js';
+import helmet from 'helmet';
 
 router.use(helmet());
 router.use(helmet.contentSecurityPolicy({
@@ -517,4 +517,4 @@ router.get('/list_mediagroup', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

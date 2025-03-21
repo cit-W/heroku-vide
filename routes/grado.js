@@ -1,12 +1,12 @@
-const express = require("express");
-const Organizacion = require("../models/Organizacion");
-const Usuario = require("../models/Usuario");
-const Grado = require("../models/Grado");
+import express from "express";
+import {} from "../models/Organizacion.js";
+import Usuario from "../models/Usuario.js";
+import {crearGrado, obtenerGradosPorOrganizacion} from "../models/Grado.js";
 const router = express.Router();
 
 router.post("/crear_grado", async (req, res) => {
   try {
-    await Grado.crearGrado(req.body);
+    await crearGrado(req.body);
     res.json({ success: true, message: "Grado creado con éxito" });
   } catch (error) {
     console.error(error);
@@ -20,7 +20,7 @@ router.get("/obtener_grados", async (req, res) => {
 
     if (orgData.length > 0) {
         const orgId = orgData[0].organizacion_id;
-        const data = await Grado.obtenerGradosPorOrganizacion(orgId);
+        const data = await obtenerGradosPorOrganizacion(orgId);
         res.json({ success: true, data });
 
     } else {
@@ -37,7 +37,7 @@ router.get("/obtener_grados", async (req, res) => {
 router.get("/obtener_grado_single", async (req, res) => {
   try {
 
-    const data = await Grado.obtenerGradosPorOrganizacion(req.query.orgId);
+    const data = await obtenerGradosPorOrganizacion(req.query.orgId);
     res.json({ success: true, data });
 
   } catch (error) {
@@ -46,4 +46,4 @@ router.get("/obtener_grado_single", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,11 +1,11 @@
-const express = require("express");
-const Usuario = require("../models/Usuario");
-const Role = require("../models/Role");
+import express from "express";
+import Usuario from "../models/Usuario.js";
+import {crearRole, obtenerRolePorOrganizacion} from "../models/Role.js";
 const router = express.Router();
 
 router.post("/crear_role", async (req, res) => {
   try {
-    await Role.crearRole(req.body);
+    await crearRole(req.body);
     res.json({ success: true, message: "Espacio creado con éxito" });
   } catch (error) {
     console.error(error);
@@ -19,7 +19,7 @@ router.get("/obtener_role", async (req, res) => {
 
     if (orgData.length > 0) {
         const orgId = orgData[0].organizacion_id;
-        const data = await Role.obtenerRolePorOrganizacion(orgId);
+        const data = await obtenerRolePorOrganizacion(orgId);
         res.json({ success: true, data });
 
     } else {
@@ -36,7 +36,7 @@ router.get("/obtener_role", async (req, res) => {
 router.get("/obtener_role_single", async (req, res) => {
   try {
 
-    const data = await Role.obtenerRolePorOrganizacion(req.query.orgId);
+    const data = await obtenerRolePorOrganizacion(req.query.orgId);
     res.json({ success: true, data });
 
   } catch (error) {
@@ -45,4 +45,4 @@ router.get("/obtener_role_single", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

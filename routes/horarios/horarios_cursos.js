@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const pool = require('../../db.js');
+import pool from '../../config/db.js';
 
 router.post('/crear_horario', async (req, res) => {
   const { Hora, LunesHora, MartesHora, MiercolesHora, JuevesHora, ViernesHora, nombre } = req.body;
@@ -244,4 +244,4 @@ router.get('/horario_personal', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,16 +1,15 @@
-const pool = require("../config/db");
-const NodeCache = require("node-cache");
+import pool from "../config/db.js";
+import NodeCache from "node-cache";
 
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-const General = {
-    async verificarConexion() {
+export async function verificarConexion() {
         const query = "SELECT * FROM android_mysql.usuarios";
         const { rows } = await pool.query(query);
         return rows;
-    },
+}
 
-    async obtenerInfoUsuario(email) {
+export async function obtenerInfoUsuario(email) {
         let usuarios = cache.get("usuarios");
         
         if (!usuarios) {
@@ -36,7 +35,4 @@ const General = {
         }
         
         return usuario;
-    }
-};
-
-module.exports = General;
+}

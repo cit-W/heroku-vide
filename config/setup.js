@@ -1,4 +1,4 @@
-const pool = require("./db");
+import pool from "./db.js";
 
 const setupDatabase = async () => {
     try {
@@ -6,14 +6,14 @@ const setupDatabase = async () => {
 
         // Crear la tabla de organizaciones primero
         await pool.query(`
-            -- DROP TABLE grades CASCADE;
-            -- DROP TABLE places CASCADE;
-            -- DROP TABLE users CASCADE;
-            -- DROP TABLE organizaciones CASCADE;
-            -- DROP TABLE role CASCADE;
-            -- DROP TABLE escuela CASCADE;
-            -- DROP TABLE departamento CASCADE;
-            -- DROP TABLE roles CASCADE;
+            DROP TABLE IF EXISTS reserva;
+            DROP TABLE IF EXISTS grades CASCADE;
+            DROP TABLE IF EXISTS places CASCADE;
+            DROP TABLE IF EXISTS users CASCADE;
+            DROP TABLE IF EXISTS organizaciones CASCADE;
+            DROP TABLE IF EXISTS roles CASCADE;
+            DROP TABLE IF EXISTS escuela CASCADE;
+            DROP TABLE IF EXISTS departamento CASCADE;
             CREATE TABLE IF NOT EXISTS organizaciones (
                 id VARCHAR(16) PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -46,7 +46,7 @@ const setupDatabase = async () => {
                 id SERIAL PRIMARY KEY,
                 personal_id VARCHAR(20) REFERENCES users(personal_id) ON DELETE CASCADE,
                 player_id TEXT UNIQUE NOT NULL,
-                device_type TEXT NOT NULL, -- Android, iOS, Web
+                device_type TEXT NOT NULL, 
                 last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);

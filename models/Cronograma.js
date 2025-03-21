@@ -1,8 +1,6 @@
-const pool = require("../config/database");
-const { format } = require("date-fns");
+import pool from "../config/db.js";
 
-const Cronograma = {
-    async crearEsquema(year) {
+export async function crearEsquema(year) {
         const yearBefore = Number(year) - 1;
         const schemaCurrent = `${year}`;
         const schemaBefore = `${yearBefore}`;
@@ -45,9 +43,9 @@ const Cronograma = {
         } finally {
         client.release();
         }
-    },
+    }
 
-    async crearEvento(evento) {
+export async function crearEvento(evento) {
         const eventDate = new Date(evento.fecha);
         const isoDate = eventDate.toISOString();
         const oneJan = new Date(eventDate.getFullYear(), 0, 1);
@@ -63,7 +61,4 @@ const Cronograma = {
         const values = [evento.tema, evento.acargo, evento.mediagroup_video, evento.mediagroup_sonido, isoDate, evento.descripcion, evento.lugar, resultWeek];
         await pool.query(query, values);
         return "SUCCESS";
-    },
-};
-
-module.exports = Cronograma;
+    }

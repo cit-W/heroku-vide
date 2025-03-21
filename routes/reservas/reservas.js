@@ -1,6 +1,6 @@
-const express = require("express");
-const Reserva = require("../../models/Reserva");
-const Usuario = require("../../models/Usuario"); // Se importa el modelo Usuario para obtener el orgID
+import express from "express";
+import Reserva from "../../models/Reserva.js";
+import Usuario from "../../models/Usuario.js";
 const router = express.Router();
 
 // Endpoint para obtener IDs (suponiendo que en Reserva se implemente obtenerIDs que reciba orgID)
@@ -119,4 +119,4 @@ router.post("/verificar_reserva", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

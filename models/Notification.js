@@ -1,11 +1,10 @@
-const pool = require("../config/db");
-const axios = require("axios");
+import pool from "../config/db.js";
+import axios from "axios";
 
 const ONE_SIGNAL_APP_ID = process.env.ONE_SIGNAL_APP_ID;
 const ONE_SIGNAL_API_KEY = process.env.ONE_SIGNAL_API_KEY;
 
-const Notification = {
-    async registerUser(user_id, player_id, role) {
+export async function registerUser(user_id, player_id, role) {
         const query = `
         INSERT INTO android_mysql.users (user_id, player_id, role)
         VALUES ($1, $2, $3)
@@ -27,9 +26,9 @@ const Notification = {
             }
         }
         );
-    },
+    }
 
-    async sendNotification(title, body, role, departamento, nivel) {
+export async function sendNotification(title, body, role, departamento, nivel) {
         let filters = [];
         const addTagFilter = (key, value) => {
         if (filters.length > 0) filters.push({ operator: "AND" });
@@ -57,7 +56,4 @@ const Notification = {
             }
         }
         );
-    }
-};
-
-module.exports = Notification;
+}

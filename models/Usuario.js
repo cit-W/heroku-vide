@@ -1,5 +1,5 @@
-const pool = require("../config/db");
-const bcrypt = require("bcrypt");
+import pool from "../config/db.js";
+import bcrypt from "bcrypt";
 const saltRounds = 10; // Número de iteraciones para generar la sal
 
 const Usuario = {
@@ -54,4 +54,4 @@ const Usuario = {
     }
 };
 
-module.exports = Usuario;
+export default Usuario;

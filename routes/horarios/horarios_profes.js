@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const pool = require('../../db.js');
+import pool from '../../config/db.js';
 
 router.get('/crear_horario', async (req, res) => {
     try {
@@ -243,4 +243,4 @@ router.get('/verificar_existencia', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
