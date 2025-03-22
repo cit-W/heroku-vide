@@ -17,7 +17,7 @@ export async function obtenerNombres() {
     }
 
 export async function fuzzySearch(search) {
-        let result = await this.obtenerNombres();
+        let result = await obtenerNombres();
         if (result.length > 0) {
         const fuseOptions = {
             includeScore: true,

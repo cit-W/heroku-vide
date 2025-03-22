@@ -33,7 +33,7 @@ const Reserva = {
     async eliminarExpiradas() {
         const query = `
             DELETE FROM reserva
-            WHERE finish < NOW()
+            WHERE finish < (NOW() AT TIME ZONE 'UTC')
             RETURNING id;
         `;
         const { rows, rowCount } = await pool.query(query);

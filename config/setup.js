@@ -14,6 +14,7 @@ const setupDatabase = async () => {
             DROP TABLE IF EXISTS roles CASCADE;
             DROP TABLE IF EXISTS escuela CASCADE;
             DROP TABLE IF EXISTS departamento CASCADE;
+            DROP TABLE IF EXISTS user_devices CASCADE;
             CREATE TABLE IF NOT EXISTS organizaciones (
                 id VARCHAR(16) PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -44,7 +45,7 @@ const setupDatabase = async () => {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS user_devices (
                 id SERIAL PRIMARY KEY,
-                personal_id VARCHAR(20) REFERENCES users(personal_id) ON DELETE CASCADE,
+                email VARCHAR(20) REFERENCES users(email) ON DELETE CASCADE,
                 player_id TEXT UNIQUE NOT NULL,
                 device_type TEXT NOT NULL, 
                 last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP

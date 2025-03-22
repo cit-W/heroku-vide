@@ -58,6 +58,7 @@ import trabajoSocialRoutes from './routes/trabajo_social.js';
 import cronogramaRoutes from './routes/cronograma.js';
 import citacionesRoutes from './routes/reservas/citaciones.js';
 import notificationsRoutes from './routes/notifications.js';
+import user_devicesRoutes from './routes/user_devide.js';
 
 // Use routes
 app.use('/general', general);
@@ -78,6 +79,7 @@ app.use('/trabajo_social', trabajoSocialRoutes);
 app.use('/cronograma', cronogramaRoutes);
 app.use('/citaciones', citacionesRoutes);
 app.use('/notifications', notificationsRoutes);
+app.use('/user_devices', user_devicesRoutes);
 
 // Error handling
 app.use(errorHandler);

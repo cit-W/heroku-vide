@@ -16,7 +16,7 @@ router.get("/ids", async (req, res) => {
     }
     const orgId = orgData[0].organizacion_id;
     // Asegúrate de implementar obtenerIDs en Reserva para filtrar por orgID
-    const data = await Reserva.obtenerIDs(orgId);
+    const data = await Reserva.obtenerReservasPorOrganizacion(orgId);
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);
