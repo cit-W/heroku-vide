@@ -1,5 +1,7 @@
 import express from "express";
 import Usuario from "../../models/Usuario.js";
+import { autenticarUsuario } from "../../models/Authentication.js";
+import { verifyToken } from "../../middleware/errorHandler.js";
 const router = express.Router();
 
 router.post("/create_user", async (req, res) => {
@@ -36,9 +38,9 @@ router.get("/obtener_nombres", async (req, res) => {
   }
 });
 
-router.get("/info_user", async (req, res) => {
+router.get("/info_user", verifyToken, async (req, res) => {
   try {
-    const data = await Usuario.obtenerPorCedula(req.query.cedula);
+    const data = await Usuario.obtenerOrgId(req.query.email);
     res.json(
       data.length
         ? { success: true, data }
@@ -58,10 +60,10 @@ router.post("/sign_in", async (req, res) => {
       return res.status(400).json({ success: false, message: "Email y contraseña son requeridos" });
     }
 
-    const autenticado = await Usuario.autenticarUsuario(email, password);
+    const token = await autenticarUsuario(email, password);
 
-    if (autenticado) {
-      res.json({ success: true, message: "Inicio de sesión exitoso" });
+    if (token) {
+      res.json({ success: true, message: "Inicio de sesión exitoso", token });
     } else {
       res.status(401).json({ success: false, message: "Credenciales incorrectas" });
     }

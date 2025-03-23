@@ -1,11 +1,11 @@
-import pool from "./db.js";
+import pool from './db.js';
 
 const setupDatabase = async () => {
-    try {
-        console.log("🔄 Verificando y creando tablas necesarias...");
+  try {
+    console.log('🔄 Verificando y creando tablas necesarias...');
 
-        // Crear la tabla de organizaciones primero
-        await pool.query(`
+    // Crear la tabla de organizaciones primero
+    await pool.query(`
             DROP TABLE IF EXISTS reserva;
             DROP TABLE IF EXISTS grades CASCADE;
             DROP TABLE IF EXISTS places CASCADE;
@@ -17,6 +17,7 @@ const setupDatabase = async () => {
             DROP TABLE IF EXISTS user_devices CASCADE;
             CREATE TABLE IF NOT EXISTS organizaciones (
                 id VARCHAR(16) PRIMARY KEY,
+                id_privado VARCHAR(16) PRIMARY KEY,
                 name TEXT NOT NULL,
                 contact TEXT UNIQUE NOT NULL,
                 estado VARCHAR(10) CHECK (estado IN ('free', 'premium')),
@@ -25,8 +26,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de usuarios
-        await pool.query(`
+    // Crear la tabla de usuarios
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 personal_id VARCHAR(20) UNIQUE NOT NULL,
@@ -41,19 +42,19 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de los dispositivos del usuario
-        await pool.query(`
+    // Crear la tabla de los dispositivos del usuario
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS user_devices (
                 id SERIAL PRIMARY KEY,
                 email VARCHAR(20) REFERENCES users(email) ON DELETE CASCADE,
                 player_id TEXT UNIQUE NOT NULL,
-                device_type TEXT NOT NULL, 
+                device_type TEXT NOT NULL,
                 last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        // Crear la tabla de grados
-        await pool.query(`
+    // Crear la tabla de grados
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS grades (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -62,8 +63,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de roles
-        await pool.query(`
+    // Crear la tabla de roles
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS roles (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -72,8 +73,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de departamentos
-        await pool.query(`
+    // Crear la tabla de departamentos
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS departamento (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -82,8 +83,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de escuelas
-        await pool.query(`
+    // Crear la tabla de escuelas
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS escuela (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -92,8 +93,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de lugares
-        await pool.query(`
+    // Crear la tabla de lugares
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS places (
                 id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
@@ -102,8 +103,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de reserva
-        await pool.query(`
+    // Crear la tabla de reserva
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS reserva (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -115,8 +116,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de trabajo_social
-        await pool.query(`
+    // Crear la tabla de trabajo_social
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS trabajo_social (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -127,8 +128,8 @@ const setupDatabase = async () => {
             );
         `);
 
-        // Crear la tabla de reporte_lugar
-        await pool.query(`
+    // Crear la tabla de reporte_lugar
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS reporte_lugar (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -140,12 +141,25 @@ const setupDatabase = async () => {
             );
         `);
 
-        console.log("✅ Todas las tablas han sido verificadas o creadas correctamente.");
-    } catch (error) {
-        console.error("❌ Error al configurar la base de datos:", error);
-    } finally {
-        await pool.end();
-    }
+    // Crear la tabla de estudiantes
+    await pool.query(`
+            CREATE TABLE IF NOT EXISTS students (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                personal_id TEXT NOT NULL
+                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
+            );
+        `);
+
+    console.log(
+      '✅ Todas las tablas han sido verificadas o creadas correctamente.'
+    );
+  } catch (error) {
+    console.error('❌ Error al configurar la base de datos:', error);
+  } finally {
+    await pool.end();
+  }
 };
 
 setupDatabase();
