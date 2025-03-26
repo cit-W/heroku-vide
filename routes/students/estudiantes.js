@@ -4,8 +4,19 @@ import {
   obtenerPorNombre,
   obtenerPorID,
   agregarEstudiante,
+  crearUsuario,
 } from '../../models/Estudiante.js';
 const router = express.Router();
+
+router.post("/create_user", async (req, res) => {
+  try {
+    await crearUsuario(req.body);
+    res.json({ success: true, message: "Usuario registrado con éxito" });
+  } catch (error) {
+    console.error("Error en /create_user:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 router.get('/registro_reservas', async (req, res) => {
   try {

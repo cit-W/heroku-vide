@@ -4,26 +4,35 @@ import pool from '../config/db.js';
 const SECRET_KEY = process.env.SECRET_KEY;
 
 export async function autenticarUsuario(email, password) {
-  const query = 'SELECT * FROM users WHERE email = $1';
-  const { rows } = await pool.query(query, [email]);
+  try {
+    // Busca en ambas tablas en orden
+    const tables = ['users', 'studentUser'];
+    let user = null;
 
-  if (rows.length === 0) {
-    return null; // Usuario no encontrado
+    for (const table of tables) {
+      const { rows } = await pool.query(`SELECT * FROM ${table} WHERE email = $1`, [email]);
+      if (rows.length) {
+        user = rows[0];
+        break;
+      }
+    }
+
+    if (!user) return null; // Usuario no encontrado
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return null; // Contraseña incorrecta
+
+    const payload = {
+      userId: user.id,
+      personalId: user.personal_id,
+      orgId: user.organizacion_id,
+      role: user.role,
+      email: user.email,
+    };
+
+    return jwt.sign(payload, SECRET_KEY, { expiresIn: '2h' });
+  } catch (err) {
+    console.error('Error en autenticarUsuario:', err);
+    throw new Error('Error interno al autenticar');
   }
-
-  const user = rows[0];
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return null; // Contraseña incorrecta
-  }
-
-  // Genera y devuelve el token
-  const token = jwt.sign({
-    userId: user.id,
-    orgId: user.organizacion_id,
-    role: user.role,
-    email: user.email
-  }, SECRET_KEY, { expiresIn: '2h' });
-
-  return token;
 }

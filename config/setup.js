@@ -6,41 +6,57 @@ const setupDatabase = async () => {
 
     // Crear la tabla de organizaciones primero
     await pool.query(`
-            DROP TABLE IF EXISTS reserva;
-            DROP TABLE IF EXISTS grades CASCADE;
-            DROP TABLE IF EXISTS places CASCADE;
-            DROP TABLE IF EXISTS users CASCADE;
-            DROP TABLE IF EXISTS organizaciones CASCADE;
-            DROP TABLE IF EXISTS roles CASCADE;
-            DROP TABLE IF EXISTS escuela CASCADE;
-            DROP TABLE IF EXISTS departamento CASCADE;
-            DROP TABLE IF EXISTS user_devices CASCADE;
-            CREATE TABLE IF NOT EXISTS organizaciones (
-                id VARCHAR(16) PRIMARY KEY,
-                id_privado VARCHAR(16) PRIMARY KEY,
-                name TEXT NOT NULL,
-                contact TEXT UNIQUE NOT NULL,
-                estado VARCHAR(10) CHECK (estado IN ('free', 'premium')),
-                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                fecha_vencimiento TIMESTAMP
-            );
-        `);
+      DROP TABLE IF EXISTS reserva;
+      DROP TABLE IF EXISTS grades CASCADE;
+      DROP TABLE IF EXISTS places CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+      DROP TABLE IF EXISTS roles CASCADE;
+      DROP TABLE IF EXISTS escuela CASCADE;
+      DROP TABLE IF EXISTS departamento CASCADE;
+      DROP TABLE IF EXISTS user_devices CASCADE;
+      DROP TABLE IF EXISTS studentUser CASCADE;
+      DROP TABLE IF EXISTS students CASCADE;
+      DROP TABLE IF EXISTS reporte_lgar CASCADE;
+      DROP TABLE IF EXISTS organizaciones CASCADE;
+      CREATE TABLE IF NOT EXISTS organizaciones (
+          id VARCHAR(16) PRIMARY KEY,
+          name TEXT NOT NULL,
+          contact TEXT UNIQUE NOT NULL,
+          estado VARCHAR(10) CHECK (estado IN ('free', 'premium')),
+          fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          fecha_vencimiento TIMESTAMP
+      );
+    `);
 
     // Crear la tabla de usuarios
     await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                personal_id VARCHAR(20) UNIQUE NOT NULL,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
-                role TEXT NOT NULL,
-                departamento TEXT NOT NULL,
-                escuela TEXT NOT NULL,
-                curso TEXT NOT NULL
-            );
-        `);
+      CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          personal_id VARCHAR(20) UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE,
+          role TEXT NOT NULL,
+          departamento TEXT NOT NULL,
+          escuela TEXT NOT NULL,
+          curso TEXT NOT NULL
+      );
+    `);
+
+    // Crear la tabla de usuarios de estudiantes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS studentUser (
+          id SERIAL PRIMARY KEY,
+          personal_id VARCHAR(20) UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          grade TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'student',
+          organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
+      );
+  `);
 
     // Crear la tabla de los dispositivos del usuario
     await pool.query(`
@@ -147,7 +163,7 @@ const setupDatabase = async () => {
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 grade TEXT NOT NULL,
-                personal_id TEXT NOT NULL
+                personal_id TEXT NOT NULL,
                 organizacion_id VARCHAR(16) REFERENCES organizaciones(id) ON DELETE CASCADE
             );
         `);

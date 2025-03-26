@@ -10,29 +10,30 @@ export async function verificarConexion() {
 }
 
 export async function obtenerInfoUsuario(email) {
-        let usuarios = cache.get("usuarios");
-        
-        if (!usuarios) {
-            // Consulta SQL que excluye password y org_id
-            const query = `SELECT personal_id, name, email, role, departamento, escuela, curso
-                            FROM users`;
-            
-            try {
-                const dbResult = await pool.query(query);
-                usuarios = dbResult.rows;
-                cache.set("usuarios", usuarios); // Almacena en caché
-            } catch (error) {
-                console.error("Error al obtener usuarios:", error);
-                throw new Error("Error en la consulta de usuarios");
-            }
-        }
-        
-        // Filtra el usuario por personal_id, convirtiendo ambos a string para comparación
-        const usuario = usuarios.find((user) => String(user.email) === String(email));
-        
-        if (!usuario) {
-            return null;
-        }
-        
-        return usuario;
+  try {
+    // Intenta leer del caché
+    let usuarios = cache.get('usuarios');
+    if (!usuarios) {
+      // Obtiene datos de ambas tablas (sin password ni org_id)
+      const query = `
+        SELECT personal_id, name, email, role, departamento, escuela, curso
+        FROM users
+        WHERE email = $1
+        UNION
+        SELECT personal_id, name, email, role, NULL AS departamento, NULL AS escuela, NULL AS curso
+        FROM studentUser
+        WHERE email = $1
+      `;
+      const { rows } = await pool.query(query, [email]);
+      usuarios = rows;
+      cache.set('usuarios', usuarios);
+    }
+
+    // Busca el usuario por email (case‑insensitive)
+    const usuario = usuarios.find(u => u.email.toLowerCase() === email.toLowerCase());
+    return usuario ?? null;
+  } catch (error) {
+    console.error('Error en obtenerInfoUsuario:', error);
+    throw new Error('Error interno al obtener información de usuario');
+  }
 }

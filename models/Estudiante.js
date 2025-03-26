@@ -53,3 +53,32 @@ export async function agregarEstudiante(name, personal_id, rh, grade, organizaci
   const result = await pool.query(query, values);
   return result;
 }
+
+export async function crearUsuario({
+    personal_id,
+    name,
+    email,
+    password,
+    grade,
+    organizacion_id
+  }) {
+    // Hasheamos la contraseña de forma asíncrona
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const query = `
+        INSERT INTO studentUser (personal_id, name, email, password, grade, organizacion_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (personal_id) DO UPDATE
+        SET name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, departamento = EXCLUDED.departamento,
+            escuela = EXCLUDED.escuela, curso = EXCLUDED.curso;
+        `;
+    // Utilizamos el hash de la contraseña en lugar del password en texto claro
+    await pool.query(query, [
+      personal_id,
+      name,
+      email,
+      hashedPassword,
+      grade,
+      organizacion_id,
+    ]);
+  }
