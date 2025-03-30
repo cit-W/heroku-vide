@@ -41,6 +41,7 @@ router.get("/obtener_nombres", async (req, res) => {
 router.get("/info_user", verifyToken, async (req, res) => {
   try {
     const data = await Usuario.obtenerOrgId(req.query.email);
+    console.log("Datos obtenidos:", data); // <-- Agrega este log
     res.json(
       data.length
         ? { success: true, data }

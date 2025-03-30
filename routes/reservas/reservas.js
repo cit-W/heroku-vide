@@ -33,6 +33,7 @@ router.get("/registro_reservas", async (req, res) => {
   try {
     const data = await Reserva.obtenerReservaPorId(id);
     if (data) {
+      console.log(data)
       res.json({ success: true, data });
     } else {
       res.status(404).json({ success: false, data: "Reserva no encontrada" });

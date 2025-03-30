@@ -56,10 +56,16 @@ const Usuario = {
   },
 
   async obtenerOrgId(email) {
-    const query = 'SELECT organizacion_id FROM users WHERE email = $1';
-    const { rows } = await pool.query(query, [email]);
-    return rows;
+    let query = 'SELECT organizacion_id FROM users WHERE email = $1';
+    let result = await pool.query(query, [email]);
+
+    if (result.rowCount === 0) {
+        query = 'SELECT organizacion_id FROM studentUser WHERE email = $1';
+        result = await pool.query(query, [email]);
+    }
+
+    return result.rows;
   },
-};
+}
 
 export default Usuario;
