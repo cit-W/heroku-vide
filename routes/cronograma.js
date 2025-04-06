@@ -306,8 +306,6 @@ router.get('/week_events', async (req, res) => {
     );
     var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
 
-    console.log(result_week);
-
     const yearActual = format(new Date(), 'yyyy');
     const monthActual = format(new Date(), 'MM');
 
@@ -342,8 +340,6 @@ router.get('/next_events', async (req, res) => {
       (currentdate - oneJan) / (24 * 60 * 60 * 1000)
     );
     var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
-
-    console.log(result_week);
 
     const yearActual = format(new Date(), 'yyyy');
     const monthActual = format(new Date(), 'MM');

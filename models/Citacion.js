@@ -1,13 +1,14 @@
 import { format, parse } from "date-fns";
 import pool from "../config/db.js";
 
-export async function crearTabla(person) {
-        const query = `
-        CREATE TABLE IF NOT EXISTS citaciones."${person}" (
+export async function crearTabla() {
+  const query = `
+        CREATE TABLE IF NOT EXISTS citaciones (
                 id SERIAL PRIMARY KEY,
                 topic VARCHAR(50) NOT NULL,
                 tutor VARCHAR(35),
                 student_id INTEGER NOT NULL,
+                name VARCHAR(50) NOT NULL,
                 date TIMESTAMP NOT NULL,
                 notes TEXT,
                 status VARCHAR(20) NOT NULL DEFAULT 'Pendiente'
@@ -16,30 +17,52 @@ export async function crearTabla(person) {
         await pool.query(query);
 }
 
-export async function crearCita({ person, topic, tutor, student_id, date, notes, status }) {
-        const parsedDate = parse(date, "dd-MM-yyyy HH:mm", new Date());
-        const formattedDate = format(parsedDate, "yyyy-MM-dd HH:mm");
+export async function crearCita({
+  topic,
+  tutor,
+  student_id,
+  name,
+  date,
+  notes,
+  status,
+}) {
+  await crearTabla();
+  const parsedDate = parse(date, 'dd-MM-yyyy HH:mm', new Date());
+  const formattedDate = format(parsedDate, 'yyyy-MM-dd HH:mm');
 
-        await this.crearEsquema();
-        await this.crearTabla(person);
-
-        const query = `
-        INSERT INTO citaciones."${person}" (topic, tutor, student_id, date, notes, status)
-        VALUES ($1, $2, $3, $4, $5, $6);
+  const query = `
+        INSERT INTO citaciones (topic, tutor, student_id, name, date, notes, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7);
         `;
-        await pool.query(query, [topic, tutor, student_id, formattedDate, notes, status]);
+  await pool.query(query, [
+    topic,
+    tutor,
+    student_id,
+    name,
+    formattedDate,
+    notes,
+    status,
+  ]);
 }
 
-export async function obtenerCitas(person, status) {
-        const query = `SELECT * FROM citaciones."${person}" WHERE status = $1`;
-        const { rows } = await pool.query(query, [status]);
-        return rows;
+export async function obtenerCitas(name, status) {
+  await crearTabla();
+  const query = `SELECT * FROM citaciones WHERE name = $1 AND status = $2;`;
+  const { rows } = await pool.query(query, [name, status]);
+  return rows;
 }
 
-export async function actualizarCita({ person, id, topic, tutor, date, notes, status }) {
-        let updateFields = [];
-        let values = [];
-        let counter = 1;
+export async function actualizarCita({
+  id,
+  topic,
+  tutor,
+  date,
+  notes,
+  status,
+}) {
+  let updateFields = [];
+  let values = [];
+  let counter = 1;
 
         if (topic) updateFields.push(`topic = $${counter++}`), values.push(topic);
         if (tutor) updateFields.push(`tutor = $${counter++}`), values.push(tutor);
@@ -54,9 +77,9 @@ export async function actualizarCita({ person, id, topic, tutor, date, notes, st
         if (updateFields.length === 0) throw new Error("No hay campos para actualizar");
         values.push(id);
 
-        const query = `
-        UPDATE citaciones."${person}"
-        SET ${updateFields.join(", ")}
+  const query = `
+        UPDATE citaciones
+        SET ${updateFields.join(', ')}
         WHERE id = $${counter};
         `;
         await pool.query(query, values);
@@ -65,7 +88,7 @@ export async function actualizarCita({ person, id, topic, tutor, date, notes, st
 export async function obtenerTablas() {
         const query = `
         SELECT table_name FROM information_schema.tables
-        WHERE table_schema = 'citaciones' ORDER BY table_name ASC;
+        WHERE table_schema = 'public' AND table_name = 'citaciones';
         `;
         const { rows } = await pool.query(query);
         return rows.map((row) => ({ name: row.table_name }));

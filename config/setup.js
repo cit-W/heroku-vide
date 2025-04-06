@@ -144,6 +144,20 @@ const setupDatabase = async () => {
             );
         `);
 
+        // Crear la tabla de citaciones
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS citaciones (
+              id SERIAL PRIMARY KEY,
+              topic VARCHAR(50) NOT NULL,
+              tutor VARCHAR(35),
+              student_id INTEGER NOT NULL,
+              name VARCHAR(50) NOT NULL,
+              date TIMESTAMP NOT NULL,
+              notes TEXT,
+              status VARCHAR(20) NOT NULL DEFAULT 'Pendiente'
+          );
+        `);
+
     // Crear la tabla de reporte_lugar
     await pool.query(`
             CREATE TABLE IF NOT EXISTS reporte_lugar (

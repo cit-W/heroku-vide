@@ -1,44 +1,82 @@
-import express from "express";
-import {agregar, obtenerIDs, obtenerPorID} from "../models/TrabajoSocial.js";
+import express from 'express';
+import Usuario from "../models/Usuario.js";
+import { agregar, obtenerIDs, obtenerPorID } from '../models/TrabajoSocial.js';
 const router = express.Router();
 
-router.post("/add_trabajo_social", async (req, res) => {
-  const { profesor, descripcion, cantidad_horas, cuando } = req.body;
-  if (!profesor || !descripcion || !cantidad_horas || !cuando) {
-    return res.status(400).json({ error: "Faltan datos" });
+router.post('/add_trabajo_social', async (req, res) => {
+  const { name, description, hours, date, email } = req.body;
+
+  if (!name || !description || !hours || !date || !email) {
+    return res.status(400).json({ error: 'Faltan datos' });
   }
 
   try {
-    await agregar(profesor, descripcion, cantidad_horas, cuando);
-    res.json({ message: "Trabajo social registrado" });
+    const orgData = await Usuario.obtenerOrgId(email);
+    if (orgData.length === 0) {
+      return res.status(404).json({ success: false, error: "Organización no encontrada" });
+    }
+
+    const orgId = orgData[0].organizacion_id;
+    await agregar(name, description, hours, date, orgId);
+    res.json({ message: 'Trabajo social registrado' });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al registrar el trabajo social" });
+    console.error("❌ Error al registrar trabajo social:", error);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
 
-router.get("/ids", async (req, res) => {
+router.get('/ids', async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email es requerido' });
+  }
+
   try {
-    const data = await obtenerIDs();
-    res.json(data ? { success: true, data } : { success: false, message: "No se encontraron registros" });
+    const orgData = await Usuario.obtenerOrgId(email);
+
+    if (orgData.length === 0) {
+      return res.status(404).json({ success: false, error: "Organización no encontrada" });
+    }
+
+    const orgId = orgData[0].organizacion_id;
+    const data = await obtenerIDs(orgId);
+
+    res.json({ success: true, data });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al obtener los IDs" });
+    console.error("❌ Error al obtener IDs:", error);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
 
-router.get("/registro_trabajo_social", async (req, res) => {
-  const { id } = req.query;
-  if (!id) {
-    return res.status(400).json({ error: "No se proporcionó un ID válido" });
+router.get('/registro_trabajo_social', async (req, res) => {
+  const { id, email } = req.query;
+
+  if (!id || !email) {
+    return res.status(400).json({ error: 'ID y email son requeridos' });
   }
 
   try {
-    const data = await obtenerPorID(id);
-    res.json(data ? { success: true, data } : { success: false, message: "No se encontraron registros" });
+    const orgData = await Usuario.obtenerOrgId(email);
+
+    if (orgData.length === 0) {
+      return res.status(404).json({ success: false, error: "Organización no encontrada" });
+    }
+
+    const orgId = orgData[0].organizacion_id;
+    const data = await obtenerPorID(id, orgId);
+
+    if (!data) {
+      return res.status(404).json({ success: false, message: 'Registro no encontrado' });
+    }
+
+    res.json({ success: true, data });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al obtener los registros" });
+    console.error("❌ Error al obtener registro:", error);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
 

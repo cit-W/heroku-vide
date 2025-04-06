@@ -90,7 +90,6 @@ app.get('/db', async (req, res) => {
     const client = await pool.connect();
     const result = await client.query('SELECT * FROM restaurante.lista_general');
     const personas = result.rows;
-    console.log(personas)
     res.render('pages/db', { personas });
     client.release();
   } catch (err) {
