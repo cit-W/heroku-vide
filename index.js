@@ -15,14 +15,16 @@ const __dirname = dirname(__filename);
 
 // Helmet configuration
 app.use(helmet());
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", "data:", "https:"],
-  }
-}));
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  })
+);
 app.use(helmet.xssFilter());
 app.use(helmet.noSniff());
 app.use(helmet.hidePoweredBy());
@@ -41,45 +43,45 @@ app.get('/', (req, res) => res.render('pages/index'));
 
 // Import routes
 import general from './routes/general.js';
+import roleRoutes from './routes/role.js';
+import userRoutes from './routes/auth/usuarios.js';
+import gradoRoutes from './routes/grado.js';
+import espacioRoutes from './routes/espacio.js';
 import accountRoutes from './routes/auth/account.js';
+import escuelaRoutes from './routes/escuela.js';
+import rastrearRoutes from './routes/rastrear.js';
+import reportesRoutes from './routes/reports/reportes.js';
+import cronogramaRoutes from './routes/cronograma.js';
+import user_devicesRoutes from './routes/user_devide.js';
+import reservationsRoutes from './routes/reservations/reservations.js';
+import departamentoRoutes from './routes/departamento.js';
+import appointmentsRoutes from './routes/reservations/appointments.js';
+import trabajoSocialRoutes from './routes/social_work.js';
+import notificationsRoutes from './routes/notifications.js';
 import horariosCursosRoutes from './routes/horarios/horarios_cursos.js';
 import horariosProfesRoutes from './routes/horarios/horarios_profes.js';
 import infoEstudiantesRoutes from './routes/students/estudiantes.js';
-import rastrearRoutes from './routes/rastrear.js';
-import reportesRoutes from './routes/reports/reportes.js';
-import reservasRoutes from './routes/reservas/reservas.js';
-import userRoutes from './routes/auth/usuarios.js';
-import espacioRoutes from './routes/espacio.js';
-import gradoRoutes from './routes/grado.js';
-import departamentoRoutes from './routes/departamento.js';
-import escuelaRoutes from './routes/escuela.js';
-import roleRoutes from './routes/role.js';
-import trabajoSocialRoutes from './routes/trabajo_social.js';
-import cronogramaRoutes from './routes/cronograma.js';
-import citacionesRoutes from './routes/reservas/citaciones.js';
-import notificationsRoutes from './routes/notifications.js';
-import user_devicesRoutes from './routes/user_devide.js';
 
 // Use routes
+app.use('/role', roleRoutes);
+app.use('/user', userRoutes);
+app.use('/grado', gradoRoutes);
 app.use('/general', general);
 app.use('/account', accountRoutes);
+app.use('/espacio', espacioRoutes);
+app.use('/escuela', escuelaRoutes);
+app.use('/rastrear', rastrearRoutes);
+app.use('/reportes', reportesRoutes);
+app.use('/cronograma', cronogramaRoutes);
+app.use('/social_work', trabajoSocialRoutes);
+app.use('/departamento', departamentoRoutes);
+app.use('/reservations', reservationsRoutes);
+app.use('/appointments', appointmentsRoutes);
+app.use('/user_devices', user_devicesRoutes);
+app.use('/notifications', notificationsRoutes);
 app.use('/horarios_cursos', horariosCursosRoutes);
 app.use('/horarios_profes', horariosProfesRoutes);
 app.use('/info_estudiantes', infoEstudiantesRoutes);
-app.use('/rastrear', rastrearRoutes);
-app.use('/reportes', reportesRoutes);
-app.use('/reservas', reservasRoutes);
-app.use('/user', userRoutes);
-app.use('/espacio', espacioRoutes);
-app.use('/grado', gradoRoutes);
-app.use('/departamento', departamentoRoutes);
-app.use('/role', roleRoutes);
-app.use('/escuela', escuelaRoutes);
-app.use('/trabajo_social', trabajoSocialRoutes);
-app.use('/cronograma', cronogramaRoutes);
-app.use('/citaciones', citacionesRoutes);
-app.use('/notifications', notificationsRoutes);
-app.use('/user_devices', user_devicesRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -88,13 +90,15 @@ app.use(errorHandler);
 app.get('/db', async (req, res) => {
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM restaurante.lista_general');
+    const result = await client.query(
+      'SELECT * FROM restaurante.lista_general'
+    );
     const personas = result.rows;
     res.render('pages/db', { personas });
     client.release();
   } catch (err) {
     console.error(err);
-    res.send("Error " + err);
+    res.send('Error ' + err);
   }
 });
 
@@ -106,12 +110,6 @@ async function createUsersTableIfNotExists() {
       role VARCHAR(50) NOT NULL
     );
   `;
-  try {
-    await pool.query(createQuery);
-    console.log('Tabla users verificada/creada correctamente.');
-  } catch (error) {
-    console.error('Error al crear/verificar la tabla users:', error.message);
-  }
 }
 
 // Llamamos a la función al iniciar el servidor

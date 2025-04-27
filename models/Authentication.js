@@ -6,11 +6,14 @@ const SECRET_KEY = process.env.SECRET_KEY;
 export async function autenticarUsuario(email, password) {
   try {
     // Busca en ambas tablas en orden
-    const tables = ['users', 'studentUser'];
+    const tables = ['users', 'student_users'];
     let user = null;
 
     for (const table of tables) {
-      const { rows } = await pool.query(`SELECT * FROM ${table} WHERE email = $1`, [email]);
+      const { rows } = await pool.query(
+        `SELECT * FROM ${table} WHERE email = $1`,
+        [email]
+      );
       if (rows.length) {
         user = rows[0];
         break;

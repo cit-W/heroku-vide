@@ -22,12 +22,10 @@ router.post('/crear_horario', async (req, res) => {
     !ViernesHora ||
     !nombre
   ) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        error: 'Faltan datos para completar el registro',
-      });
+    return res.status(400).json({
+      success: false,
+      error: 'Faltan datos para completar el registro',
+    });
   }
 
   try {
@@ -59,12 +57,10 @@ router.get('/crear_tabla_cursos', async (req, res) => {
   const curso = req.query.curso;
 
   if (!profesor || !curso) {
-    return res
-      .status(400)
-      .json({
-        success: 0,
-        error: 'No se proporcionó un profesor o curso válido',
-      });
+    return res.status(400).json({
+      success: 0,
+      error: 'No se proporcionó un profesor o curso válido',
+    });
   }
 
   try {
@@ -186,12 +182,10 @@ router.get('/registro_horario_account', async (req, res) => {
       const tables = result.rows.map((row) => ({ name: row.table_name }));
       res.json({ success: true, data: tables });
     } else {
-      res
-        .status(404)
-        .json({
-          success: false,
-          message: 'No hay tablas que coincidan con el nombre proporcionado',
-        });
+      res.status(404).json({
+        success: false,
+        message: 'No hay tablas que coincidan con el nombre proporcionado',
+      });
     }
   } catch (err) {
     console.error(err);
@@ -219,7 +213,7 @@ router.get('/registro_horario', async (req, res) => {
     } else {
       res.json({
         success: false,
-        message: 'No se encontraron reservas para el ID proporcionado',
+        message: 'No se encontraron reservations para el ID proporcionado',
       });
     }
   } catch (err) {

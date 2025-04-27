@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  obtenerReservas,
+  obtenerreservations,
   obtenerPorNombre,
   obtenerPorID,
   agregarEstudiante,
@@ -8,27 +8,27 @@ import {
 } from '../../models/Estudiante.js';
 const router = express.Router();
 
-router.post("/create_user", async (req, res) => {
+router.post('/create_user', async (req, res) => {
   try {
     await crearUsuario(req.body);
-    res.json({ success: true, message: "Usuario registrado con éxito" });
+    res.json({ success: true, message: 'Usuario registrado con éxito' });
   } catch (error) {
-    console.error("Error en /create_user:", error);
+    console.error('Error en /create_user:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.get('/registro_reservas', async (req, res) => {
+router.get('/registro_reservations', async (req, res) => {
   try {
-    const data = await obtenerReservas();
+    const data = await obtenerreservations();
     res.json(
       data
         ? { success: true, data }
-        : { success: false, message: 'No se encontraron reservas' }
+        : { success: false, message: 'No se encontraron reservations' }
     );
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al obtener reservas' });
+    res.status(500).json({ error: 'Error al obtener reservations' });
   }
 });
 
@@ -88,12 +88,10 @@ router.post('/uploadStudents', async (req, res) => {
   try {
     const students = req.body; // Se espera un arreglo de objetos { name, id, rh, grade }
     if (!Array.isArray(students)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Se esperaba un arreglo de estudiantes',
-        });
+      return res.status(400).json({
+        success: false,
+        message: 'Se esperaba un arreglo de estudiantes',
+      });
     }
 
     // Insertar cada estudiante en la base de datos
