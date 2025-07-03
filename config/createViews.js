@@ -66,6 +66,7 @@ const createViews = async () => {
     console.log('✅ Vista appointments_details creada correctamente.');
 
     // Vista 4: reservation_details
+    await pool.query(`DROP VIEW IF EXISTS reservation_details;`);
     await pool.query(`
       CREATE OR REPLACE VIEW reservation_details AS
       SELECT
@@ -75,7 +76,9 @@ const createViews = async () => {
         p.place,
         r.start,
         r.finish,
-        o.name AS organization
+        r.status, -- Añadida la columna status
+        r.organizacion_id AS organizacion_id, -- Añadido el ID de la organización
+        o.name AS organization_name -- Renombrado para claridad
       FROM reservations r
       JOIN users u ON r.user_id = u.id -- Añadida la unión con la tabla users
       JOIN grades g ON r.grade_id = g.id

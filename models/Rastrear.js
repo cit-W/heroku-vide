@@ -1,45 +1,28 @@
 import pool from '../config/db.js';
 import NodeCache from 'node-cache';
-import Fuse from 'fuse.js';
 
 // Inicializar el caché
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-export async function getNames() {
-  let result = cache.get('nombres');
+export async function getNames(organizacion_id) {
+  let result = cache.get(`nombres_${organizacion_id}`);
   if (!result) {
-    const query = 'SELECT * FROM android_mysql.id2024sql';
-    const dbResult = await pool.query(query);
+    const query = 'SELECT * FROM students WHERE organizacion_id = $1';
+    const dbResult = await pool.query(query, [organizacion_id]);
     result = dbResult.rows;
-    cache.set('nombres', result);
+    cache.set(`nombres_${organizacion_id}`, result);
   }
   return result;
 }
 
-export async function getNamesAct(organizacion_id) {
-  const sanitizedOrganizacionId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
-  const tableName = 'student_' + sanitizedOrganizacionId;
-  let result = cache.get('nombres');
-  if (!result) {
-    const query = 'SELECT name FROM android_mysql.id2024sql';
-    const dbResult = await pool.query(query);
-    result = dbResult.rows;
-    cache.set('nombres', result);
-  }
-  return result;
-}
-
-export async function fuzzySearch(search) {
-  let result = await getNames();
-  if (result.length > 0) {
-    const fuseOptions = {
-      includeScore: true,
-      threshold: 0.4,
-      keys: ['nombre'],
-    };
-    const fuse = new Fuse(result, fuseOptions);
-    const searchResults = fuse.search(search);
-    return searchResults.map((r) => r.item);
-  }
-  return [];
+export async function fuzzySearch(search, organizacion_id) {
+  const query = `
+    SELECT *
+    FROM students
+    WHERE organizacion_id = $1
+      AND word_similarity(name, $2) > 0.12 -- Umbral de similitud de palabra
+    ORDER BY similarity(name, $2) DESC;
+  `;
+  const dbResult = await pool.query(query, [organizacion_id, search]);
+  return dbResult.rows;
 }

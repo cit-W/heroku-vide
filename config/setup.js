@@ -43,7 +43,7 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS grades CASCADE;
       DROP TABLE IF EXISTS organizations CASCADE;
       DROP TABLE IF EXISTS status CASCADE;
-      
+
     `);
 
     // Crear tabla de estado
@@ -196,6 +196,7 @@ const setupDatabase = async () => {
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "finish" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
+        "status" VARCHAR(50) NOT NULL DEFAULT 'upcoming',
         PRIMARY KEY ("id")
       );
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id"); -- Nueva FK
@@ -292,7 +293,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    
+
 
     console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');
     console.log('🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.');

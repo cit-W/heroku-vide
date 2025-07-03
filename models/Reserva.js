@@ -93,13 +93,15 @@ const Reservation = {
 
   async deleteExpired(client = pool) {
     const query = `
-    DELETE FROM reservations
+    UPDATE reservations
+    SET status = 'past'
     WHERE finish < (NOW() AT TIME ZONE 'UTC')
+    AND status = 'upcoming' -- Solo actualiza si aún no está marcada como pasada
     RETURNING id;
   `;
     const { rows, rowCount } = await client.query(query);
-    const deletedIds = rows.map((r) => r.id);
-    return { deletedCount: rowCount, deletedIds };
+    const updatedIds = rows.map((r) => r.id);
+    return { updatedCount: rowCount, updatedIds };
   },
 
   async checkAvailability(
