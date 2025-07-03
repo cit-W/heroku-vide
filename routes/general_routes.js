@@ -3,7 +3,7 @@ import {
   createOrganization,
   getOrganizations,
 } from '../models/Organizacion.js';
-import User from '../models/Usuario.js';
+import User from '../models/User.js';
 import { checkConnection, getUserInfo } from '../models/General.js';
 const router = express.Router();
 

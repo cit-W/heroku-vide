@@ -53,13 +53,12 @@ router.post('/create-schedule', async (req, res) => {
 });
 
 router.get('/create-course-table', async (req, res) => {
-  const profesor = req.query.profesor;
   const curso = req.query.curso;
 
-  if (!profesor || !curso) {
+  if (!curso) {
     return res.status(400).json({
       success: 0,
-      error: 'No se proporcionó un profesor o curso válido',
+      error: 'No se proporcionó un curso válido',
     });
   }
 
@@ -103,7 +102,7 @@ router.post('/delete-schedule/:name', async (req, res) => {
 
   try {
     // Construimos la consulta de forma dinámica, ya que no se pueden usar parámetros en nombres de tabla
-    const query = `DROP TABLE IF EXISTS horarios_profes."${name}"`;
+    const query = `DROP TABLE IF EXISTS horarios_cursos."${name}"`;
 
     // Ejecutamos la consulta (DROP TABLE no devuelve filas, así que no usamos result.rows)
     await pool.query(query);
@@ -160,7 +159,7 @@ router.get('/delete-all-schedules', async (req, res) => {
 
 router.get('/get-account-schedule-record', async (req, res) => {
   const { name } = req.query;
-  nameCorrect = name.toLowerCase();
+  const nameCorrect = name.toLowerCase();
 
   if (!nameCorrect) {
     return res

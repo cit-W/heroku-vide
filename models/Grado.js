@@ -8,7 +8,7 @@ export async function createGrade({ id, name, organizacion_id }, client = pool) 
     SET grade = EXCLUDED.grade,
         organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await client.query(query, [id, nombre, organizacion_id]);
+  await client.query(query, [id, name, organizacion_id]);
 }
 
 export async function getGradesByOrganization(organizacion_id, client = pool) {

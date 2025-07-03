@@ -150,7 +150,7 @@ router.post('/delete-schedule/:name', async (req, res) => {
 router.get('/get-account-schedule-record', async (req, res) => {
   try {
     const { name } = req.query;
-    nameCorrect = name.toLowerCase();
+    const nameCorrect = name.toLowerCase();
 
     if (!nameCorrect) {
       res.status(400).send("El parámetro 'name' es requerido.");
@@ -269,10 +269,10 @@ router.get('/check-existence', async (req, res) => {
             SELECT table_name
             FROM information_schema.tables
             WHERE table_schema = 'horarios_profes'
-			AND table_name = '$1'
+			AND table_name = $1
             ORDER BY table_name ASC;
         `;
-    const result = await client.query(query, [IdProfe]);
+    const result = await client.query(query, [profe]);
     client.release();
 
     if (result.rows.length > 0) {

@@ -9,7 +9,7 @@ export async function createPlace({ id, name, organizacion_id }, client = pool) 
       SET place = EXCLUDED.place,
           organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await client.query(query, [id, nombre, organizacion_id]);
+  await client.query(query, [id, name, organizacion_id]);
 }
 
 // Obtener espacios por organización

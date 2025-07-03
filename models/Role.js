@@ -6,7 +6,7 @@ export async function createRole({ id, name, organizacion_id }, client = pool) {
         VALUES ($1, $2, $3)
         ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;
         `;
-        await client.query(query, [id, nombre, organizacion_id]);
+        await client.query(query, [id, name, organizacion_id]);
 }
 
 export async function getRolesByOrganization(organizacion_id, client = pool) {

@@ -9,7 +9,7 @@ export async function createDepartment({ id, name, organizacion_id }, client = p
       SET department = EXCLUDED.department,
           organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await client.query(query, [id, nombre, organizacion_id]);
+  await client.query(query, [id, name, organizacion_id]);
 }
 
 // Obtener departamentos por organización

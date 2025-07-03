@@ -3,14 +3,14 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
 const SECRET_KEY = process.env.SECRET_KEY;
 
-export async function authenticateUser(email, password) {
+export async function authenticateUser(email, password, client = pool) {
   try {
     // Busca en ambas tablas en orden
     const tables = ['users', 'student_users'];
     let user = null;
 
     for (const table of tables) {
-      const { rows } = await pool.query(
+      const { rows } = await client.query(
         `SELECT * FROM ${table} WHERE email = $1`,
         [email]
       );

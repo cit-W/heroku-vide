@@ -1,11 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
-import {
-  crearCita,
-  obtenerCitas,
-  actualizarCita,
-  obtenerTablas,
-} from '../../models/Citacion.js';
+import {createAppointment,getAppointments,updateAppointment,getTables,} from '../../models/Citacion.js';
 import pool from '../../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
@@ -27,7 +22,7 @@ router.use(verifyToken, async (req, res, next) => {
 router.post('/create_citation', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await crearCita({ ...req.query, organizacion_id: orgId }, req.dbClient);
+    await createAppointment({ ...req.query, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Citación creada con éxito' });
   } catch (error) {
     next(error);
@@ -41,7 +36,7 @@ router.get('/get_citations', async (req, res, next) => {
     if (!person || !status)
       return res.status(400).json({ error: 'Faltan parámetros' });
 
-    const data = await obtenerCitas(person, status, orgId, req.dbClient);
+    const data = await getAppointments(person, status, orgId, req.dbClient);
     res.json(
       data.length
         ? { success: true, data }
@@ -55,7 +50,7 @@ router.get('/get_citations', async (req, res, next) => {
 router.put('/update_citation', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await actualizarCita({ ...req.query, organizacion_id: orgId }, req.dbClient);
+    await updateAppointment({ ...req.query, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Citación actualizada' });
   } catch (error) {
     next(error);
@@ -65,7 +60,7 @@ router.put('/update_citation', async (req, res, next) => {
 router.get('/ids_appointments', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerTablas(orgId, req.dbClient);
+    const data = await getTables(orgId, req.dbClient);
     res.json(
       data.length
         ? { success: true, data }

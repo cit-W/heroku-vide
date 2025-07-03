@@ -30,7 +30,7 @@ export async function getNamesAct(organizacion_id) {
 }
 
 export async function fuzzySearch(search) {
-  let result = await obtenerNombres();
+  let result = await getNames();
   if (result.length > 0) {
     const fuseOptions = {
       includeScore: true,

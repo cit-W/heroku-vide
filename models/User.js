@@ -9,20 +9,20 @@ const User = {
     email,
     password,
     organizacion_id,
-    role,
-    departamento,
-    escuela,
-    curso,
+    role_id,
+    department_id,
+    education_levels_id,
+    grade_id,
   }, client = pool) {
     // Hasheamos la contraseña de forma asíncrona
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const query = `
-        INSERT INTO users (personal_id, name, email, password, organizacion_id, role, departamento, escuela, curso)
+        INSERT INTO users (personal_id, name, email, password, organizacion_id, role_id, department_id, education_levels_id, grade_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (personal_id) DO UPDATE
-        SET name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, departamento = EXCLUDED.departamento,
-            escuela = EXCLUDED.escuela, curso = EXCLUDED.curso;
+        SET name = EXCLUDED.name, email = EXCLUDED.email, role_id = EXCLUDED.role_id, department_id = EXCLUDED.department_id,
+            education_levels_id = EXCLUDED.education_levels_id, grade_id = EXCLUDED.grade_id;
         `;
     // Utilizamos el hash de la contraseña en lugar del password en texto claro
     await client.query(query, [
@@ -31,10 +31,10 @@ const User = {
       email,
       hashedPassword,
       organizacion_id,
-      role,
-      departamento,
-      escuela,
-      curso,
+      role_id,
+      department_id,
+      education_levels_id,
+      grade_id,
     ]);
   },
 

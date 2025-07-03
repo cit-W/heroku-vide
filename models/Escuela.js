@@ -9,7 +9,7 @@ export async function createEducationLevel({ id, name, organizacion_id }, client
       SET level = EXCLUDED.level,
           organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await client.query(query, [id, nombre, organizacion_id]);
+  await client.query(query, [id, name, organizacion_id]);
 }
 
 // Obtener escuelas por organización
