@@ -185,7 +185,7 @@ const setupDatabase = async () => {
     await pool.query(`
       CREATE TABLE "public"."reservations" (
         "id" INTEGER NOT NULL DEFAULT nextval('reserva_id_seq'::regclass),
-        "name" TEXT NOT NULL,
+        "user_id" INTEGER NOT NULL, -- Cambiado de "name" a "user_id"
         "grade_id" INTEGER NOT NULL,
         "place_id" INTEGER NOT NULL,
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -193,6 +193,7 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id"); -- Nueva FK
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
@@ -232,6 +233,7 @@ const setupDatabase = async () => {
       );
       ALTER TABLE "public"."appointments" ADD CONSTRAINT "fk_appointments_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
       ALTER TABLE "public"."appointments" ADD CONSTRAINT "fk_appointments_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
+      ALTER TABLE "public"."appointments" ADD CONSTRAINT "fk_appointments_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."appointments" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."appointments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);

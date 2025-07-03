@@ -49,14 +49,15 @@ router.get('/registro_reservations', async (req, res, next) => {
 });
 
 router.post('/reportar', async (req, res, next) => {
-  const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
-  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
+  const { clase, lugar, hora_inicio, hora_final } = req.body;
+  if (!clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
     const orgId = req.user.orgId;
+    const userId = req.user.userId; // Obtener userId del token
     await Reserva.reportarReserva(
-      profesor,
+      userId, // Pasar userId en lugar de profesor
       clase,
       lugar,
       hora_inicio,
@@ -71,14 +72,15 @@ router.post('/reportar', async (req, res, next) => {
 });
 
 router.post('/reservar_lugar', async (req, res, next) => {
-  const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
-  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
+  const { clase, lugar, hora_inicio, hora_final } = req.body;
+  if (!clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
     const orgId = req.user.orgId;
+    const userId = req.user.userId; // Obtener userId del token
     await Reserva.reservarLugar(
-      profesor,
+      userId, // Pasar userId en lugar de profesor
       clase,
       lugar,
       hora_inicio,

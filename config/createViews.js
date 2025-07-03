@@ -70,13 +70,14 @@ const createViews = async () => {
       CREATE OR REPLACE VIEW reservation_details AS
       SELECT
         r.id,
-        r.name,
+        u.name AS user_name, -- Cambiado de r.name a u.name
         g.grade AS grade,
         p.place,
         r.start,
         r.finish,
         o.name AS organization
       FROM reservations r
+      JOIN users u ON r.user_id = u.id -- Añadida la unión con la tabla users
       JOIN grades g ON r.grade_id = g.id
       JOIN places p ON r.place_id = p.id
       JOIN organizations o ON r.organizacion_id = o.id;

@@ -3,6 +3,7 @@ import buscarIdsPorNombres from './buscarIdsPorNombres.js';
 
 const Reserva = {
   async obtenerreservationsPorOrganizacion(organizacion_id, client = pool) {
+    // Asumiendo que reservation_details ahora incluye user_name
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
@@ -10,6 +11,7 @@ const Reserva = {
   },
 
   async obtenerReservaPorId(id, client = pool) {
+    // Asumiendo que reservation_details ahora incluye user_name
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
 
@@ -21,7 +23,7 @@ const Reserva = {
   },
 
   async reportarReserva(
-    name,
+    user_id, // Cambiado de name a user_id
     grade,
     place,
     start,
@@ -39,12 +41,12 @@ const Reserva = {
     );
     const query = `
     INSERT INTO report_place
-      (name, grade_id, place_id, start, finish, organizacion_id)
+      (user_id, grade_id, place_id, start, finish, organizacion_id)
     VALUES
       ($1, $2, $3, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ, $6);
   `;
     await client.query(query, [
-      name,
+      user_id, // Usar user_id
       grade_id,
       place_id,
       start,
@@ -54,7 +56,7 @@ const Reserva = {
   },
 
   async reservarLugar(
-    name,
+    user_id, // Cambiado de name a user_id
     grade,
     place,
     start,
@@ -72,13 +74,13 @@ const Reserva = {
     );
 
     const insertQuery = `
-    INSERT INTO reservations (name, grade_id, place_id, start, finish, organizacion_id)
+    INSERT INTO reservations (user_id, grade_id, place_id, start, finish, organizacion_id)
     VALUES ($1, $2, $3, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ, $6)
     RETURNING *;
   `;
 
     const { rows } = await client.query(insertQuery, [
-      name,
+      user_id, // Usar user_id
       grade_id,
       place_id,
       start,
