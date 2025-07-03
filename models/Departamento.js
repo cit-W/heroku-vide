@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 // Crear o actualizar departamento
-export async function crearDepartamento({ id, nombre, organizacion_id }, client = pool) {
+export async function createDepartment({ id, name, organizacion_id }, client = pool) {
   const query = `
     INSERT INTO departments (id, department, organizacion_id)
     VALUES ($1, $2, $3)
@@ -13,7 +13,7 @@ export async function crearDepartamento({ id, nombre, organizacion_id }, client 
 }
 
 // Obtener departamentos por organización
-export async function obtenerDepartamentosPorOrganizacion(organizacion_id, client = pool) {
+export async function getDepartmentsByOrganization(organizacion_id, client = pool) {
   const query = `
     SELECT department FROM departments
     WHERE organizacion_id = $1

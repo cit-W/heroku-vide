@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import { crearEscuela, obtenerEscuelasPorOrganizacion } from '../models/Escuela.js';
+import { createEducationLevel, getEducationLevelsByOrganization } from '../models/Escuela.js';
 import pool from '../config/db.js'; // Importar el pool de conexiones
 
 const router = Router();
@@ -19,30 +19,30 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.post('/crear_escuela', async (req, res, next) => {
+router.post('/create-education-level', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await crearEscuela({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    await createEducationLevel({ ...req.body, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Escuela creada con éxito' });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_escuela', async (req, res, next) => {
+router.get('/get-education-levels', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerEscuelasPorOrganizacion(orgId, req.dbClient);
+    const data = await getEducationLevelsByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_escuela_single', async (req, res, next) => {
+router.get('/get-single-education-level', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerEscuelasPorOrganizacion(orgId, req.dbClient);
+    const data = await getEducationLevelsByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

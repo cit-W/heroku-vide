@@ -1,15 +1,15 @@
 import express from 'express';
 import {
-  crearOrganizacion,
-  obtenerorganizations,
+  createOrganization,
+  getOrganizations,
 } from '../models/Organizacion.js';
-import Usuario from '../models/Usuario.js';
-import { verificarConexion, obtenerInfoUsuario } from '../models/General.js';
+import User from '../models/Usuario.js';
+import { checkConnection, getUserInfo } from '../models/General.js';
 const router = express.Router();
 
-router.get('/conexion_verification', async (req, res) => {
+router.get('/connection-verification', async (req, res) => {
   try {
-    const data = await verificarConexion();
+    const data = await checkConnection();
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -17,9 +17,9 @@ router.get('/conexion_verification', async (req, res) => {
   }
 });
 
-router.post('/crear_organizacion', async (req, res) => {
+router.post('/create-organization', async (req, res) => {
   try {
-    await crearOrganizacion(req.body);
+    await createOrganization(req.body);
     res.json({ success: true, message: 'Organización creada con éxito' });
   } catch (error) {
     console.error(error);
@@ -29,9 +29,9 @@ router.post('/crear_organizacion', async (req, res) => {
   }
 });
 
-router.get('/obtener_organizations', async (req, res) => {
+router.get('/get-organizations', async (req, res) => {
   try {
-    const data = await obtenerorganizations();
+    const data = await getOrganizations();
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);
@@ -41,9 +41,9 @@ router.get('/obtener_organizations', async (req, res) => {
   }
 });
 
-router.get('/obtener_usuarios', async (req, res) => {
+router.get('/get-users', async (req, res) => {
   try {
-    const data = await Usuario.obtenerUsuariosPorOrganizacion(
+    const data = await User.getUsersByOrganization(
       req.query.organizacion_id
     );
     res.json({ success: true, data });
@@ -55,7 +55,7 @@ router.get('/obtener_usuarios', async (req, res) => {
   }
 });
 
-router.get('/info_user', async (req, res) => {
+router.get('/user-info', async (req, res) => {
   const { email } = req.query;
   if (!email) {
     return res
@@ -63,7 +63,7 @@ router.get('/info_user', async (req, res) => {
       .json({ error: 'No se proporcionó una cédula válida' });
   }
   try {
-    const data = await obtenerInfoUsuario(email);
+    const data = await getUserInfo(email);
 
     // Verifica si data es nulo, un objeto único o un array
     if (!data) {

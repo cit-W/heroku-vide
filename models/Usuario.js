@@ -2,8 +2,8 @@ import pool from '../config/db.js';
 import bcrypt from 'bcrypt';
 const saltRounds = 10; // Número de iteraciones para generar la sal
 
-const Usuario = {
-  async crearUsuario({
+const User = {
+  async createUser({
     personal_id,
     name,
     email,
@@ -38,28 +38,20 @@ const Usuario = {
     ]);
   },
 
-  async saveUserDevices({ personal_id, player_id, device_type, organizacion_id }, client = pool) {
-    const query = `
-            INSERT INTO user_devices (personal_id, player_id, device_type, last_active, organizacion_id)
-            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4)
-            ON CONFLICT (player_id) DO UPDATE
-            SET last_active = CURRENT_TIMESTAMP, device_type = EXCLUDED.device_type, organizacion_id = EXCLUDED.organizacion_id;
-        `;
-    await client.query(query, [personal_id, player_id, device_type, organizacion_id]);
-  },
+  
 
-  async obtenerUsuariosPorOrganizacion(organizacion_id, client = pool) {
+  async getUsersByOrganization(organizacion_id, client = pool) {
     const query =
       'SELECT * FROM users WHERE organizacion_id = $1 ORDER BY name';
     const { rows } = await client.query(query, [organizacion_id]);
     return rows;
   },
 
-  async obtenerOrgId(email, client = pool) {
+  async getOrgId(email, client = pool) {
     const query = 'SELECT organizacion_id FROM users WHERE email = $1';
     const { rows } = await client.query(query, [email]);
     return rows;
   },
 };
 
-export default Usuario;
+export default User;

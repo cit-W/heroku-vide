@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import pool from '../../config/db.js';
 
-router.get('/crear_horario', async (req, res) => {
+router.get('/create-schedule', async (req, res) => {
   try {
     const {
       Hora,
@@ -55,7 +55,7 @@ router.get('/crear_horario', async (req, res) => {
   }
 });
 
-router.get('/crear_tabla_profe', async (req, res) => {
+router.get('/create-teacher-table', async (req, res) => {
   try {
     const { profe } = req.query;
 
@@ -95,7 +95,7 @@ router.get('/crear_tabla_profe', async (req, res) => {
   }
 });
 
-router.post('/delete_horarios_all', async (req, res) => {
+router.post('/delete-all-schedules', async (req, res) => {
   try {
     const client = await pool.connect();
 
@@ -121,7 +121,7 @@ router.post('/delete_horarios_all', async (req, res) => {
   }
 });
 
-router.post('/delete_horario/:name', async (req, res) => {
+router.post('/delete-schedule/:name', async (req, res) => {
   const name = req.params.name;
 
   if (!name) {
@@ -147,7 +147,7 @@ router.post('/delete_horario/:name', async (req, res) => {
   }
 });
 
-router.get('/registro_horario_account', async (req, res) => {
+router.get('/get-account-schedule-record', async (req, res) => {
   try {
     const { name } = req.query;
     nameCorrect = name.toLowerCase();
@@ -185,7 +185,7 @@ router.get('/registro_horario_account', async (req, res) => {
   }
 });
 
-router.get('/registro_horario', async (req, res) => {
+router.get('/get-schedule-record', async (req, res) => {
   try {
     const client = await pool.connect();
 
@@ -212,7 +212,7 @@ router.get('/registro_horario', async (req, res) => {
   }
 });
 
-router.get('/ver_horario', async (req, res) => {
+router.get('/view-schedule', async (req, res) => {
   try {
     const { name } = req.query;
 
@@ -255,7 +255,7 @@ router.get('/ver_horario', async (req, res) => {
   }
 });
 
-router.get('/verificar_existencia', async (req, res) => {
+router.get('/check-existence', async (req, res) => {
   try {
     const { profe } = req.query;
 

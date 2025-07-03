@@ -1,10 +1,10 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
 import {
-  eliminarReservaPersonal,
-  eliminarTrabajoSocialPersonal,
-  obtenerReservationsPorProfesor,
-  obtenerTrabajosSocialesPorProfesor,
+  deletePersonalReservation,
+  deletePersonalSocialWork,
+  getReservationsByTeacher,
+  getSocialWorksByTeacher,
 } from '../../models/Account.js';
 import pool from '../../config/db.js'; // Importar el pool de conexiones
 
@@ -24,10 +24,10 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.delete('/delete_reserva_personal/:id', async (req, res, next) => {
+router.delete('/delete-personal-reservation/:id', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const success = await eliminarReservaPersonal(req.params.id, orgId, req.dbClient);
+    const success = await deletePersonalReservation(req.params.id, orgId, req.dbClient);
     res.json(
       success
         ? { success: true, message: 'Borrado exitosamente' }
@@ -38,10 +38,10 @@ router.delete('/delete_reserva_personal/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/delete_social_personal', async (req, res, next) => {
+router.delete('/delete-personal-social-work', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const success = await eliminarTrabajoSocialPersonal(req.query.id, orgId, req.dbClient);
+    const success = await deletePersonalSocialWork(req.query.id, orgId, req.dbClient);
     res.json(
       success
         ? { success: true, message: 'Borrado exitosamente' }
@@ -52,10 +52,10 @@ router.delete('/delete_social_personal', async (req, res, next) => {
   }
 });
 
-router.get('/reservationsIDs_personal', async (req, res, next) => {
+router.get('/personal-reservation-ids', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerReservationsPorProfesor(req.query.profesor, orgId, req.dbClient);
+    const data = await getReservationsByTeacher(req.query.profesor, orgId, req.dbClient);
     res.json(
       data.length
         ? { success: true, data }
@@ -70,10 +70,10 @@ router.get('/reservationsIDs_personal', async (req, res, next) => {
   }
 });
 
-router.get('/socialIDs_personal', async (req, res, next) => {
+router.get('/personal-social-work-ids', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerTrabajosSocialesPorProfesor(
+    const data = await getSocialWorksByTeacher(
       req.query.profesor,
       orgId,
       req.dbClient

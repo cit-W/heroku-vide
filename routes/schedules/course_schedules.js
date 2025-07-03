@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import pool from '../../config/db.js';
 
-router.post('/crear_horario', async (req, res) => {
+router.post('/create-schedule', async (req, res) => {
   const {
     Hora,
     LunesHora,
@@ -52,7 +52,7 @@ router.post('/crear_horario', async (req, res) => {
   }
 });
 
-router.get('/crear_tabla_cursos', async (req, res) => {
+router.get('/create-course-table', async (req, res) => {
   const profesor = req.query.profesor;
   const curso = req.query.curso;
 
@@ -92,7 +92,7 @@ router.get('/crear_tabla_cursos', async (req, res) => {
   }
 });
 
-router.post('/delete_horario/:id', async (req, res) => {
+router.post('/delete-schedule/:name', async (req, res) => {
   const name = req.params.name;
 
   if (!name) {
@@ -118,7 +118,7 @@ router.post('/delete_horario/:id', async (req, res) => {
   }
 });
 
-router.get('/delete_horarios_all', async (req, res) => {
+router.get('/delete-all-schedules', async (req, res) => {
   try {
     const client = await pool.connect();
 
@@ -158,7 +158,7 @@ router.get('/delete_horarios_all', async (req, res) => {
   }
 });
 
-router.get('/registro_horario_account', async (req, res) => {
+router.get('/get-account-schedule-record', async (req, res) => {
   const { name } = req.query;
   nameCorrect = name.toLowerCase();
 
@@ -193,7 +193,7 @@ router.get('/registro_horario_account', async (req, res) => {
   }
 });
 
-router.get('/registro_horario', async (req, res) => {
+router.get('/get-schedule-record', async (req, res) => {
   try {
     // Conexión a la base de datos
     const client = await pool.connect();
@@ -222,7 +222,7 @@ router.get('/registro_horario', async (req, res) => {
   }
 });
 
-router.get('/ver_horario', async (req, res) => {
+router.get('/view-schedule', async (req, res) => {
   const name = req.query.name;
   if (!name) {
     return res
@@ -261,7 +261,7 @@ router.get('/ver_horario', async (req, res) => {
   }
 });
 
-router.get('/horario_personal', async (req, res) => {
+router.get('/personal-schedule', async (req, res) => {
   const name = req.query.name;
   if (!name) {
     return res

@@ -4,14 +4,14 @@ import NodeCache from 'node-cache';
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 // Verifica si hay conexión con la base de datos
-export async function verificarConexion() {
+export async function checkConnection() {
   const query = 'SELECT * FROM android_mysql.usuarios';
   const { rows } = await pool.query(query);
   return rows;
 }
 
 // Obtiene la info de usuario desde users o student_users
-export async function obtenerInfoUsuario(email) {
+export async function getUserInfo(email) {
   try {
     const cacheKey = `usuario_${email.toLowerCase()}`;
     let usuario = cache.get(cacheKey);

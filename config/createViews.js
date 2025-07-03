@@ -151,7 +151,6 @@ const createViews = async () => {
   } catch (error) {
     console.error('❌ Error al crear las vistas:', error);
   } finally {
-    await pool.end();
   }
 };
 

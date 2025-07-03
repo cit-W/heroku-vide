@@ -14,7 +14,7 @@ import pool from '../config/db.js';
  * @returns {Object} - Objeto con los IDs encontrados
  */
 
-export async function buscarIdsPorNombres(
+export async function resolveNamesToIds(
   { organizacion_id, grade, place, roles, education_levels, departments },
   client = pool
 ) {
@@ -82,4 +82,4 @@ export async function buscarIdsPorNombres(
   }
 }
 
-export default buscarIdsPorNombres;
+export default resolveNamesToIds;

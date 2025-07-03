@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import { crearRole, obtenerRolePorOrganizacion } from '../models/Role.js';
+import { createRole, getRolesByOrganization } from '../models/Role.js';
 import pool from '../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
@@ -19,30 +19,30 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.post('/crear_role', async (req, res, next) => {
+router.post('/create-role', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await crearRole({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    await createRole({ ...req.body, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Rol creado con éxito' });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_role', async (req, res, next) => {
+router.get('/get-roles', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerRolePorOrganizacion(orgId, req.dbClient);
+    const data = await getRolesByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_role_single', async (req, res, next) => {
+router.get('/get-single-role', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await obtenerRolePorOrganizacion(orgId, req.dbClient);
+    const data = await getRolesByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

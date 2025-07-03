@@ -1,9 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import {
-  crearEspacio,
-  obtenerEspaciosPorOrganizacion,
-} from '../models/Espacio.js';
+import { addSocialWork, getIDs, getByID } from '../models/TrabajoSocial.js';
 import pool from '../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
@@ -22,30 +19,50 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.post('/crear_espacio', async (req, res, next) => {
+router.post('/add-social-work', async (req, res, next) => {
+  const { name, description, hours, date } = req.body;
+  const orgId = req.user.orgId;
+
+  if (!name || !description || !hours || !date) {
+    return res.status(400).json({ error: 'Faltan datos' });
+  }
+
   try {
-    const orgId = req.user.orgId;
-    await crearEspacio({ ...req.body, organizacion_id: orgId }, req.dbClient);
-    res.json({ success: true, message: 'Espacio creado con éxito' });
+    await addSocialWork(name, description, hours, date, orgId, req.dbClient);
+    res.json({ message: 'Trabajo social registrado' });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_espacios', async (req, res, next) => {
+router.get('/get-ids', async (req, res, next) => {
+  const orgId = req.user.orgId;
+
   try {
-    const orgId = req.user.orgId;
-    const data = await obtenerEspaciosPorOrganizacion(orgId, req.dbClient);
+    const data = await getIDs(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/obtener_espacio_single', async (req, res, next) => {
+router.get('/get-social-work-record', async (req, res, next) => {
+  const { id } = req.query;
+  const orgId = req.user.orgId;
+
+  if (!id) {
+    return res.status(400).json({ error: 'ID es requerido' });
+  }
+
   try {
-    const orgId = req.user.orgId;
-    const data = await obtenerEspaciosPorOrganizacion(orgId, req.dbClient);
+    const data = await getByID(id, orgId, req.dbClient);
+
+    if (!data) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Registro no encontrado' });
+    }
+
     res.json({ success: true, data });
   } catch (error) {
     next(error);

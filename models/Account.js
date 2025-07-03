@@ -1,38 +1,38 @@
 import pool from '../config/db.js';
 
 // Elimina una reserva de la tabla reservations
-export async function eliminarReservaPersonal(id, organizacion_id, client = pool) {
+export async function deletePersonalReservation(id, organizacion_id, client = pool) {
   const query = 'DELETE FROM reservations WHERE id = $1 AND organizacion_id = $2';
   const result = await client.query(query, [id, organizacion_id]);
   return result.rowCount > 0;
 }
 
 // Elimina un trabajo social por ID
-export async function eliminarTrabajoSocialPersonal(id, organizacion_id, client = pool) {
+export async function deletePersonalSocialWork(id, organizacion_id, client = pool) {
   const query = 'DELETE FROM social_work WHERE id = $1 AND organizacion_id = $2';
   const result = await client.query(query, [id, organizacion_id]);
   return result.rowCount > 0;
 }
 
 // Obtiene solo los IDs de reservas asociadas a un profesor
-export async function obtenerReservationsPorProfesor(profesor, organizacion_id, client = pool) {
+export async function getReservationsByTeacher(teacherId, organizacion_id, client = pool) {
   const query = `
     SELECT id
     FROM reservations
     WHERE user_id = $1 AND organizacion_id = $2
-    ORDER BY lugar
+    ORDER BY place
   `;
-  const { rows } = await client.query(query, [profesor, organizacion_id]);
+  const { rows } = await client.query(query, [teacherId, organizacion_id]);
   return rows;
 }
 
 // Obtiene solo los IDs de trabajos sociales asociados a un profesor
-export async function obtenerTrabajosSocialesPorProfesor(profesor, organizacion_id, client = pool) {
+export async function getSocialWorksByTeacher(teacherId, organizacion_id, client = pool) {
   const query = `
     SELECT id
     FROM social_work
     WHERE profesor = $1 AND organizacion_id = $2
   `;
-  const { rows } = await client.query(query, [profesor, organizacion_id]);
+  const { rows } = await client.query(query, [teacherId, organizacion_id]);
   return rows;
 }

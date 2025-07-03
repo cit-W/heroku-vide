@@ -2,7 +2,7 @@ import { format, parse } from 'date-fns';
 import pool from '../config/db.js';
 
 // Crear nueva cita
-export async function crearCita({
+export async function createAppointment({
   topic,
   tutor,
   student_id,
@@ -32,7 +32,7 @@ export async function crearCita({
 }
 
 // Obtener citas por nombre y estado
-export async function obtenerCitas(name, status, organizacion_id, client = pool) {
+export async function getAppointments(name, status, organizacion_id, client = pool) {
   const query = `
     SELECT * FROM appointments
     WHERE name = $1 AND status = $2 AND organizacion_id = $3;
@@ -42,7 +42,7 @@ export async function obtenerCitas(name, status, organizacion_id, client = pool)
 }
 
 // Actualizar campos de una cita
-export async function actualizarCita({
+export async function updateAppointment({
   id,
   topic,
   tutor,
@@ -92,12 +92,12 @@ export async function actualizarCita({
   await client.query(query, values);
 }
 
-export async function obtenerTablas(organizacion_id, client = pool) {
+export async function getTables(organizacion_id, client = pool) {
   const query = `
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'appointments' AND table_catalog = $1;
+    WHERE table_schema = 'public' AND table_name = 'appointments';
   `;
-  const { rows } = await client.query(query, [organizacion_id]);
+  const { rows } = await client.query(query);
   return rows.map((row) => ({ name: row.table_name }));
 }

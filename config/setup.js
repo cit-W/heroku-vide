@@ -43,7 +43,7 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS grades CASCADE;
       DROP TABLE IF EXISTS organizations CASCADE;
       DROP TABLE IF EXISTS status CASCADE;
-      DROP TABLE IF EXISTS prueba CASCADE;
+      
     `);
 
     // Crear tabla de estado
@@ -80,7 +80,8 @@ const setupDatabase = async () => {
         "id" INTEGER NOT NULL DEFAULT nextval('departamento_id_seq'::regclass),
         "department" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id")
+        PRIMARY KEY ("id"),
+        UNIQUE ("department", "organizacion_id")
       );
       ALTER TABLE "public"."departments" ADD CONSTRAINT "fk_departments_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."departments" ENABLE ROW LEVEL SECURITY;
@@ -93,7 +94,8 @@ const setupDatabase = async () => {
         "id" INTEGER NOT NULL DEFAULT nextval('escuela_id_seq'::regclass),
         "level" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id")
+        PRIMARY KEY ("id"),
+        UNIQUE ("level", "organizacion_id")
       );
       ALTER TABLE "public"."education_levels" ADD CONSTRAINT "fk_education_levels_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."education_levels" ENABLE ROW LEVEL SECURITY;
@@ -106,7 +108,8 @@ const setupDatabase = async () => {
         "id" INTEGER NOT NULL DEFAULT nextval('grades_id_seq'::regclass),
         "grade" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id")
+        PRIMARY KEY ("id"),
+        UNIQUE ("grade", "organizacion_id")
       );
       ALTER TABLE "public"."grades" ADD CONSTRAINT "fk_grades_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."grades" ENABLE ROW LEVEL SECURITY;
@@ -119,7 +122,8 @@ const setupDatabase = async () => {
         "id" INTEGER NOT NULL DEFAULT nextval('roles_id_seq'::regclass),
         "role" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id")
+        PRIMARY KEY ("id"),
+        UNIQUE ("role", "organizacion_id")
       );
       ALTER TABLE "public"."roles" ADD CONSTRAINT "fk_roles_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
@@ -132,7 +136,8 @@ const setupDatabase = async () => {
         "id" INTEGER NOT NULL DEFAULT nextval('places_id_seq'::regclass),
         "place" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id")
+        PRIMARY KEY ("id"),
+        UNIQUE ("place", "organizacion_id")
       );
       ALTER TABLE "public"."places" ADD CONSTRAINT "fk_places_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."places" ENABLE ROW LEVEL SECURITY;
@@ -287,16 +292,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    await pool.query(`
-      CREATE TABLE "public"."prueba" (
-        "horas" VARCHAR(40) NOT NULL,
-        "lunes" VARCHAR(40) NOT NULL,
-        "martes" VARCHAR(40) NOT NULL,
-        "miercoles" VARCHAR(40) NOT NULL,
-        "jueves" VARCHAR(40) NOT NULL,
-        "viernes" VARCHAR(40) NOT NULL
-      );
-    `);
+    
 
     console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');
     console.log('🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.');

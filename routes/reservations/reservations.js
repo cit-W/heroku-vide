@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
-import Reserva from '../../models/Reserva.js';
+import Reservation from '../../models/Reserva.js';
 import pool from '../../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
@@ -19,17 +19,20 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.get('/ids', async (req, res, next) => {
+router.get('/get-reservation-ids', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await Reserva.obtenerreservationsPorOrganizacion(orgId, req.dbClient);
+    const data = await Reservation.getReservationsByOrganization(
+      orgId,
+      req.dbClient
+    );
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/registro_reservations', async (req, res, next) => {
+router.get('/get-reservation-record', async (req, res, next) => {
   const { id } = req.query;
   if (!id) {
     return res
@@ -37,7 +40,7 @@ router.get('/registro_reservations', async (req, res, next) => {
       .json({ success: false, data: 'No se proporcionó un ID válido' });
   }
   try {
-    const data = await Reserva.obtenerReservaPorId(id, req.dbClient);
+    const data = await Reservation.getReservationById(id, req.dbClient);
     if (data) {
       res.json({ success: true, data });
     } else {
@@ -48,7 +51,7 @@ router.get('/registro_reservations', async (req, res, next) => {
   }
 });
 
-router.post('/reportar', async (req, res, next) => {
+router.post('/report-reservation', async (req, res, next) => {
   const { clase, lugar, hora_inicio, hora_final } = req.body;
   if (!clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
@@ -56,7 +59,7 @@ router.post('/reportar', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
     const userId = req.user.userId; // Obtener userId del token
-    await Reserva.reportarReserva(
+    await Reservation.reportReservation(
       userId, // Pasar userId en lugar de profesor
       clase,
       lugar,
@@ -71,7 +74,7 @@ router.post('/reportar', async (req, res, next) => {
   }
 });
 
-router.post('/reservar_lugar', async (req, res, next) => {
+router.post('/book-place', async (req, res, next) => {
   const { clase, lugar, hora_inicio, hora_final } = req.body;
   if (!clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
@@ -79,7 +82,7 @@ router.post('/reservar_lugar', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
     const userId = req.user.userId; // Obtener userId del token
-    await Reserva.reservarLugar(
+    await Reservation.bookPlace(
       userId, // Pasar userId en lugar de profesor
       clase,
       lugar,
@@ -94,25 +97,25 @@ router.post('/reservar_lugar', async (req, res, next) => {
   }
 });
 
-router.post('/eliminarExpiradas', async (req, res, next) => {
+router.post('/delete-expired-reservations', async (req, res, next) => {
   try {
     // Esta función no necesita orgId, pero si la tabla reservations tiene RLS,
     // esta operación solo afectará las reservas de la organización del usuario que la ejecuta.
-    const result = await Reserva.eliminarExpiradas(req.dbClient);
+    const result = await Reservation.deleteExpired(req.dbClient);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/verificar_reserva', async (req, res, next) => {
+router.post('/check-reservation-availability', async (req, res, next) => {
   const { lugar, clase, hora_inicio, hora_final } = req.body;
   if (!lugar || !clase || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
     const orgId = req.user.orgId;
-    const result = await Reserva.verificarDisponibilidad(
+    const result = await Reservation.checkAvailability(
       lugar,
       clase,
       hora_inicio,

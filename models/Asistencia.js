@@ -1,5 +1,7 @@
-const Asistencia = {
-    async marcarAsistencia(id, fecha) {
+import pool from '../config/db.js';
+
+const Attendance = {
+    async markAttendance(id, fecha) {
         const currentDate = new Date();
         const [hours, minutes, seconds] = fecha.split(":");
         currentDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), parseInt(seconds, 10));
@@ -8,11 +10,11 @@ const Asistencia = {
         await pool.query(query, [id, formattedDate]);
     },
 
-    async obtenerRegistroDiario(id) {
+    async getDailyRecord(id) {
         const query = "SELECT * FROM asistencia.asistencia_diaria WHERE id = $1";
         const { rows } = await pool.query(query, [id]);
         return rows;
     },
 };
 
-module.exports = Asistencia;
+export default Attendance;

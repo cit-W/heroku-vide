@@ -42,46 +42,46 @@ app.set('view engine', 'ejs');
 app.get('/', (req, res) => res.render('pages/index'));
 
 // Import routes
-import general from './routes/general.js';
-import roleRoutes from './routes/role.js';
-import userRoutes from './routes/auth/usuarios.js';
-import gradoRoutes from './routes/grado.js';
-import espacioRoutes from './routes/espacio.js';
+import generalRoutes from './routes/general_routes.js';
+import roleRoutes from './routes/role_routes.js';
+import userRoutes from './routes/auth/users.js';
+import gradeRoutes from './routes/grade.js';
+import placeRoutes from './routes/place.js';
 import accountRoutes from './routes/auth/account.js';
-import escuelaRoutes from './routes/escuela.js';
-import rastrearRoutes from './routes/rastrear.js';
-import reportesRoutes from './routes/reports/reportes.js';
-import cronogramaRoutes from './routes/cronograma.js';
-import user_devicesRoutes from './routes/user_devide.js';
+import educationLevelRoutes from './routes/education_level.js';
+import trackRoutes from './routes/track.js';
+import reportsRoutes from './routes/reports/reports.js';
+import scheduleRoutes from './routes/schedule.js';
+import userDevicesRoutes from './routes/user_device.js';
 import reservationsRoutes from './routes/reservations/reservations.js';
-import departamentoRoutes from './routes/departamento.js';
+import departmentRoutes from './routes/department.js';
 import appointmentsRoutes from './routes/reservations/appointments.js';
-import trabajoSocialRoutes from './routes/social_work.js';
+import socialWorkRoutes from './routes/social_work_routes.js';
 import notificationsRoutes from './routes/notifications.js';
-import horariosCursosRoutes from './routes/horarios/horarios_cursos.js';
-import horariosProfesRoutes from './routes/horarios/horarios_profes.js';
-import infoEstudiantesRoutes from './routes/students/estudiantes.js';
+import courseSchedulesRoutes from './routes/schedules/course_schedules.js';
+import teacherSchedulesRoutes from './routes/schedules/teacher_schedules.js';
+import studentsRoutes from './routes/students/students.js';
 
 // Use routes
 app.use('/role', roleRoutes);
 app.use('/user', userRoutes);
-app.use('/grado', gradoRoutes);
-app.use('/general', general);
+app.use('/grade', gradeRoutes);
+app.use('/general', generalRoutes);
 app.use('/account', accountRoutes);
-app.use('/espacio', espacioRoutes);
-app.use('/escuela', escuelaRoutes);
-app.use('/rastrear', rastrearRoutes);
-app.use('/reportes', reportesRoutes);
-app.use('/cronograma', cronogramaRoutes);
-app.use('/social_work', trabajoSocialRoutes);
-app.use('/departamento', departamentoRoutes);
+app.use('/place', placeRoutes);
+app.use('/education-level', educationLevelRoutes);
+app.use('/track', trackRoutes);
+app.use('/reports', reportsRoutes);
+app.use('/schedule', scheduleRoutes);
+app.use('/social-work', socialWorkRoutes);
+app.use('/department', departmentRoutes);
 app.use('/reservations', reservationsRoutes);
 app.use('/appointments', appointmentsRoutes);
-app.use('/user_devices', user_devicesRoutes);
+app.use('/user-devices', userDevicesRoutes);
 app.use('/notifications', notificationsRoutes);
-app.use('/horarios_cursos', horariosCursosRoutes);
-app.use('/horarios_profes', horariosProfesRoutes);
-app.use('/info_estudiantes', infoEstudiantesRoutes);
+app.use('/course-schedules', courseSchedulesRoutes);
+app.use('/teacher-schedules', teacherSchedulesRoutes);
+app.use('/students', studentsRoutes);
 
 // Error handling
 app.use(errorHandler);
@@ -91,7 +91,7 @@ app.get('/db', async (req, res) => {
   try {
     const client = await pool.connect();
     const result = await client.query(
-      'SELECT * FROM restaurante.lista_general'
+      'SELECT * FROM users'
     );
     const personas = result.rows;
     res.render('pages/db', { personas });
@@ -102,18 +102,7 @@ app.get('/db', async (req, res) => {
   }
 });
 
-async function createUsersTableIfNotExists() {
-  const createQuery = `
-    CREATE TABLE IF NOT EXISTS android_mysql.usersNotifications (
-      user_id VARCHAR(100) PRIMARY KEY,
-      player_id VARCHAR(200) NOT NULL,
-      role VARCHAR(50) NOT NULL
-    );
-  `;
-}
 
-// Llamamos a la función al iniciar el servidor
-createUsersTableIfNotExists();
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));

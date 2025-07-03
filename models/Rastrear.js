@@ -5,7 +5,7 @@ import Fuse from 'fuse.js';
 // Inicializar el caché
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-export async function obtenerNombres() {
+export async function getNames() {
   let result = cache.get('nombres');
   if (!result) {
     const query = 'SELECT * FROM android_mysql.id2024sql';
@@ -16,7 +16,7 @@ export async function obtenerNombres() {
   return result;
 }
 
-export async function obtenerNombresAct(organizacion_id) {
+export async function getNamesAct(organizacion_id) {
   const sanitizedOrganizacionId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = 'student_' + sanitizedOrganizacionId;
   let result = cache.get('nombres');

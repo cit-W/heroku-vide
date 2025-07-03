@@ -24,7 +24,7 @@ router.use(
 //  denegado
 
 // Endpoint para crear el esquema y las tablas mensuales
-router.post('/create', async (req, res, next) => {
+router.post('/create-schema', async (req, res, next) => {
   try {
     const { year } = req.query;
 
@@ -100,7 +100,7 @@ router.post('/create', async (req, res, next) => {
 });
 
 // Endpoint para crear un evento en el cronograma
-router.post('/create_event', async (req, res) => {
+router.post('/create-event', async (req, res) => {
   try {
     const {
       tema,
@@ -157,7 +157,7 @@ router.post('/create_event', async (req, res) => {
   }
 });
 
-router.post('/delete', async (req, res) => {
+router.post('/delete-schema', async (req, res) => {
   const client = await pool.connect(); // Asegura que el client esté inicializado correctamente
 
   try {
@@ -212,7 +212,7 @@ router.post('/delete', async (req, res) => {
   }
 });
 
-router.post('/delete_event', async (req, res) => {
+router.post('/delete-event', async (req, res) => {
   try {
     const { id, month } = req.query;
 
@@ -234,7 +234,7 @@ router.post('/delete_event', async (req, res) => {
   }
 });
 
-router.get('/month_events', async (req, res) => {
+router.get('/month-events', async (req, res) => {
   try {
     const { month } = req.query;
     var monthFormmated = month;
@@ -267,7 +267,7 @@ router.get('/month_events', async (req, res) => {
   }
 });
 
-router.get('/month_topic', async (req, res) => {
+router.get('/month-topic', async (req, res) => {
   try {
     const { month } = req.query;
 
@@ -297,7 +297,7 @@ router.get('/month_topic', async (req, res) => {
   }
 });
 
-router.get('/week_events', async (req, res) => {
+router.get('/week-events', async (req, res) => {
   try {
     var currentdate = new Date();
     var oneJan = new Date(currentdate.getFullYear(), 0, 1);
@@ -332,7 +332,7 @@ router.get('/week_events', async (req, res) => {
   }
 });
 
-router.get('/next_events', async (req, res) => {
+router.get('/next-events', async (req, res) => {
   try {
     currentdate = new Date();
     var oneJan = new Date(currentdate.getFullYear(), 0, 1);
@@ -367,7 +367,7 @@ router.get('/next_events', async (req, res) => {
   }
 });
 
-router.get('/closest_event', async (req, res) => {
+router.get('/closest-event', async (req, res) => {
   try {
     const yearActual = format(new Date(), 'yyyy');
 
@@ -461,7 +461,7 @@ router.post('/mediagroup', async (req, res) => {
   }
 });
 
-router.get('/list_mediagroup', async (req, res) => {
+router.get('/list-mediagroup', async (req, res) => {
   let client;
   try {
     // Obtener la fecha actual

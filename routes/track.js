@@ -1,10 +1,10 @@
 import express from "express";
-import {fuzzySearch, obtenerNombres} from "../models/Rastrear.js";
+import {fuzzySearch, getNames} from "../models/Rastrear.js";
 const router = express.Router();
 
-router.get("/obtener_nombres", async (req, res) => {
+router.get("/get-names", async (req, res) => {
   try {
-    const data = await obtenerNombres();
+    const data = await getNames();
     res.json(data.length > 0 ? { success: true, data } : { success: false, message: "No se encontraron nombres" });
   } catch (error) {
     console.error(error);

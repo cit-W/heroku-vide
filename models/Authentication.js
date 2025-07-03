@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
 const SECRET_KEY = process.env.SECRET_KEY;
 
-export async function autenticarUsuario(email, password) {
+export async function authenticateUser(email, password) {
   try {
     // Busca en ambas tablas en orden
     const tables = ['users', 'student_users'];

@@ -1,8 +1,8 @@
 import pool from '../config/db.js';
-import buscarIdsPorNombres from './buscarIdsPorNombres.js';
+import resolveNamesToIds from './resolveNamesToIds.js';
 
-const Reserva = {
-  async obtenerreservationsPorOrganizacion(organizacion_id, client = pool) {
+const Reservation = {
+  async getReservationsByOrganization(organizacion_id, client = pool) {
     // Asumiendo que reservation_details ahora incluye user_name
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
@@ -10,7 +10,7 @@ const Reserva = {
     return rows;
   },
 
-  async obtenerReservaPorId(id, client = pool) {
+  async getReservationById(id, client = pool) {
     // Asumiendo que reservation_details ahora incluye user_name
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
@@ -22,7 +22,7 @@ const Reserva = {
     return rows[0];
   },
 
-  async reportarReserva(
+  async reportReservation(
     user_id, // Cambiado de name a user_id
     grade,
     place,
@@ -31,7 +31,7 @@ const Reserva = {
     organizacion_id,
     client = pool
   ) {
-    const { grade_id, place_id } = await buscarIdsPorNombres(
+    const { grade_id, place_id } = await resolveNamesToIds(
       {
         grade,
         place,
@@ -55,7 +55,7 @@ const Reserva = {
     ]);
   },
 
-  async reservarLugar(
+  async bookPlace(
     user_id, // Cambiado de name a user_id
     grade,
     place,
@@ -64,7 +64,7 @@ const Reserva = {
     organizacion_id,
     client = pool
   ) {
-    const { grade_id, place_id } = await buscarIdsPorNombres(
+    const { grade_id, place_id } = await resolveNamesToIds(
       {
         grade,
         place,
@@ -91,7 +91,7 @@ const Reserva = {
     return rows[0];
   },
 
-  async eliminarExpiradas(client = pool) {
+  async deleteExpired(client = pool) {
     const query = `
     DELETE FROM reservations
     WHERE finish < (NOW() AT TIME ZONE 'UTC')
@@ -102,7 +102,7 @@ const Reserva = {
     return { deletedCount: rowCount, deletedIds };
   },
 
-  async verificarDisponibilidad(
+  async checkAvailability(
     place,
     grade,
     hora_inicio,
@@ -110,7 +110,7 @@ const Reserva = {
     organizacion_id,
     client = pool
   ) {
-    const { grade_id, place_id } = await buscarIdsPorNombres(
+    const { grade_id, place_id } = await resolveNamesToIds(
       {
         grade,
         place,
@@ -163,4 +163,4 @@ const Reserva = {
   },
 };
 
-export default Reserva;
+export default Reservation;

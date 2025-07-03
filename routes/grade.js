@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import { agregar, obtenerIDs, obtenerPorID } from '../models/TrabajoSocial.js';
+import { createGrade, getGradesByOrganization } from '../models/Grado.js';
 import pool from '../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
@@ -19,50 +19,30 @@ router.use(verifyToken, async (req, res, next) => {
   }
 });
 
-router.post('/add_social_work', async (req, res, next) => {
-  const { name, description, hours, date } = req.body;
-  const orgId = req.user.orgId;
-
-  if (!name || !description || !hours || !date) {
-    return res.status(400).json({ error: 'Faltan datos' });
-  }
-
+router.post('/create-grade', async (req, res, next) => {
   try {
-    await agregar(name, description, hours, date, orgId, req.dbClient);
-    res.json({ message: 'Trabajo social registrado' });
+    const orgId = req.user.orgId;
+    await createGrade({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    res.json({ success: true, message: 'Grado creado con éxito' });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/ids', async (req, res, next) => {
-  const orgId = req.user.orgId;
-
+router.get('/get-grades', async (req, res, next) => {
   try {
-    const data = await obtenerIDs(orgId, req.dbClient);
+    const orgId = req.user.orgId;
+    const data = await getGradesByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/registro_social_work', async (req, res, next) => {
-  const { id } = req.query;
-  const orgId = req.user.orgId;
-
-  if (!id) {
-    return res.status(400).json({ error: 'ID es requerido' });
-  }
-
+router.get('/get-single-grade', async (req, res, next) => {
   try {
-    const data = await obtenerPorID(id, orgId, req.dbClient);
-
-    if (!data) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Registro no encontrado' });
-    }
-
+    const orgId = req.user.orgId;
+    const data = await getGradesByOrganization(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

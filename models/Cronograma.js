@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-export async function crearEsquema(year) {
+export async function createSchema(year) {
   const yearBefore = Number(year) - 1;
   const schemaCurrent = `${year}`;
   const schemaBefore = `${yearBefore}`;
@@ -45,7 +45,7 @@ export async function crearEsquema(year) {
   }
 }
 
-export async function crearEvento(evento) {
+export async function createEvent(evento) {
   const eventDate = new Date(evento.fecha);
   const isoDate = eventDate.toISOString();
   const oneJan = new Date(eventDate.getFullYear(), 0, 1);

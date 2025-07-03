@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-export async function crearGrado({ id, nombre, organizacion_id }, client = pool) {
+export async function createGrade({ id, name, organizacion_id }, client = pool) {
   const query = `
     INSERT INTO grades (id, grade, organizacion_id)
     VALUES ($1, $2, $3)
@@ -11,7 +11,7 @@ export async function crearGrado({ id, nombre, organizacion_id }, client = pool)
   await client.query(query, [id, nombre, organizacion_id]);
 }
 
-export async function obtenerGradosPorOrganizacion(organizacion_id, client = pool) {
+export async function getGradesByOrganization(organizacion_id, client = pool) {
   const query = `
     SELECT id, grade
     FROM grades
