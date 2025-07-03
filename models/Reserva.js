@@ -2,16 +2,16 @@ import pool from '../config/db.js';
 import buscarIdsPorNombres from './buscarIdsPorNombres.js';
 
 const Reserva = {
-  async obtenerreservationsPorOrganizacion(organizacion_id) {
+  async obtenerreservationsPorOrganizacion(organizacion_id, client = pool) {
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
-    const { rows } = await pool.query(query, [organizacion_id]);
+    const { rows } = await client.query(query, [organizacion_id]);
     return rows;
   },
 
-  async obtenerReservaPorId(id) {
+  async obtenerReservaPorId(id, client = pool) {
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
-    const { rows } = await pool.query(query, [id]);
+    const { rows } = await client.query(query, [id]);
 
     if (rows.length === 0) {
       throw new Error(`❌ No se encontró ninguna reserva con ID: ${id}`);
@@ -20,19 +20,30 @@ const Reserva = {
     return rows[0];
   },
 
-  async reportarReserva(name, grade, place, start, finish, organizacion_id) {
-    const { grade_id, place_id } = await buscarIdsPorNombres({
-      grade,
-      place,
-      organizacion_id,
-    });
+  async reportarReserva(
+    name,
+    grade,
+    place,
+    start,
+    finish,
+    organizacion_id,
+    client = pool
+  ) {
+    const { grade_id, place_id } = await buscarIdsPorNombres(
+      {
+        grade,
+        place,
+        organizacion_id,
+      },
+      client
+    );
     const query = `
     INSERT INTO report_place
       (name, grade_id, place_id, start, finish, organizacion_id)
     VALUES
       ($1, $2, $3, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ, $6);
   `;
-    await pool.query(query, [
+    await client.query(query, [
       name,
       grade_id,
       place_id,
@@ -42,12 +53,23 @@ const Reserva = {
     ]);
   },
 
-  async reservarLugar(name, grade, place, start, finish, organizacion_id) {
-    const { grade_id, place_id } = await buscarIdsPorNombres({
-      grade,
-      place,
-      organizacion_id,
-    });
+  async reservarLugar(
+    name,
+    grade,
+    place,
+    start,
+    finish,
+    organizacion_id,
+    client = pool
+  ) {
+    const { grade_id, place_id } = await buscarIdsPorNombres(
+      {
+        grade,
+        place,
+        organizacion_id,
+      },
+      client
+    );
 
     const insertQuery = `
     INSERT INTO reservations (name, grade_id, place_id, start, finish, organizacion_id)
@@ -55,7 +77,7 @@ const Reserva = {
     RETURNING *;
   `;
 
-    const { rows } = await pool.query(insertQuery, [
+    const { rows } = await client.query(insertQuery, [
       name,
       grade_id,
       place_id,
@@ -67,13 +89,13 @@ const Reserva = {
     return rows[0];
   },
 
-  async eliminarExpiradas() {
+  async eliminarExpiradas(client = pool) {
     const query = `
     DELETE FROM reservations
     WHERE finish < (NOW() AT TIME ZONE 'UTC')
     RETURNING id;
   `;
-    const { rows, rowCount } = await pool.query(query);
+    const { rows, rowCount } = await client.query(query);
     const deletedIds = rows.map((r) => r.id);
     return { deletedCount: rowCount, deletedIds };
   },
@@ -83,13 +105,17 @@ const Reserva = {
     grade,
     hora_inicio,
     hora_final,
-    organizacion_id
+    organizacion_id,
+    client = pool
   ) {
-    const { grade_id, place_id } = await buscarIdsPorNombres({
-      grade,
-      place,
-      org_id: organizacion_id,
-    });
+    const { grade_id, place_id } = await buscarIdsPorNombres(
+      {
+        grade,
+        place,
+        organizacion_id,
+      },
+      client
+    );
 
     const queryLugar = `
       SELECT * FROM reservation_details
@@ -99,7 +125,7 @@ const Reserva = {
         start < $3::TIMESTAMPTZ AND finish > $4::TIMESTAMPTZ
       );
     `;
-    const resultLugar = await pool.query(queryLugar, [
+    const resultLugar = await client.query(queryLugar, [
       place_id,
       organizacion_id,
       hora_final,
@@ -119,7 +145,7 @@ const Reserva = {
         start < $4::TIMESTAMPTZ AND finish > $5::TIMESTAMPTZ
       );
     `;
-    const resultClase = await pool.query(queryClase, [
+    const resultClase = await client.query(queryClase, [
       grade_id,
       place_id,
       organizacion_id,

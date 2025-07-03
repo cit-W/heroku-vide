@@ -1,50 +1,63 @@
-import express from "express";
-import Usuario from "../models/Usuario.js";
-import {crearEspacio, 
-  obtenerEspaciosPorOrganizacion
-} from "../models/Espacio.js";
+import express from 'express';
+import { verifyToken } from '../middleware/auth.js';
+import {
+  crearEspacio,
+  obtenerEspaciosPorOrganizacion,
+} from '../models/Espacio.js';
+import pool from '../config/db.js'; // Importar el pool de conexiones
+
 const router = express.Router();
 
-router.post("/crear_espacio", async (req, res) => {
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
   try {
-    await crearEspacio(req.body);
-    res.json({ success: true, message: "Espacio creado con éxito" });
+    // Establecer la variable de sesión para RLS
+    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al crear espacio" });
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
   }
 });
 
-router.get("/obtener_espacios", async (req, res) => {
+router.post('/crear_espacio', async (req, res, next) => {
   try {
-    const orgData = await Usuario.obtenerOrgId(req.query.email);
-
-    if (orgData.length > 0) {
-        const orgId = orgData[0].organizacion_id;
-        const data = await obtenerEspaciosPorOrganizacion(orgId);
-        res.json({ success: true, data });
-
-    } else {
-        console.error("❌ No se encontró la organización para el email proporcionado.");
-        res.json({ success: false, error: "Error en las consultas." });
-    }
-
+    const orgId = req.user.orgId;
+    await crearEspacio({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    res.json({ success: true, message: 'Espacio creado con éxito' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+    next(error);
   }
 });
 
-router.get("/obtener_espacio_single", async (req, res) => {
+router.get('/obtener_espacios', async (req, res, next) => {
   try {
-
-    const data = await obtenerEspaciosPorOrganizacion(req.query.orgId);
+    const orgId = req.user.orgId;
+    const data = await obtenerEspaciosPorOrganizacion(orgId, req.dbClient);
     res.json({ success: true, data });
-
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+    next(error);
   }
+});
+
+router.get('/obtener_espacio_single', async (req, res, next) => {
+  try {
+    const orgId = req.user.orgId;
+    const data = await obtenerEspaciosPorOrganizacion(orgId, req.dbClient);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;

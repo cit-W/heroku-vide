@@ -10,25 +10,22 @@ import pool from '../config/db.js';
  * @param {string} [opciones.roles] - Nombre del rol (opcional)
  * @param {string} [opciones.education_levels] - Nivel educativo (opcional)
  * @param {string} [opciones.departments] - Nombre del departamento (opcional)
+ * @param {object} [client=pool] - Cliente de conexión a la base de datos (opcional, por defecto usa el pool)
  * @returns {Object} - Objeto con los IDs encontrados
  */
 
-export async function buscarIdsPorNombres({
-  organizacion_id,
-  grade,
-  place,
-  roles,
-  education_levels,
-  departments,
-}) {
+export async function buscarIdsPorNombres(
+  { organizacion_id, grade, place, roles, education_levels, departments },
+  client = pool
+) {
   if (!organizacion_id) throw new Error('❌ Se requiere el organizacion_id');
 
   const resultados = {};
 
   try {
     if (grade) {
-      const res = await pool.query(
-        `SELECT id FROM grades WHERE nombre = $1 AND organizacion_id = $2`,
+      const res = await client.query(
+        `SELECT id FROM grades WHERE grade = $1 AND organizacion_id = $2`,
         [grade, organizacion_id]
       );
       if (res.rowCount === 0)
@@ -37,7 +34,7 @@ export async function buscarIdsPorNombres({
     }
 
     if (place) {
-      const res = await pool.query(
+      const res = await client.query(
         `SELECT id FROM places WHERE place = $1 AND organizacion_id = $2`,
         [place, organizacion_id]
       );
@@ -47,7 +44,7 @@ export async function buscarIdsPorNombres({
     }
 
     if (roles) {
-      const res = await pool.query(
+      const res = await client.query(
         `SELECT id FROM roles WHERE role = $1 AND organizacion_id = $2`,
         [roles, organizacion_id]
       );
@@ -57,7 +54,7 @@ export async function buscarIdsPorNombres({
     }
 
     if (education_levels) {
-      const res = await pool.query(
+      const res = await client.query(
         `SELECT id FROM education_levels WHERE level = $1 AND organizacion_id = $2`,
         [education_levels, organizacion_id]
       );
@@ -69,7 +66,7 @@ export async function buscarIdsPorNombres({
     }
 
     if (departments) {
-      const res = await pool.query(
+      const res = await client.query(
         `SELECT id FROM departments WHERE department = $1 AND organizacion_id = $2`,
         [departments, organizacion_id]
       );

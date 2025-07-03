@@ -1,80 +1,61 @@
 import express from 'express';
-import Usuario from '../models/Usuario.js';
+import { verifyToken } from '../middleware/auth.js';
 import { agregar, obtenerIDs, obtenerPorID } from '../models/TrabajoSocial.js';
+import pool from '../config/db.js'; // Importar el pool de conexiones
+
 const router = express.Router();
 
-router.post('/add_social_work', async (req, res) => {
-  const { name, description, hours, date, email } = req.body;
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    // Establecer la variable de sesión para RLS
+    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
+  } catch (error) {
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
+  }
+});
 
-  if (!name || !description || !hours || !date || !email) {
+router.post('/add_social_work', async (req, res, next) => {
+  const { name, description, hours, date } = req.body;
+  const orgId = req.user.orgId;
+
+  if (!name || !description || !hours || !date) {
     return res.status(400).json({ error: 'Faltan datos' });
   }
 
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-    if (orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: 'Organización no encontrada' });
-    }
-
-    const orgId = orgData[0].organizacion_id;
-    await agregar(name, description, hours, date, orgId);
+    await agregar(name, description, hours, date, orgId, req.dbClient);
     res.json({ message: 'Trabajo social registrado' });
   } catch (error) {
-    console.error('❌ Error al registrar trabajo social:', error);
-    res
-      .status(500)
-      .json({ success: false, error: 'Error interno del servidor' });
+    next(error);
   }
 });
 
-router.get('/ids', async (req, res) => {
-  const { email } = req.query;
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email es requerido' });
-  }
+router.get('/ids', async (req, res, next) => {
+  const orgId = req.user.orgId;
 
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-
-    if (orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: 'Organización no encontrada' });
-    }
-
-    const orgId = orgData[0].organizacion_id;
-    const data = await obtenerIDs(orgId);
-
+    const data = await obtenerIDs(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
-    console.error('❌ Error al obtener IDs:', error);
-    res
-      .status(500)
-      .json({ success: false, error: 'Error interno del servidor' });
+    next(error);
   }
 });
 
-router.get('/registro_social_work', async (req, res) => {
-  const { id, email } = req.query;
+router.get('/registro_social_work', async (req, res, next) => {
+  const { id } = req.query;
+  const orgId = req.user.orgId;
 
-  if (!id || !email) {
-    return res.status(400).json({ error: 'ID y email son requeridos' });
+  if (!id) {
+    return res.status(400).json({ error: 'ID es requerido' });
   }
 
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-
-    if (orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, error: 'Organización no encontrada' });
-    }
-
-    const orgId = orgData[0].organizacion_id;
-    const data = await obtenerPorID(id, orgId);
+    const data = await obtenerPorID(id, orgId, req.dbClient);
 
     if (!data) {
       return res
@@ -84,11 +65,16 @@ router.get('/registro_social_work', async (req, res) => {
 
     res.json({ success: true, data });
   } catch (error) {
-    console.error('❌ Error al obtener registro:', error);
-    res
-      .status(500)
-      .json({ success: false, error: 'Error interno del servidor' });
+    next(error);
   }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;

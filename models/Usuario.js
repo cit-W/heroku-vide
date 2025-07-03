@@ -13,7 +13,7 @@ const Usuario = {
     departamento,
     escuela,
     curso,
-  }) {
+  }, client = pool) {
     // Hasheamos la contraseña de forma asíncrona
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -25,7 +25,7 @@ const Usuario = {
             escuela = EXCLUDED.escuela, curso = EXCLUDED.curso;
         `;
     // Utilizamos el hash de la contraseña en lugar del password en texto claro
-    await pool.query(query, [
+    await client.query(query, [
       personal_id,
       name,
       email,
@@ -38,26 +38,26 @@ const Usuario = {
     ]);
   },
 
-  async saveUserDevices({ personal_id, player_id, device_type }) {
+  async saveUserDevices({ personal_id, player_id, device_type, organizacion_id }, client = pool) {
     const query = `
-            INSERT INTO user_devices (personal_id, player_id, device_type, last_active)
-            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+            INSERT INTO user_devices (personal_id, player_id, device_type, last_active, organizacion_id)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4)
             ON CONFLICT (player_id) DO UPDATE
-            SET last_active = CURRENT_TIMESTAMP, device_type = EXCLUDED.device_type;
+            SET last_active = CURRENT_TIMESTAMP, device_type = EXCLUDED.device_type, organizacion_id = EXCLUDED.organizacion_id;
         `;
-    await pool.query(query, [personal_id, player_id, device_type]);
+    await client.query(query, [personal_id, player_id, device_type, organizacion_id]);
   },
 
-  async obtenerUsuariosPorOrganizacion(organizacion_id) {
+  async obtenerUsuariosPorOrganizacion(organizacion_id, client = pool) {
     const query =
       'SELECT * FROM users WHERE organizacion_id = $1 ORDER BY name';
-    const { rows } = await pool.query(query, [organizacion_id]);
+    const { rows } = await client.query(query, [organizacion_id]);
     return rows;
   },
 
-  async obtenerOrgId(email) {
+  async obtenerOrgId(email, client = pool) {
     const query = 'SELECT organizacion_id FROM users WHERE email = $1';
-    const { rows } = await pool.query(query, [email]);
+    const { rows } = await client.query(query, [email]);
     return rows;
   },
 };

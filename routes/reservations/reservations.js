@@ -1,20 +1,35 @@
 import express from 'express';
-import Reserva from '../../models/Reserva.js';
 import { verifyToken } from '../../middleware/auth.js';
+import Reserva from '../../models/Reserva.js';
+import pool from '../../config/db.js'; // Importar el pool de conexiones
+
 const router = express.Router();
 
-router.get('/ids', verifyToken, async (req, res) => {
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
   try {
-    const orgId = req.user.orgId;
-    const data = await Reserva.obtenerreservationsPorOrganizacion(orgId);
-    res.json({ success: true, data });
+    // Establecer la variable de sesión para RLS
+    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, data: 'Error al obtener los IDs' });
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
   }
 });
 
-router.get('/registro_reservations', async (req, res) => {
+router.get('/ids', async (req, res, next) => {
+  try {
+    const orgId = req.user.orgId;
+    const data = await Reserva.obtenerreservationsPorOrganizacion(orgId, req.dbClient);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/registro_reservations', async (req, res, next) => {
   const { id } = req.query;
   if (!id) {
     return res
@@ -22,21 +37,18 @@ router.get('/registro_reservations', async (req, res) => {
       .json({ success: false, data: 'No se proporcionó un ID válido' });
   }
   try {
-    const data = await Reserva.obtenerReservaPorId(id);
+    const data = await Reserva.obtenerReservaPorId(id, req.dbClient);
     if (data) {
       res.json({ success: true, data });
     } else {
       res.status(404).json({ success: false, data: 'Reserva no encontrada' });
     }
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ success: false, data: 'Error al obtener la reserva' });
+    next(error);
   }
 });
 
-router.post('/reportar', verifyToken, async (req, res) => {
+router.post('/reportar', async (req, res, next) => {
   const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
   if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
@@ -49,18 +61,16 @@ router.post('/reportar', verifyToken, async (req, res) => {
       lugar,
       hora_inicio,
       hora_final,
-      orgId
+      orgId,
+      req.dbClient
     );
     res.json({ success: true, data: 'Reporte registrado con éxito' });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ success: false, data: 'Error al registrar el reporte' });
+    next(error);
   }
 });
 
-router.post('/reservar_lugar', verifyToken, async (req, res) => {
+router.post('/reservar_lugar', async (req, res, next) => {
   const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
   if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
@@ -73,33 +83,27 @@ router.post('/reservar_lugar', verifyToken, async (req, res) => {
       lugar,
       hora_inicio,
       hora_final,
-      orgId
+      orgId,
+      req.dbClient
     );
     res.json({ success: true, data: 'Reserva registrada con éxito' });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ success: false, data: 'Error al registrar la reserva' });
+    next(error);
   }
 });
 
-router.post('/eliminarExpiradas', async (req, res) => {
+router.post('/eliminarExpiradas', async (req, res, next) => {
   try {
-    const result = await Reserva.eliminarExpiradas();
+    // Esta función no necesita orgId, pero si la tabla reservations tiene RLS,
+    // esta operación solo afectará las reservas de la organización del usuario que la ejecuta.
+    const result = await Reserva.eliminarExpiradas(req.dbClient);
     res.json({ success: true, data: result });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        data: 'Error al eliminar reservations expiradas',
-      });
+    next(error);
   }
 });
 
-router.post('/verificar_reserva', verifyToken, async (req, res) => {
+router.post('/verificar_reserva', async (req, res, next) => {
   const { lugar, clase, hora_inicio, hora_final } = req.body;
   if (!lugar || !clase || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
@@ -111,18 +115,21 @@ router.post('/verificar_reserva', verifyToken, async (req, res) => {
       clase,
       hora_inicio,
       hora_final,
-      orgId
+      orgId,
+      req.dbClient
     );
     res.json({ success: result.disponible, data: result });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        data: 'Error en la verificación de disponibilidad',
-      });
+    next(error);
   }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;

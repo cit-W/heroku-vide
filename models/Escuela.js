@@ -1,24 +1,24 @@
 import pool from '../config/db.js';
 
 // Crear o actualizar una escuela
-export async function crearEscuela({ id, nombre, organizacion_id }) {
+export async function crearEscuela({ id, nombre, organizacion_id }, client = pool) {
   const query = `
-    INSERT INTO escuela (id, nombre, organizacion_id)
+    INSERT INTO education_levels (id, level, organizacion_id)
     VALUES ($1, $2, $3)
     ON CONFLICT (id) DO UPDATE
-      SET nombre = EXCLUDED.nombre,
+      SET level = EXCLUDED.level,
           organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await pool.query(query, [id, nombre, organizacion_id]);
+  await client.query(query, [id, nombre, organizacion_id]);
 }
 
 // Obtener escuelas por organización
-export async function obtenerEscuelasPorOrganizacion(organizacion_id) {
+export async function obtenerEscuelasPorOrganizacion(organizacion_id, client = pool) {
   const query = `
-    SELECT nombre FROM escuela
+    SELECT level FROM education_levels
     WHERE organizacion_id = $1
-    ORDER BY nombre;
+    ORDER BY level;
   `;
-  const { rows } = await pool.query(query, [organizacion_id]);
+  const { rows } = await client.query(query, [organizacion_id]);
   return rows;
 }

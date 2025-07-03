@@ -3,33 +3,33 @@ import bcrypt from 'bcrypt';
 const saltRounds = 10;
 
 // Buscar estudiante por nombre
-export async function obtenerPorNombre(nombre, organizacion_id) {
+export async function obtenerPorNombre(nombre, organizacion_id, client = pool) {
   const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = `student_${sanitizedId}`;
   const query = `SELECT * FROM ${tableName} WHERE name = $1`;
-  const { rows } = await pool.query(query, [nombre]);
+  const { rows } = await client.query(query, [nombre]);
   return rows.length > 0 ? rows : null;
 }
 
 // Buscar estudiante por ID
-export async function obtenerPorID(id, organizacion_id) {
+export async function obtenerPorID(id, organizacion_id, client = pool) {
   const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = `student_${sanitizedId}`;
   const query = `SELECT * FROM ${tableName} WHERE id = $1`;
-  const { rows } = await pool.query(query, [id]);
+  const { rows } = await client.query(query, [id]);
   return rows.length > 0 ? rows : null;
 }
 
 // Eliminar tabla de estudiantes por organización
-export async function deleteEstudiantes(organizacion_id) {
+export async function deleteEstudiantes(organizacion_id, client = pool) {
   const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = `student_${sanitizedId}`;
   const query = `DROP TABLE IF EXISTS ${tableName} CASCADE;`;
-  await pool.query(query);
+  await client.query(query);
 }
 
 // Crear tabla de estudiantes por organización
-export async function createTableStudents(organizacion_id) {
+export async function createTableStudents(organizacion_id, client = pool) {
   const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = `student_${sanitizedId}`;
   const query = `
@@ -41,7 +41,7 @@ export async function createTableStudents(organizacion_id) {
       grade TEXT NOT NULL
     );
   `;
-  return await pool.query(query);
+  return await client.query(query);
 }
 
 // Agregar estudiante a tabla dinámica
@@ -50,7 +50,8 @@ export async function agregarEstudiante(
   personal_id,
   rh,
   grade,
-  organizacion_id
+  organizacion_id,
+  client = pool
 ) {
   const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
   const tableName = `student_${sanitizedId}`;
@@ -58,7 +59,7 @@ export async function agregarEstudiante(
     INSERT INTO ${tableName} (name, personal_id, rh, grade)
     VALUES ($1, $2, $3, $4);
   `;
-  const result = await pool.query(query, [name, personal_id, rh, grade]);
+  const result = await client.query(query, [name, personal_id, rh, grade]);
   return result;
 }
 
@@ -70,7 +71,7 @@ export async function crearUsuario({
   password,
   grade,
   organizacion_id,
-}) {
+}, client = pool) {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   const query = `
     INSERT INTO student_users (personal_id, name, email, password, grade, organizacion_id)
@@ -81,7 +82,7 @@ export async function crearUsuario({
         grade = EXCLUDED.grade,
         organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await pool.query(query, [
+  await client.query(query, [
     personal_id,
     name,
     email,

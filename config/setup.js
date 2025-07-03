@@ -72,6 +72,8 @@ const setupDatabase = async () => {
       ADD CONSTRAINT "fk_organizations_status_id_status_id" FOREIGN KEY("status_id") REFERENCES "public"."status"("id");
     `);
 
+    // --- TABLAS CON RLS ---
+
     // Crear la tabla de departamentos
     await pool.query(`
       CREATE TABLE "public"."departments" (
@@ -80,12 +82,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "departments_departamento_nombre_organizacion_id_key"
-      ON "public"."departments" ("department", "organizacion_id");
-
-      ALTER TABLE "public"."departments"
-      ADD CONSTRAINT "fk_departments_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."departments" ADD CONSTRAINT "fk_departments_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."departments" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."departments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de niveles educativos
@@ -96,12 +95,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "education_levels_escuela_nombre_organizacion_id_key"
-      ON "public"."education_levels" ("level", "organizacion_id");
-
-      ALTER TABLE "public"."education_levels"
-      ADD CONSTRAINT "fk_education_levels_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."education_levels" ADD CONSTRAINT "fk_education_levels_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."education_levels" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."education_levels" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de grados
@@ -112,16 +108,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "grades_grades_nombre_organizacion_id_key"
-      ON "public"."grades" ("grade", "organizacion_id");
-
-      /* Agregamos el índice único para la columna grade */
-      CREATE UNIQUE INDEX "grades_grade_key"
-      ON "public"."grades" ("grade");
-
-      ALTER TABLE "public"."grades"
-      ADD CONSTRAINT "fk_grades_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."grades" ADD CONSTRAINT "fk_grades_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."grades" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."grades" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de roles
@@ -132,12 +121,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "roles_roles_nombre_organizacion_id_key"
-      ON "public"."roles" ("role", "organizacion_id");
-
-      ALTER TABLE "public"."roles"
-      ADD CONSTRAINT "fk_roles_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."roles" ADD CONSTRAINT "fk_roles_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."roles" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de lugares
@@ -148,12 +134,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "places_places_nombre_organizacion_id_key"
-      ON "public"."places" ("place", "organizacion_id");
-
-      ALTER TABLE "public"."places"
-      ADD CONSTRAINT "fk_places_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."places" ADD CONSTRAINT "fk_places_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."places" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."places" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de usuarios
@@ -171,30 +154,16 @@ const setupDatabase = async () => {
         "grade_id" INTEGER NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      CREATE UNIQUE INDEX "users_users_email_key"
-      ON "public"."users" ("email");
-
-      CREATE UNIQUE INDEX "users_users_personal_id_key"
-      ON "public"."users" ("personal_id");
-
-      ALTER TABLE "public"."users"
-      ADD CONSTRAINT "fk_users_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
-
-      ALTER TABLE "public"."users"
-      ADD CONSTRAINT "fk_users_role_id_roles_id" FOREIGN KEY("role_id") REFERENCES "public"."roles"("id");
-
-      ALTER TABLE "public"."users"
-      ADD CONSTRAINT "fk_users_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
-
-      ALTER TABLE "public"."users"
-      ADD CONSTRAINT "fk_users_education_levels_id_education_levels_id" FOREIGN KEY("education_levels_id") REFERENCES "public"."education_levels"("id");
-
-      ALTER TABLE "public"."users"
-      ADD CONSTRAINT "fk_users_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_role_id_roles_id" FOREIGN KEY("role_id") REFERENCES "public"."roles"("id");
+      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
+      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_education_levels_id_education_levels_id" FOREIGN KEY("education_levels_id") REFERENCES "public"."education_levels"("id");
+      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."users" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de estudiantes - SOLUCIÓN: Cambiando la relación para usar el ID en lugar del texto
+    // Crear la tabla de estudiantes
     await pool.query(`
       CREATE TABLE "public"."students" (
         "id" INTEGER NOT NULL DEFAULT nextval('students_id_seq'::regclass),
@@ -203,58 +172,13 @@ const setupDatabase = async () => {
         "rh" CHAR(4),
         "grade" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
-        "grade_id" INTEGER NOT NULL,  /* Añadimos un campo grade_id para relacionar con la tabla grades */
+        "grade_id" INTEGER NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      /* Cambiamos la restricción de clave externa para usar grade_id en lugar de grade */
-      ALTER TABLE "public"."students"
-      ADD CONSTRAINT "fk_students_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
-
-      ALTER TABLE "public"."students"
-      ADD CONSTRAINT "fk_students_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
-    `);
-
-    // Crear la tabla de usuarios de estudiantes
-    await pool.query(`
-      CREATE TABLE "public"."student_users" (
-        "id" INTEGER NOT NULL DEFAULT nextval('studentuser_id_seq'::regclass),
-        "student_id" INTEGER NOT NULL UNIQUE,
-        "email" TEXT NOT NULL UNIQUE,
-        "password" TEXT NOT NULL,
-        "role" TEXT NOT NULL DEFAULT '''student''::text',
-        PRIMARY KEY ("id")
-      );
-
-      CREATE UNIQUE INDEX "student_users_studentuser_email_key"
-      ON "public"."student_users" ("email");
-
-      CREATE UNIQUE INDEX "student_users_studentuser_personal_id_key"
-      ON "public"."student_users" ("student_id");
-
-      ALTER TABLE "public"."student_users"
-      ADD CONSTRAINT "fk_student_users_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
-    `);
-
-    // Crear la tabla de dispositivos del usuario
-    await pool.query(`
-      CREATE TABLE "public"."user_devices" (
-        "id" INTEGER NOT NULL DEFAULT nextval('user_devices_id_seq'::regclass),
-        "email" VARCHAR(20) NOT NULL,
-        "player_id" TEXT NOT NULL UNIQUE,
-        "device_type" TEXT NOT NULL,
-        "last_active" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY ("id")
-      );
-
-      CREATE UNIQUE INDEX "user_devices_user_devices_player_id_key"
-      ON "public"."user_devices" ("player_id");
-
-      ALTER TABLE "public"."user_devices"
-      ADD CONSTRAINT "fk_user_devices_email_users_email" FOREIGN KEY("email") REFERENCES "public"."users"("email");
-
-      ALTER TABLE "public"."user_devices"
-      ADD CONSTRAINT "fk_user_devices_id_users_id" FOREIGN KEY("id") REFERENCES "public"."users"("id");
+      ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."students" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."students" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de reservas
@@ -269,15 +193,11 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      ALTER TABLE "public"."reservations"
-      ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
-
-      ALTER TABLE "public"."reservations"
-      ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
-
-      ALTER TABLE "public"."reservations"
-      ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."reservations" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."reservations" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de trabajo social
@@ -291,9 +211,9 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      ALTER TABLE "public"."social_work"
-      ADD CONSTRAINT "fk_social_work_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."social_work" ADD CONSTRAINT "fk_social_work_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."social_work" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."social_work" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de citaciones
@@ -306,16 +226,14 @@ const setupDatabase = async () => {
         "user_id" INTEGER NOT NULL,
         "date" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         "notes" TEXT,
-        "status" VARCHAR(20) NOT NULL DEFAULT '''Pendiente''::character varying',
+        "status" VARCHAR(20) NOT NULL DEFAULT 'Pendiente'::character varying,
         "organizacion_id" CHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      ALTER TABLE "public"."appointments"
-      ADD CONSTRAINT "fk_appointments_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
-
-      ALTER TABLE "public"."appointments"
-      ADD CONSTRAINT "fk_appointments_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
+      ALTER TABLE "public"."appointments" ADD CONSTRAINT "fk_appointments_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
+      ALTER TABLE "public"."appointments" ADD CONSTRAINT "fk_appointments_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
+      ALTER TABLE "public"."appointments" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."appointments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
     // Crear la tabla de reporte_lugar
@@ -330,18 +248,43 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-
-      ALTER TABLE "public"."report_place"
-      ADD CONSTRAINT "fk_report_place_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
-
-      ALTER TABLE "public"."report_place"
-      ADD CONSTRAINT "fk_report_place_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
-
-      ALTER TABLE "public"."report_place"
-      ADD CONSTRAINT "fk_report_place_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
+      ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."report_place" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."report_place" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de prueba
+    // --- TABLAS SIN RLS (O CON LÓGICA DIFERENTE) ---
+
+    await pool.query(`
+      CREATE TABLE "public"."student_users" (
+        "id" INTEGER NOT NULL DEFAULT nextval('studentuser_id_seq'::regclass),
+        "student_id" INTEGER NOT NULL UNIQUE,
+        "email" TEXT NOT NULL UNIQUE,
+        "password" TEXT NOT NULL,
+        "role" TEXT NOT NULL DEFAULT 'student'::text,
+        PRIMARY KEY ("id")
+      );
+      ALTER TABLE "public"."student_users" ADD CONSTRAINT "fk_student_users_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
+    `);
+
+    // Crear la tabla de dispositivos del usuario (Añadido organizacion_id y RLS)
+    await pool.query(`
+      CREATE TABLE "public"."user_devices" (
+        "id" INTEGER NOT NULL DEFAULT nextval('user_devices_id_seq'::regclass),
+        "email" VARCHAR(20) NOT NULL,
+        "player_id" TEXT NOT NULL UNIQUE,
+        "device_type" TEXT NOT NULL,
+        "last_active" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        "organizacion_id" VARCHAR(16) NOT NULL,
+        PRIMARY KEY ("id")
+      );
+      ALTER TABLE "public"."user_devices" ADD CONSTRAINT "fk_user_devices_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."user_devices" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
+    `);
+
     await pool.query(`
       CREATE TABLE "public"."prueba" (
         "horas" VARCHAR(40) NOT NULL,
@@ -354,6 +297,8 @@ const setupDatabase = async () => {
     `);
 
     console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');
+    console.log('🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.');
+
   } catch (error) {
     console.error('❌ Error al configurar la base de datos:', error);
   } finally {

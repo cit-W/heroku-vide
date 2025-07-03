@@ -1,16 +1,16 @@
 import pool from "../config/db.js";
 
-export async function crearRole({ id, nombre, organizacion_id }) {
+export async function crearRole({ id, nombre, organizacion_id }, client = pool) {
         const query = `
-        INSERT INTO roles (id, nombre, organizacion_id)
+        INSERT INTO roles (id, role, organizacion_id)
         VALUES ($1, $2, $3)
-        ON CONFLICT (id) DO UPDATE SET nombre = EXCLUDED.nombre;
+        ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;
         `;
-        await pool.query(query, [id, nombre, organizacion_id]);
+        await client.query(query, [id, nombre, organizacion_id]);
 }
 
-export async function obtenerRolePorOrganizacion(organizacion_id) {
-        const query = "SELECT nombre FROM roles WHERE organizacion_id = $1 ORDER BY nombre";
-        const { rows } = await pool.query(query, [organizacion_id]);
+export async function obtenerRolePorOrganizacion(organizacion_id, client = pool) {
+        const query = "SELECT role FROM roles WHERE organizacion_id = $1 ORDER BY role";
+        const { rows } = await client.query(query, [organizacion_id]);
         return rows;
 }

@@ -1,72 +1,50 @@
-import express from "express";
-import pool from ".././config/db.js";
+import pool from '../config/db.js';
 
-const router = express.Router();
-
-export async function postDevice(email, player_id, device_type) {
-    const query = `INSERT INTO user_devices (email, player_id, device_type)
-        VALUES ($1, $2, $3) RETURNING *;`
-        await pool(query, [email, player_id, device_type]);
+export async function postDevice(email, player_id, device_type, organizacion_id) {
+  const query = `INSERT INTO user_devices (email, player_id, device_type, organizacion_id)
+        VALUES ($1, $2, $3, $4) RETURNING *;`;
+  const { rows } = await pool.query(query, [
+    email,
+    player_id,
+    device_type,
+    organizacion_id,
+  ]);
+  return rows[0];
 }
 
-export async function getDevice(email) {
-    const query = `SELECT * FROM user_devices WHERE email = $1`
-        await pool(query, [email]);
+export async function getDevice(email, organizacion_id) {
+  const query = `SELECT * FROM user_devices WHERE email = $1 AND organizacion_id = $2`;
+  const { rows } = await pool.query(query, [email, organizacion_id]);
+  return rows[0];
 }
 
-router.put("/:id", async (req, res) => {
-    const { id } = req.params;
-    const { device_type, last_active } = req.body;
+export async function updateDevice(id, device_type, last_active, organizacion_id) {
+  let fields = [];
+  let values = [];
+  let index = 1;
 
-    if (!device_type && !last_active) {
-        return res.status(400).json({ success: false, error: "No se proporcionó ningún dato para actualizar." });
-    }
+  if (device_type) {
+    fields.push(`device_type = $${index}`);
+    values.push(device_type);
+    index++;
+  }
+  if (last_active) {
+    fields.push(`last_active = $${index}`);
+    values.push(last_active);
+    index++;
+  }
+  values.push(id);
+  values.push(organizacion_id);
 
-    try {
-        let fields = [];
-        let values = [];
-        let index = 1;
+  const query = `UPDATE user_devices SET ${fields.join(
+    ', '
+  )} WHERE id = $${index} AND organizacion_id = $${index + 1} RETURNING *;`;
+  const { rows } = await pool.query(query, values);
+  return rows[0];
+}
 
-        if (device_type) {
-        fields.push(`device_type = $${index}`);
-        values.push(device_type);
-        index++;
-        }
-        if (last_active) {
-        fields.push(`last_active = $${index}`);
-        values.push(last_active);
-        index++;
-        }
-        values.push(id);
-
-        const result = await pool.query(
-        `UPDATE user_devices SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`,
-        values
-        );
-
-        if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, error: "Dispositivo no encontrado." });
-        }
-        res.json({ success: true, data: result.rows[0] });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al actualizar el dispositivo." });
-    }
-});
-
-router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const result = await pool.query("DELETE FROM user_devices WHERE id = $1;", [id]);
-        if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, error: "Dispositivo no encontrado." });
-        }
-        res.json({ success: true, message: "Dispositivo eliminado correctamente." });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al eliminar el dispositivo." });
-    }
-});
-
-export default router;
+export async function deleteDevice(id, organizacion_id) {
+  const query = 'DELETE FROM user_devices WHERE id = $1 AND organizacion_id = $2;';
+  const result = await pool.query(query, [id, organizacion_id]);
+  return result.rowCount > 0;
+}

@@ -1,90 +1,107 @@
-import express from "express";
-import pool from ".././config/db.js";
-import {postDevice, getDevice} from "../models/UserDevices.js";
+import express from 'express';
+import { verifyToken } from '../middleware/auth.js';
+import {
+  postDevice,
+  getDevice,
+  updateDevice,
+  deleteDevice,
+} from '../models/UserDevices.js';
+import pool from '../config/db.js'; // Importar el pool de conexiones
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
-    const { email, player_id, device_type } = req.body;
-    
-    if (!email || !player_id || !device_type) {
-        return res.status(400).json({ success: false, error: "Faltan datos requeridos." });
-    }
-
-    try {
-        const result = await postDevice(email, player_id, device_type)
-        res.json({ success: true, data: result.rows[0] });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al registrar el dispositivo." });
-    }
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    // Establecer la variable de sesión para RLS
+    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
+  } catch (error) {
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
+  }
 });
 
-router.get("/", async (req, res) => {
-    const { email } = req.query;
+router.post('/', async (req, res, next) => {
+  const { email, player_id, device_type } = req.body;
+  const orgId = req.user.orgId;
 
-    try {
-        const result = await getDevice(email)
-        res.json({ success: true, data: result.rows[0] });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al obtener dispositivos." });
-    }
+  if (!email || !player_id || !device_type) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'Faltan datos requeridos.' });
+  }
+
+  try {
+    const result = await postDevice(email, player_id, device_type, orgId, req.dbClient);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.put("/:id", async (req, res) => {
-    const { id } = req.params;
-    const { device_type, last_active } = req.body;
+router.get('/', async (req, res, next) => {
+  const { email } = req.query;
+  const orgId = req.user.orgId;
 
-    if (!device_type && !last_active) {
-        return res.status(400).json({ success: false, error: "No se proporcionó ningún dato para actualizar." });
-    }
-
-    try {
-        let fields = [];
-        let values = [];
-        let index = 1;
-
-        if (device_type) {
-        fields.push(`device_type = $${index}`);
-        values.push(device_type);
-        index++;
-        }
-        if (last_active) {
-        fields.push(`last_active = $${index}`);
-        values.push(last_active);
-        index++;
-        }
-        values.push(id);
-
-        const result = await pool.query(
-        `UPDATE user_devices SET ${fields.join(", ")} WHERE id = $${index} RETURNING *;`,
-        values
-        );
-
-        if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, error: "Dispositivo no encontrado." });
-        }
-        res.json({ success: true, data: result.rows[0] });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al actualizar el dispositivo." });
-    }
+  try {
+    const result = await getDevice(email, orgId, req.dbClient);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
+router.put('/:id', async (req, res, next) => {
+  const { id } = req.params;
+  const { device_type, last_active } = req.body;
+  const orgId = req.user.orgId;
 
-    try {
-        const result = await pool.query("DELETE FROM user_devices WHERE id = $1;", [id]);
-        if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, error: "Dispositivo no encontrado." });
-        }
-        res.json({ success: true, message: "Dispositivo eliminado correctamente." });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: "Error al eliminar el dispositivo." });
+  if (!device_type && !last_active) {
+    return res
+      .status(400)
+      .json({ success: false, error: 'No se proporcionó ningún dato para actualizar.' });
+  }
+
+  try {
+    const result = await updateDevice(id, device_type, last_active, orgId, req.dbClient);
+
+    if (!result) {
+      return res
+        .status(404)
+        .json({ success: false, error: 'Dispositivo no encontrado.' });
     }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:id', async (req, res, next) => {
+  const { id } = req.params;
+  const orgId = req.user.orgId;
+
+  try {
+    const result = await deleteDevice(id, orgId, req.dbClient);
+    if (!result) {
+      return res
+        .status(404)
+        .json({ success: false, error: 'Dispositivo no encontrado.' });
+    }
+    res.json({ success: true, message: 'Dispositivo eliminado correctamente.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;

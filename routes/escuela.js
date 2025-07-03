@@ -1,49 +1,60 @@
-import { Router } from "express";
-import Usuario from "../models/Usuario.js";
-import { crearDepartamento } from "../models/Departamento.js";
-import { obtenerEscuelasPorOrganizacion } from "../models/Escuela.js";
+import { Router } from 'express';
+import { verifyToken } from '../middleware/auth.js';
+import { crearEscuela, obtenerEscuelasPorOrganizacion } from '../models/Escuela.js';
+import pool from '../config/db.js'; // Importar el pool de conexiones
+
 const router = Router();
 
-router.post("/crear_escuela", async (req, res) => {
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
   try {
-    await crearDepartamento(req.body);
-    res.json({ success: true, message: "Espacio creado con éxito" });
+    // Establecer la variable de sesión para RLS
+    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al crear espacio" });
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
   }
 });
 
-router.get("/obtener_escuela", async (req, res) => {
+router.post('/crear_escuela', async (req, res, next) => {
   try {
-    const orgData = await Usuario.obtenerOrgId(req.query.email);
-
-    if (orgData.length > 0) {
-        const orgId = orgData[0].organizacion_id;
-        const data = await obtenerEscuelasPorOrganizacion(orgId);
-        res.json({ success: true, data });
-
-    } else {
-        console.error("❌ No se encontró la organización para el email proporcionado.");
-        res.json({ success: false, error: "Error en las consultas." });
-    }
-
+    const orgId = req.user.orgId;
+    await crearEscuela({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    res.json({ success: true, message: 'Escuela creada con éxito' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+    next(error);
   }
 });
 
-router.get("/obtener_escuela_single", async (req, res) => {
+router.get('/obtener_escuela', async (req, res, next) => {
   try {
-
-    const data = await obtenerEscuelasPorOrganizacion(req.query.orgId);
+    const orgId = req.user.orgId;
+    const data = await obtenerEscuelasPorOrganizacion(orgId, req.dbClient);
     res.json({ success: true, data });
-
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Error al obtener espacios" });
+    next(error);
   }
+});
+
+router.get('/obtener_escuela_single', async (req, res, next) => {
+  try {
+    const orgId = req.user.orgId;
+    const data = await obtenerEscuelasPorOrganizacion(orgId, req.dbClient);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;
