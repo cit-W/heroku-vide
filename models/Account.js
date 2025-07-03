@@ -1,8 +1,8 @@
 import pool from '../config/db.js';
 
-// Elimina una reserva de la tabla reservar_areas (formato android_mysql)
+// Elimina una reserva de la tabla reservations
 export async function eliminarReservaPersonal(id) {
-  const query = 'DELETE FROM android_mysql.reservar_areas WHERE id = $1';
+  const query = 'DELETE FROM reservations WHERE id = $1';
   const result = await pool.query(query, [id]);
   return result.rowCount > 0;
 }
@@ -15,11 +15,11 @@ export async function eliminarTrabajoSocialPersonal(id) {
 }
 
 // Obtiene solo los IDs de reservas asociadas a un profesor
-export async function obtenerreservationsPorProfesor(profesor) {
+export async function obtenerReservationsPorProfesor(profesor) {
   const query = `
     SELECT id
-    FROM android_mysql.reservar_areas
-    WHERE profesor = $1
+    FROM reservations
+    WHERE user_id = $1
     ORDER BY lugar
   `;
   const { rows } = await pool.query(query, [profesor]);

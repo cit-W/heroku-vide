@@ -1,23 +1,11 @@
 import express from 'express';
 import Reserva from '../../models/Reserva.js';
-import Usuario from '../../models/Usuario.js';
+import { verifyToken } from '../../middleware/auth.js';
 const router = express.Router();
 
-// Endpoint para obtener IDs (suponiendo que en Reserva se implemente obtenerIDs que reciba orgID)
-router.get('/ids', async (req, res) => {
-  const email = req.query.email;
-  if (!email) {
-    return res.status(400).json({ success: false, data: 'Falta email' });
-  }
+router.get('/ids', verifyToken, async (req, res) => {
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-    if (!orgData || orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, data: 'Organización no encontrada' });
-    }
-    const orgId = orgData[0].organizacion_id;
-    // Asegúrate de implementar obtenerIDs en Reserva para filtrar por orgID
+    const orgId = req.user.orgId;
     const data = await Reserva.obtenerreservationsPorOrganizacion(orgId);
     res.json({ success: true, data });
   } catch (error) {
@@ -26,7 +14,6 @@ router.get('/ids', async (req, res) => {
   }
 });
 
-// Endpoint para obtener una reserva por su ID
 router.get('/registro_reservations', async (req, res) => {
   const { id } = req.query;
   if (!id) {
@@ -49,22 +36,13 @@ router.get('/registro_reservations', async (req, res) => {
   }
 });
 
-// Endpoint para reportar una reserva
-router.post('/reportar', async (req, res) => {
+router.post('/reportar', verifyToken, async (req, res) => {
   const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
-  const email = req.query.email;
-  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final || !email) {
+  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-    if (!orgData || orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, data: 'Organización no encontrada' });
-    }
-    const orgId = orgData[0].organizacion_id;
-    // Se mapean los parámetros: profesor → name, clase → grade, etc.
+    const orgId = req.user.orgId;
     await Reserva.reportarReserva(
       profesor,
       clase,
@@ -82,21 +60,13 @@ router.post('/reportar', async (req, res) => {
   }
 });
 
-// Endpoint para registrar una reserva
-router.post('/reservar_lugar', async (req, res) => {
+router.post('/reservar_lugar', verifyToken, async (req, res) => {
   const { profesor, clase, lugar, hora_inicio, hora_final } = req.body;
-  const email = req.query.email;
-  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final || !email) {
+  if (!profesor || !clase || !lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-    if (!orgData || orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, data: 'Organización no encontrada' });
-    }
-    const orgId = orgData[0].organizacion_id;
+    const orgId = req.user.orgId;
     await Reserva.reservarLugar(
       profesor,
       clase,
@@ -114,7 +84,6 @@ router.post('/reservar_lugar', async (req, res) => {
   }
 });
 
-// Endpoint para eliminar reservations expiradas (no se filtra por organización)
 router.post('/eliminarExpiradas', async (req, res) => {
   try {
     const result = await Reserva.eliminarExpiradas();
@@ -130,21 +99,13 @@ router.post('/eliminarExpiradas', async (req, res) => {
   }
 });
 
-// Endpoint para verificar la disponibilidad de una reserva
-router.post('/verificar_reserva', async (req, res) => {
+router.post('/verificar_reserva', verifyToken, async (req, res) => {
   const { lugar, clase, hora_inicio, hora_final } = req.body;
-  const email = req.query.email;
-  if (!lugar || !clase || !hora_inicio || !hora_final || !email) {
+  if (!lugar || !clase || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
-    const orgData = await Usuario.obtenerOrgId(email);
-    if (!orgData || orgData.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, data: 'Organización no encontrada' });
-    }
-    const orgId = orgData[0].organizacion_id;
+    const orgId = req.user.orgId;
     const result = await Reserva.verificarDisponibilidad(
       lugar,
       clase,
@@ -152,7 +113,6 @@ router.post('/verificar_reserva', async (req, res) => {
       hora_final,
       orgId
     );
-    // La propiedad "disponible" en el resultado indica si se encontró conflicto o no
     res.json({ success: result.disponible, data: result });
   } catch (error) {
     console.error(error);

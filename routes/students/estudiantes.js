@@ -1,10 +1,13 @@
 import express from 'express';
+import { verifyToken } from '../../middleware/auth.js';
+import Usuario from '../../models/Usuario.js';
 import {
-  obtenerreservations,
+  obtenerReservations,
   obtenerPorNombre,
   obtenerPorID,
   agregarEstudiante,
   crearUsuario,
+  createTableStudents,
 } from '../../models/Estudiante.js';
 const router = express.Router();
 
@@ -15,20 +18,6 @@ router.post('/create_user', async (req, res) => {
   } catch (error) {
     console.error('Error en /create_user:', error);
     res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-router.get('/registro_reservations', async (req, res) => {
-  try {
-    const data = await obtenerreservations();
-    res.json(
-      data
-        ? { success: true, data }
-        : { success: false, message: 'No se encontraron reservations' }
-    );
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al obtener reservations' });
   }
 });
 
@@ -84,8 +73,13 @@ router.post('/delete_students', async (req, res) => {
   }
 });
 
-router.post('/uploadStudents', async (req, res) => {
+router.post('/uploadStudents', verifyToken, async (req, res, next) => {
   try {
+    const orgId = req.user.orgId;
+
+    // Crear tabla dinámica para esa organización
+    await createTableStudents(orgId);
+
     const students = req.body; // Se espera un arreglo de objetos { name, id, rh, grade }
     if (!Array.isArray(students)) {
       return res.status(400).json({
@@ -102,15 +96,20 @@ router.post('/uploadStudents', async (req, res) => {
         student.name,
         student.id,
         student.rh,
-        student.grade
+        student.grade,
+        orgId
       );
     }
-    res.json({ success: true, message: 'Estudiantes agregados correctamente' });
+
+    // Al final, enviar solo una respuesta
+    res.json({
+      success: true,
+      message: 'Estudiantes agregados correctamente',
+      orgId,
+    });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({ success: false, error: 'Error al procesar los estudiantes' });
+    next(error); // Deja que el middleware de errores lo maneje
   }
 });
 

@@ -2,23 +2,20 @@ import pool from '../config/db.js';
 import bcrypt from 'bcrypt';
 const saltRounds = 10;
 
-// Obtener todas las reservas
-export async function obtenerreservations() {
-  const query = 'SELECT * FROM android_mysql.reservar_areas ORDER BY lugar ASC';
-  const { rows } = await pool.query(query);
-  return rows.length > 0 ? rows : null;
-}
-
 // Buscar estudiante por nombre
-export async function obtenerPorNombre(nombre) {
-  const query = 'SELECT * FROM android_mysql.id2024sql WHERE nombre = $1';
+export async function obtenerPorNombre(nombre, organizacion_id) {
+  const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
+  const tableName = `student_${sanitizedId}`;
+  const query = `SELECT * FROM ${tableName} WHERE name = $1`;
   const { rows } = await pool.query(query, [nombre]);
   return rows.length > 0 ? rows : null;
 }
 
 // Buscar estudiante por ID
-export async function obtenerPorID(id) {
-  const query = 'SELECT * FROM android_mysql.id2024sql WHERE id = $1';
+export async function obtenerPorID(id, organizacion_id) {
+  const sanitizedId = organizacion_id.replace(/[^a-zA-Z0-9]/g, '');
+  const tableName = `student_${sanitizedId}`;
+  const query = `SELECT * FROM ${tableName} WHERE id = $1`;
   const { rows } = await pool.query(query, [id]);
   return rows.length > 0 ? rows : null;
 }

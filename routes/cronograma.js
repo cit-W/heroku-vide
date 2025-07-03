@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import express from 'express';
 const router = express.Router();
-import { ValidationError, DatabaseError } from '../middleware/errorHandler.js';
+import { ValidationError, DatabaseError } from '../errors/CustomError.js';
 import pool from '../config/db.js';
 import helmet from 'helmet';
 

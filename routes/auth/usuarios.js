@@ -1,7 +1,7 @@
 import express from "express";
 import Usuario from "../../models/Usuario.js";
 import { autenticarUsuario } from "../../models/Authentication.js";
-import { verifyToken } from "../../middleware/errorHandler.js";
+import { verifyToken } from "../../middleware/auth.js";
 const router = express.Router();
 
 router.post("/create_user", async (req, res) => {
@@ -40,12 +40,7 @@ router.get("/obtener_nombres", async (req, res) => {
 
 router.get("/info_user", verifyToken, async (req, res) => {
   try {
-    const data = await Usuario.obtenerOrgId(req.query.email);
-    res.json(
-      data.length
-        ? { success: true, data }
-        : { success: false, message: "No se encontraron items para la cédula proporcionada" }
-    );
+    res.json({ success: true, data: req.user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: error.message });

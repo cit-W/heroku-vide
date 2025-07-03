@@ -23,3 +23,17 @@ class NotFoundError extends CustomError {
         super(message, { status: 404, code: 'NOT_FOUND' });
     }
 }
+
+class UnauthorizedError extends CustomError {
+  constructor(message) {
+    super(message, { status: 401, code: 'UNAUTHORIZED' });
+  }
+}
+
+export {
+  CustomError,
+  ValidationError,
+  DatabaseError,
+  NotFoundError,
+  UnauthorizedError,
+};
