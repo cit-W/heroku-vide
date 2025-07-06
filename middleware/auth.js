@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../errors/CustomError.js';
-const SECRET_KEY = process.env.SECRET_KEY;
+const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkeyforlocaldev';
 
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
