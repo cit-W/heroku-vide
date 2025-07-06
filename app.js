@@ -13,7 +13,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Helmet configuration
+
 app.use(helmet());
 app.use(
   helmet.contentSecurityPolicy({
@@ -29,19 +29,19 @@ app.use(helmet.xssFilter());
 app.use(helmet.noSniff());
 app.use(helmet.hidePoweredBy());
 
-// Middleware
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// View engine setup
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// Routes
+
 app.get('/', (req, res) => res.render('pages/index'));
 
-// Import routes
+
 import generalRoutes from './routes/general_routes.js';
 import roleRoutes from './routes/role_routes.js';
 import userRoutes from './routes/auth/users.js';
@@ -63,7 +63,7 @@ import teacherSchedulesRoutes from './routes/schedules/teacher_schedules.js';
 import studentsRoutes from './routes/students/students.js';
 import userReservationRoutes from './routes/user_routes.js';
 
-// Use routes
+
 app.use('/role', roleRoutes);
 app.use('/user', userRoutes);
 app.use('/grade', gradeRoutes);
@@ -85,7 +85,7 @@ app.use('/teacher-schedules', teacherSchedulesRoutes);
 app.use('/students', studentsRoutes);
 app.use('/user-reservations', userReservationRoutes);
 
-// Error handling
+
 app.use(errorHandler);
 
 export default app;

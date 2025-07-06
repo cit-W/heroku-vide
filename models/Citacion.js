@@ -1,7 +1,7 @@
 import { format, parse } from 'date-fns';
 import pool from '../config/db.js';
 
-// Crear nueva cita
+
 export async function createAppointment({
   topic,
   tutor,
@@ -31,7 +31,7 @@ export async function createAppointment({
   ]);
 }
 
-// Obtener citas por nombre y estado
+
 export async function getAppointments(name, status, organizacion_id, client = pool) {
   const query = `
     SELECT * FROM appointments
@@ -41,7 +41,7 @@ export async function getAppointments(name, status, organizacion_id, client = po
   return rows;
 }
 
-// Actualizar campos de una cita
+
 export async function updateAppointment({
   id,
   topic,

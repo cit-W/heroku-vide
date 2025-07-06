@@ -4,29 +4,27 @@ import { saveDevice } from "../../models/UserDevices.js";
 import { getUserInfo } from "../../models/General.js";
 import { authenticateUser } from "../../models/Authentication.js";
 import { verifyToken } from "../../middleware/auth.js";
-import pool from '../../config/db.js'; // Importar el pool de conexiones
+import pool from '../../config/db.js'; 
 
 const router = express.Router();
 
-// Middleware para manejar la conexión y el RLS
 router.use(async (req, res, next) => {
   const client = await pool.connect();
   try {
-    // Solo establecer la variable de sesión si hay un usuario autenticado
     if (req.user && req.user.orgId) {
       await client.query('SET app.current_org_id = $1', [req.user.orgId]);
     }
-    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    req.dbClient = client; 
     next();
   } catch (error) {
-    client.release(); // Liberar el cliente en caso de error
+    client.release(); 
     next(error);
   }
 });
 
 router.post("/create-user", async (req, res, next) => {
   try {
-    const orgId = req.user ? req.user.orgId : null; // Si no hay token, orgId puede ser null
+    const orgId = req.user ? req.user.orgId : null;
     await User.createUser({ ...req.body, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: "Usuario registrado con éxito" });
   } catch (error) {
@@ -87,7 +85,6 @@ router.post("/sign-in", async (req, res, next) => {
   }
 });
 
-// Middleware para liberar el cliente después de cada solicitud
 router.use((req, res, next) => {
   if (req.dbClient) {
     req.dbClient.release();

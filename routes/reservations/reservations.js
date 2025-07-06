@@ -1,22 +1,22 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
 import Reservation from '../../models/Reserva.js';
-import pool from '../../config/db.js'; // Importar el pool de conexiones
+import pool from '../../config/db.js'; 
 
 const router = express.Router();
 
-// Middleware para manejar la conexión y el RLS
+
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    // Establecer la variable de sesión para RLS
+    
     await client.query("SELECT set_config('app.current_org_id', $1, false)", [
       req.user.orgId.toString(),
     ]);
-    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    req.dbClient = client; 
     next();
   } catch (error) {
-    client.release(); // Liberar el cliente en caso de error
+    client.release(); 
     next(error);
   }
 });
@@ -60,9 +60,9 @@ router.post('/report-reservation', async (req, res, next) => {
   }
   try {
     const orgId = req.user.orgId;
-    const userId = req.user.userId; // Obtener userId del token
+    const userId = req.user.userId; 
     await Reservation.reportReservation(
-      userId, // Pasar userId en lugar de profesor
+      userId, 
       clase,
       lugar,
       hora_inicio,
@@ -83,9 +83,9 @@ router.post('/book-place', async (req, res, next) => {
   }
   try {
     const orgId = req.user.orgId;
-    const userId = req.user.userId; // Obtener userId del token
+    const userId = req.user.userId; 
     await Reservation.bookPlace(
-      userId, // Pasar userId en lugar de profesor
+      userId, 
       clase,
       lugar,
       hora_inicio,
@@ -101,8 +101,8 @@ router.post('/book-place', async (req, res, next) => {
 
 router.post('/delete-expired-reservations', async (req, res, next) => {
   try {
-    // Esta función no necesita orgId, pero si la tabla reservations tiene RLS,
-    // esta operación solo afectará las reservas de la organización del usuario que la ejecuta.
+    
+    
     const result = await Reservation.deleteExpired(req.dbClient);
     res.json({ success: true, data: result });
   } catch (error) {
@@ -131,7 +131,7 @@ router.post('/check-reservation-availability', async (req, res, next) => {
   }
 });
 
-// Middleware para liberar el cliente después de cada solicitud
+
 router.use((req, res, next) => {
   if (req.dbClient) {
     req.dbClient.release();

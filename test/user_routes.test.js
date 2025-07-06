@@ -65,7 +65,7 @@ describe('User Routes', () => {
       clase: 'Matemáticas',
       lugar: 'Aula 101',
       hora_inicio: new Date().toISOString(),
-      hora_final: new Date(Date.now() + 3600000).toISOString(), // 1 hora después
+      hora_final: new Date(Date.now() + 3600000).toISOString(), 
     };
 
     it('should report a reservation with valid data', async () => {
@@ -73,7 +73,7 @@ describe('User Routes', () => {
       const token = jwt.sign(testUser, SECRET_KEY, { expiresIn: '1h' });
 
       mockClient.query.withArgs('SET app.current_org_id = $1', [testUser.orgId]).resolves();
-      // Mock resolveNamesToIds if it makes DB calls
+      
       mockClient.query.withArgs(sinon.match.string, sinon.match.array).resolves({ rows: [{ grade_id: 1, place_id: 1 }] });
 
       const res = await request(app)
@@ -124,7 +124,7 @@ describe('User Routes', () => {
       clase: 'Historia',
       lugar: 'Biblioteca',
       hora_inicio: new Date().toISOString(),
-      hora_final: new Date(Date.now() + 7200000).toISOString(), // 2 horas después
+      hora_final: new Date(Date.now() + 7200000).toISOString(), 
     };
 
     it('should book a place with valid data', async () => {

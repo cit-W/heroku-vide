@@ -3,14 +3,14 @@ import NodeCache from 'node-cache';
 
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
-// Verifica si hay conexión con la base de datos
+
 export async function checkConnection() {
   const query = 'SELECT 1;';
   const { rows } = await pool.query(query);
   return rows;
 }
 
-// Obtiene la info de usuario desde users o student_users
+
 export async function getUserInfo(email) {
   try {
     const cacheKey = `usuario_${email.toLowerCase()}`;
@@ -28,7 +28,7 @@ export async function getUserInfo(email) {
       `;
       const { rows } = await pool.query(query, [email]);
 
-      // Tomamos el primer resultado si hay coincidencia
+      
       usuario = rows.length > 0 ? rows[0] : null;
       if (usuario) cache.set(cacheKey, usuario);
     }

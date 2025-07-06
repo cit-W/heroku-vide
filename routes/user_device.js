@@ -6,22 +6,22 @@ import {
   updateDevice,
   deleteDevice,
 } from '../models/UserDevices.js';
-import pool from '../config/db.js'; // Importar el pool de conexiones
+import pool from '../config/db.js'; 
 
 const router = express.Router();
 
-// Middleware para manejar la conexión y el RLS
+
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    // Establecer la variable de sesión para RLS
+    
     await client.query("SELECT set_config('app.current_org_id', $1, false)", [
       req.user.orgId.toString(),
     ]);
-    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    req.dbClient = client; 
     next();
   } catch (error) {
-    client.release(); // Liberar el cliente en caso de error
+    client.release(); 
     next(error);
   }
 });
@@ -98,7 +98,7 @@ router.delete('/:id', async (req, res, next) => {
   }
 });
 
-// Middleware para liberar el cliente después de cada solicitud
+
 router.use((req, res, next) => {
   if (req.dbClient) {
     req.dbClient.release();

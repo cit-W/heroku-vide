@@ -4,12 +4,12 @@ const setupDatabase = async () => {
   try {
     console.log('🔄 Verificando y creando tablas necesarias...');
 
-    // Crear schema
+    
     await pool.query(`
       CREATE SCHEMA IF NOT EXISTS "public";
     `);
 
-    // Crear secuencias
+    
     await pool.query(`
       CREATE SEQUENCE IF NOT EXISTS roles_id_seq;
       CREATE SEQUENCE IF NOT EXISTS user_devices_id_seq;
@@ -27,7 +27,7 @@ const setupDatabase = async () => {
       CREATE SEQUENCE IF NOT EXISTS events_id_seq;
     `);
 
-    // Eliminar tablas existentes (en orden inverso a las dependencias)
+    
     await pool.query(`
       DROP TABLE IF EXISTS events CASCADE;
       DROP TABLE IF EXISTS user_devices CASCADE;
@@ -48,7 +48,7 @@ const setupDatabase = async () => {
 
     `);
 
-    // Crear tabla de estado
+    
     await pool.query(`
       CREATE TABLE "public"."status" (
         "id" INTEGER PRIMARY KEY,
@@ -56,7 +56,7 @@ const setupDatabase = async () => {
       );
     `);
 
-    // Crear la tabla de organizaciones
+    
     await pool.query(`
       CREATE TABLE "public"."organizations" (
         "id" VARCHAR(16) PRIMARY KEY,
@@ -74,9 +74,9 @@ const setupDatabase = async () => {
       ADD CONSTRAINT "fk_organizations_status_id_status_id" FOREIGN KEY("status_id") REFERENCES "public"."status"("id");
     `);
 
-    // --- TABLAS CON RLS ---
+    
 
-    // Crear la tabla de departamentos
+    
     await pool.query(`
       CREATE TABLE "public"."departments" (
         "id" INTEGER NOT NULL DEFAULT nextval('departamento_id_seq'::regclass),
@@ -90,7 +90,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."departments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de niveles educativos
+    
     await pool.query(`
       CREATE TABLE "public"."education_levels" (
         "id" INTEGER NOT NULL DEFAULT nextval('escuela_id_seq'::regclass),
@@ -104,7 +104,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."education_levels" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de grados
+    
     await pool.query(`
       CREATE TABLE "public"."grades" (
         "id" INTEGER NOT NULL DEFAULT nextval('grades_id_seq'::regclass),
@@ -118,7 +118,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."grades" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de roles
+    
     await pool.query(`
       CREATE TABLE "public"."roles" (
         "id" INTEGER NOT NULL DEFAULT nextval('roles_id_seq'::regclass),
@@ -132,7 +132,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."roles" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de lugares
+    
     await pool.query(`
       CREATE TABLE "public"."places" (
         "id" INTEGER NOT NULL DEFAULT nextval('places_id_seq'::regclass),
@@ -146,7 +146,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."places" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de usuarios
+    
     await pool.query(`
       CREATE TABLE "public"."users" (
         "id" INTEGER NOT NULL DEFAULT nextval('users_id_seq'::regclass),
@@ -170,7 +170,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."users" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de estudiantes
+    
     await pool.query(`
       CREATE TABLE "public"."students" (
         "id" INTEGER NOT NULL DEFAULT nextval('students_id_seq'::regclass),
@@ -188,11 +188,11 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."students" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de reservas
+    
     await pool.query(`
       CREATE TABLE "public"."reservations" (
         "id" INTEGER NOT NULL DEFAULT nextval('reserva_id_seq'::regclass),
-        "user_id" INTEGER NOT NULL, -- Cambiado de "name" a "user_id"
+        "user_id" INTEGER NOT NULL, 
         "grade_id" INTEGER NOT NULL,
         "place_id" INTEGER NOT NULL,
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -201,7 +201,7 @@ const setupDatabase = async () => {
         "status" VARCHAR(50) NOT NULL DEFAULT 'upcoming',
         PRIMARY KEY ("id")
       );
-      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id"); -- Nueva FK
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id"); 
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
@@ -209,7 +209,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."reservations" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de trabajo social
+    
     await pool.query(`
       CREATE TABLE "public"."social_work" (
         "id" INTEGER NOT NULL DEFAULT nextval('trabajo_social_id_seq'::regclass),
@@ -225,7 +225,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."social_work" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de citaciones
+    
     await pool.query(`
       CREATE TABLE "public"."appointments" (
         "id" INTEGER NOT NULL DEFAULT nextval('citaciones_id_seq'::regclass),
@@ -246,7 +246,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."appointments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de reporte_lugar
+    
     await pool.query(`
       CREATE TABLE "public"."report_place" (
         "id" INTEGER NOT NULL DEFAULT nextval('reporte_lugar_id_seq'::regclass),
@@ -265,7 +265,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."report_place" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // --- TABLAS SIN RLS (O CON LÓGICA DIFERENTE) ---
+    
 
     await pool.query(`
       CREATE TABLE "public"."student_users" (
@@ -279,7 +279,7 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."student_users" ADD CONSTRAINT "fk_student_users_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
     `);
 
-    // Crear la tabla de dispositivos del usuario (Añadido organizacion_id y RLS)
+    
     await pool.query(`
       CREATE TABLE "public"."user_devices" (
         "id" INTEGER NOT NULL DEFAULT nextval('user_devices_id_seq'::regclass),
@@ -295,7 +295,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    // Crear la tabla de eventos
+    
     await pool.query(`
       CREATE TABLE "public"."events" (
           "id" SERIAL PRIMARY KEY,

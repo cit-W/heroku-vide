@@ -7,18 +7,17 @@ import helmet from 'helmet';
 
 const router = express.Router();
 
-// Middleware para manejar la conexión y el RLS
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    // Establecer la variable de sesión para RLS
+    
     await client.query("SELECT set_config('app.current_org_id', $1, false)", [
       req.user.orgId.toString(),
     ]);
-    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    req.dbClient = client; 
     next();
   } catch (error) {
-    client.release(); // Liberar el cliente en caso de error
+    client.release(); 
     next(error);
   }
 });
@@ -35,13 +34,9 @@ router.use(
   })
 );
 
-// Parametros para mefiagroup:
-//  innecesaario
-//  solicitado
-//  confirmado
-//  denegado
 
-// Endpoint para crear un evento en el cronograma
+
+
 router.post('/create-event', async (req, res) => {
   try {
     const {
@@ -56,12 +51,12 @@ router.post('/create-event', async (req, res) => {
 
     const organization_id = req.user.orgId;
 
-    // Convertir la fecha recibida a un objeto Date
+    
     const eventDate = new Date(fecha);
-    // Convertir a formato ISO para incluir la zona horaria
+    
     const isoDate = eventDate.toISOString();
 
-    // Calcular la semana del evento basándose en la fecha del evento
+    
     const oneJan = new Date(eventDate.getFullYear(), 0, 1);
     const numberOfDays = Math.floor(
       (eventDate - oneJan) / (24 * 60 * 60 * 1000)
@@ -354,11 +349,11 @@ router.get('/list-mediagroup', async (req, res) => {
       return;
     }
 
-    // Obtener la fecha actual
+    
     const currentdate = new Date();
     const oneJan = new Date(currentdate.getFullYear(), 0, 1);
 
-    // Calcular el número de días y la semana actual
+    
     const numberOfDays = Math.floor(
       (currentdate - oneJan) / (24 * 60 * 60 * 1000)
     );
@@ -366,10 +361,9 @@ router.get('/list-mediagroup', async (req, res) => {
       (numberOfDays + currentdate.getDay() + 1) / 7
     );
 
-    // Conectar a la base de datos
     const client = req.dbClient;
 
-    // Consulta SQL para las semanas actuales y futuras
+    
     const query = `
             SELECT *
             FROM events
@@ -384,14 +378,13 @@ router.get('/list-mediagroup', async (req, res) => {
       result_week + 3,
     ];
 
-    // Ejecutar la consulta
     let result = await client.query(query, values);
 
-    // Verificar si se encontraron datos
+    
     if (result.rows.length > 0) {
       res.json(result.rows);
     } else {
-      // Si no hay datos, retornar un JSON indicando que no hay eventos
+      
       res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {
@@ -402,7 +395,6 @@ router.get('/list-mediagroup', async (req, res) => {
   }
 });
 
-// Middleware para liberar el cliente después de cada solicitud
 router.use((req, res, next) => {
   if (req.dbClient) {
     req.dbClient.release();

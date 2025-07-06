@@ -5,7 +5,7 @@ import pool from '../config/db.js';
 
 const router = express.Router();
 
-// Middleware para manejar la conexión, RLS y liberación del cliente
+
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
@@ -71,7 +71,7 @@ router.post('/book-place', async (req, res, next) => {
   }
 });
 
-// Middleware para liberar el cliente después de cada solicitud
+
 router.use((req, res, next) => {
   if (req.dbClient) {
     req.dbClient.release();

@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-// Crear o actualizar una escuela
+
 export async function createEducationLevel({ id, name, organizacion_id }, client = pool) {
   const query = `
     INSERT INTO education_levels (id, level, organizacion_id)
@@ -12,7 +12,7 @@ export async function createEducationLevel({ id, name, organizacion_id }, client
   await client.query(query, [id, name, organizacion_id]);
 }
 
-// Obtener escuelas por organización
+
 export async function getEducationLevelsByOrganization(organizacion_id, client = pool) {
   const query = `
     SELECT level FROM education_levels

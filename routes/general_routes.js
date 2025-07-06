@@ -65,17 +65,17 @@ router.get('/user-info', async (req, res) => {
   try {
     const data = await getUserInfo(email);
 
-    // Verifica si data es nulo, un objeto único o un array
+    
     if (!data) {
       return res.json({ success: false, message: 'No se encontró usuario' });
     }
 
-    // Si es un array, verifica si tiene elementos
+    
     if (Array.isArray(data) && data.length === 0) {
       return res.json({ success: false, message: 'No se encontró usuario' });
     }
 
-    // En cualquier otro caso, hay datos para devolver
+    
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);

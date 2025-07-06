@@ -4,7 +4,7 @@ const createViews = async () => {
   try {
     console.log('🔄 Creando vistas para la base de datos...');
 
-    // Vista 1: user_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW user_details AS
       SELECT
@@ -26,7 +26,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista user_details creada correctamente.');
 
-    // Vista 2: student_user_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW student_user_details AS
       SELECT
@@ -45,7 +45,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista student_user_details creada correctamente.');
 
-    // Vista 3: appointments_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW appointments_details AS
       SELECT
@@ -65,29 +65,29 @@ const createViews = async () => {
     `);
     console.log('✅ Vista appointments_details creada correctamente.');
 
-    // Vista 4: reservation_details
+    
     await pool.query(`DROP VIEW IF EXISTS reservation_details;`);
     await pool.query(`
       CREATE OR REPLACE VIEW reservation_details AS
       SELECT
         r.id,
-        u.name AS user_name, -- Cambiado de r.name a u.name
+        u.name AS user_name, 
         g.grade AS grade,
         p.place,
         r.start,
         r.finish,
-        r.status, -- Añadida la columna status
-        r.organizacion_id AS organizacion_id, -- Añadido el ID de la organización
-        o.name AS organization_name -- Renombrado para claridad
+        r.status, 
+        r.organizacion_id AS organizacion_id, 
+        o.name AS organization_name 
       FROM reservations r
-      JOIN users u ON r.user_id = u.id -- Añadida la unión con la tabla users
+      JOIN users u ON r.user_id = u.id 
       JOIN grades g ON r.grade_id = g.id
       JOIN places p ON r.place_id = p.id
       JOIN organizations o ON r.organizacion_id = o.id;
     `);
     console.log('✅ Vista reservation_details creada correctamente.');
 
-    // Vista 5: report_place_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW report_place_details AS
       SELECT
@@ -105,7 +105,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista report_place_details creada correctamente.');
 
-    // Vista 6: social_work_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW social_work_details AS
       SELECT
@@ -120,7 +120,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista social_work_details creada correctamente.');
 
-    // Vista 7: user_devices_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW user_devices_details AS
       SELECT
@@ -135,7 +135,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista user_devices_details creada correctamente.');
 
-    // Vista 8: organization_status_details
+    
     await pool.query(`
       CREATE OR REPLACE VIEW organization_status_details AS
       SELECT

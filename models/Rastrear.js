@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 import NodeCache from 'node-cache';
 
-// Inicializar el caché
+
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 export async function getNames(organizacion_id) {
@@ -20,7 +20,7 @@ export async function fuzzySearch(search, organizacion_id) {
     SELECT *
     FROM students
     WHERE organizacion_id = $1
-      AND word_similarity(name, $2) > 0.12 -- Umbral de similitud de palabra
+      AND word_similarity(name, $2) > 0.12 
     ORDER BY similarity(name, $2) DESC;
   `;
   const dbResult = await pool.query(query, [organizacion_id, search]);

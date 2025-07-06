@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-// Crear o actualizar un espacio
+
 export async function createPlace({ id, name, organizacion_id }, client = pool) {
   const query = `
     INSERT INTO places (id, place, organizacion_id)
@@ -12,7 +12,7 @@ export async function createPlace({ id, name, organizacion_id }, client = pool) 
   await client.query(query, [id, name, organizacion_id]);
 }
 
-// Obtener espacios por organización
+
 export async function getPlacesByOrganization(organizacion_id, client = pool) {
   const query = `
     SELECT place FROM places

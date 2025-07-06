@@ -5,7 +5,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 
 export async function authenticateUser(email, password, client = pool) {
   try {
-    // Busca en ambas tablas en orden
+    
     const tables = ['users', 'student_users'];
     let user = null;
 
@@ -20,10 +20,10 @@ export async function authenticateUser(email, password, client = pool) {
       }
     }
 
-    if (!user) return null; // Usuario no encontrado
+    if (!user) return null; 
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return null; // Contraseña incorrecta
+    if (!isMatch) return null; 
 
     const payload = {
       userId: user.id,

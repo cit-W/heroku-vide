@@ -1,20 +1,20 @@
 import pool from '../config/db.js';
 
-// Elimina una reserva de la tabla reservations
+
 export async function deletePersonalReservation(id, organizacion_id, client = pool) {
   const query = 'DELETE FROM reservations WHERE id = $1 AND organizacion_id = $2';
   const result = await client.query(query, [id, organizacion_id]);
   return result.rowCount > 0;
 }
 
-// Elimina un trabajo social por ID
+
 export async function deletePersonalSocialWork(id, organizacion_id, client = pool) {
   const query = 'DELETE FROM social_work WHERE id = $1 AND organizacion_id = $2';
   const result = await client.query(query, [id, organizacion_id]);
   return result.rowCount > 0;
 }
 
-// Obtiene solo los IDs de reservas asociadas a un profesor
+
 export async function getReservationsByTeacher(teacherId, organizacion_id, client = pool) {
   const query = `
     SELECT id
@@ -26,7 +26,7 @@ export async function getReservationsByTeacher(teacherId, organizacion_id, clien
   return rows;
 }
 
-// Obtiene solo los IDs de trabajos sociales asociados a un profesor
+
 export async function getSocialWorksByTeacher(teacherId, organizacion_id, client = pool) {
   const query = `
     SELECT id

@@ -39,7 +39,7 @@ describe('User Model', () => {
 
       expect(bcrypt.hash.calledOnceWith(userData.password, 10)).to.be.true;
       expect(mockClient.query.calledOnce).to.be.true;
-      expect(mockClient.query.args[0][1][3]).to.equal(hashedPassword); // Check if hashed password is used
+      expect(mockClient.query.args[0][1][3]).to.equal(hashedPassword); 
     });
   });
 });

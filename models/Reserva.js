@@ -3,7 +3,7 @@ import resolveNamesToIds from './resolveNamesToIds.js';
 
 const Reservation = {
   async getReservationsByOrganization(organizacion_id, client = pool) {
-    // Asumiendo que reservation_details ahora incluye user_name
+    
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
@@ -11,7 +11,7 @@ const Reservation = {
   },
 
   async getReservationById(id, client = pool) {
-    // Asumiendo que reservation_details ahora incluye user_name
+    
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
 
@@ -23,7 +23,7 @@ const Reservation = {
   },
 
   async reportReservation(
-    user_id, // Cambiado de name a user_id
+    user_id, 
     grade,
     place,
     start,
@@ -46,7 +46,7 @@ const Reservation = {
       ($1, $2, $3, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ, $6);
   `;
     await client.query(query, [
-      user_id, // Usar user_id
+      user_id, 
       grade_id,
       place_id,
       start,
@@ -56,7 +56,7 @@ const Reservation = {
   },
 
   async bookPlace(
-    user_id, // Cambiado de name a user_id
+    user_id, 
     grade,
     place,
     start,
@@ -80,7 +80,7 @@ const Reservation = {
   `;
 
     const { rows } = await client.query(insertQuery, [
-      user_id, // Usar user_id
+      user_id, 
       grade_id,
       place_id,
       start,
@@ -96,7 +96,7 @@ const Reservation = {
     UPDATE reservations
     SET status = 'past'
     WHERE finish < (NOW() AT TIME ZONE 'UTC')
-    AND status = 'upcoming' -- Solo actualiza si aún no está marcada como pasada
+    AND status = 'upcoming' 
     RETURNING id;
   `;
     const { rows, rowCount } = await client.query(query);
