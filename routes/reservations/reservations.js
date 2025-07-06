@@ -10,7 +10,9 @@ router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
     // Establecer la variable de sesión para RLS
-    await client.query(`SET app.current_org_id = '${req.user.orgId}'`);
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
     req.dbClient = client; // Adjuntar el cliente a la solicitud
     next();
   } catch (error) {

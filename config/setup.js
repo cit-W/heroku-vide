@@ -24,10 +24,12 @@ const setupDatabase = async () => {
       CREATE SEQUENCE IF NOT EXISTS escuela_id_seq;
       CREATE SEQUENCE IF NOT EXISTS studentuser_id_seq;
       CREATE SEQUENCE IF NOT EXISTS grades_id_seq;
+      CREATE SEQUENCE IF NOT EXISTS events_id_seq;
     `);
 
     // Eliminar tablas existentes (en orden inverso a las dependencias)
     await pool.query(`
+      DROP TABLE IF EXISTS events CASCADE;
       DROP TABLE IF EXISTS user_devices CASCADE;
       DROP TABLE IF EXISTS appointments CASCADE;
       DROP TABLE IF EXISTS report_place CASCADE;
@@ -291,6 +293,29 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."user_devices" ADD CONSTRAINT "fk_user_devices_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."user_devices" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
+    `);
+
+    // Crear la tabla de eventos
+    await pool.query(`
+      CREATE TABLE "public"."events" (
+          "id" SERIAL PRIMARY KEY,
+          "organization_id" VARCHAR(16) NOT NULL,
+          "tema" VARCHAR(50) NOT NULL,
+          "acargo" VARCHAR(40),
+          "mediagroup_video" VARCHAR(20),
+          "mediagroup_sonido" VARCHAR(20),
+          "fecha" TIMESTAMPTZ NOT NULL,
+          "descripcion" VARCHAR(200),
+          "lugar" VARCHAR(40),
+          "n_semana" INT NOT NULL
+      );
+      ALTER TABLE "public"."events" ADD CONSTRAINT "fk_events_organizacion_id_organizations_id" FOREIGN KEY("organization_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."events" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."events" FOR ALL USING (organization_id = current_setting('app.current_org_id', true));
+
+      CREATE INDEX IF NOT EXISTS idx_events_fecha ON "public"."events" (fecha);
+      CREATE INDEX IF NOT EXISTS idx_events_organization_id ON "public"."events" (organization_id);
+      CREATE INDEX IF NOT EXISTS idx_events_org_fecha ON "public"."events" (organization_id, fecha);
     `);
 
 

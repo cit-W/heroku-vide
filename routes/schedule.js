@@ -1,9 +1,27 @@
 import { format } from 'date-fns';
 import express from 'express';
-const router = express.Router();
+import { verifyToken } from '../middleware/auth.js';
 import { ValidationError, DatabaseError } from '../errors/CustomError.js';
 import pool from '../config/db.js';
 import helmet from 'helmet';
+
+const router = express.Router();
+
+// Middleware para manejar la conexión y el RLS
+router.use(verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    // Establecer la variable de sesión para RLS
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
+    req.dbClient = client; // Adjuntar el cliente a la solicitud
+    next();
+  } catch (error) {
+    client.release(); // Liberar el cliente en caso de error
+    next(error);
+  }
+});
 
 router.use(helmet());
 router.use(
@@ -23,82 +41,6 @@ router.use(
 //  confirmado
 //  denegado
 
-// Endpoint para crear el esquema y las tablas mensuales
-router.post('/create-schema', async (req, res, next) => {
-  try {
-    const { year } = req.query;
-
-    if (!year) {
-      throw new ValidationError('El año es requerido');
-    }
-
-    const year_before = Number(year) - 1;
-    const schemaCurrent = `${year}`;
-    const schemaBefore = `${year_before}`;
-
-    const client = await pool.connect();
-
-    try {
-      // Verificar si el esquema anterior existe
-      const schemaExistsResult = await client.query(
-        `
-                SELECT EXISTS(
-                    SELECT 1
-                    FROM information_schema.schemata
-                    WHERE schema_name = $1
-                )
-            `,
-        [schemaBefore]
-      );
-
-      const schemaExists = schemaExistsResult.rows[0].exists;
-
-      await client.query('BEGIN');
-
-      try {
-        if (schemaExists) {
-          // Si el esquema anterior existe, eliminarlo
-          await client.query(`DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE`);
-        }
-
-        // Crear nuevo esquema
-        await client.query(`
-                    CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"
-                    AUTHORIZATION u9976s05mfbvrs
-                `);
-
-        // Crear tablas mensuales en el nuevo esquema con columna fecha como TIMESTAMPTZ
-        for (let i = 0; i < 12; i++) {
-          const month = String(i + 1).padStart(2, '0');
-          await client.query(`
-                        CREATE TABLE IF NOT EXISTS "${schemaCurrent}"."${month}" (
-                            id SERIAL PRIMARY KEY,
-                            tema VARCHAR(50) NOT NULL,
-                            acargo VARCHAR(40),
-                            mediagroup_video VARCHAR(20),
-                            mediagroup_sonido VARCHAR(20),
-                            fecha TIMESTAMPTZ NOT NULL,
-                            descripcion VARCHAR(200),
-                            lugar VARCHAR(40),
-                            n_semana INT NOT NULL
-                        )
-                    `);
-        }
-
-        await client.query('COMMIT');
-        res.json({ success: true, data: 'cronograma_registrado' });
-      } catch (err) {
-        await client.query('ROLLBACK');
-        throw new DatabaseError(`Error en la transacción: ${err.message}`);
-      }
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    next(err);
-  }
-});
-
 // Endpoint para crear un evento en el cronograma
 router.post('/create-event', async (req, res) => {
   try {
@@ -112,6 +54,8 @@ router.post('/create-event', async (req, res) => {
       lugar,
     } = req.query;
 
+    const organization_id = req.user.orgId;
+
     // Convertir la fecha recibida a un objeto Date
     const eventDate = new Date(fecha);
     // Convertir a formato ISO para incluir la zona horaria
@@ -124,17 +68,14 @@ router.post('/create-event', async (req, res) => {
     );
     const result_week = Math.ceil((eventDate.getDay() + 1 + numberOfDays) / 7);
 
-    const table_year = eventDate.getFullYear().toString();
-    // Obtener el mes en formato de dos dígitos
-    const month = eventDate.toLocaleString('en-US', { month: '2-digit' });
-
     const query_create_event = `
-            INSERT INTO "${table_year}"."${month}"
-            (tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, lugar, n_semana)
-            VALUES( $1, $2, $3, $4, $5::TIMESTAMPTZ, $6, $7, $8 );
+            INSERT INTO events
+            (organization_id, tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, lugar, n_semana)
+            VALUES( $1, $2, $3, $4, $5::TIMESTAMPTZ, $6, $7, $8, $9 );
         `;
 
     const values = [
+      organization_id,
       tema,
       acargo,
       mediagroup_video,
@@ -145,10 +86,8 @@ router.post('/create-event', async (req, res) => {
       result_week,
     ];
 
-    const client = await pool.connect();
+    const client = req.dbClient;
     await client.query(query_create_event, values);
-
-    client.release();
 
     res.json({ success: true, data: 'SUCCESS' });
   } catch (err) {
@@ -157,75 +96,25 @@ router.post('/create-event', async (req, res) => {
   }
 });
 
-router.post('/delete-schema', async (req, res) => {
-  const client = await pool.connect(); // Asegura que el client esté inicializado correctamente
 
-  try {
-    const { year } = req.query;
-
-    // Verifica si el parámetro está presente
-    if (!year) {
-      res.status(400).send("El parámetro 'year' es requerido.");
-      return;
-    }
-
-    // Verifica si el esquema year existe
-    const schemaExistsQuery = `
-            SELECT EXISTS(
-                SELECT 1
-                FROM information_schema.schemata
-                WHERE schema_name = '${year}'
-            );
-        `;
-    const result = await client.query(schemaExistsQuery);
-
-    if (result.rows[0].exists) {
-      // Elimina todas las tablas dentro del esquema antes de eliminar el esquema
-      const dropTablesQuery = `
-                DO $$
-                DECLARE
-                    r RECORD;
-                BEGIN
-                    -- Selecciona todas las tablas dentro del esquema
-                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '${year}')
-                    LOOP
-                        -- Ejecuta un DROP TABLE para cada tabla en el esquema
-                        EXECUTE 'DROP TABLE IF EXISTS "${year}".' || quote_ident(r.tablename) || ' CASCADE';
-                    END LOOP;
-                END $$;
-            `;
-      await client.query(dropTablesQuery);
-
-      // Luego, elimina el esquema
-      const dropSchemaQuery = `
-                DROP SCHEMA IF EXISTS "${year}" CASCADE;
-            `;
-      await client.query(dropSchemaQuery);
-    }
-
-    res.json({ success: true, data: 'Borrado exitosamente' });
-  } catch (err) {
-    console.error('Error al borrar la tabla: ', err);
-    res.status(500).send('Error al borrar: ' + err.message);
-  } finally {
-    client.release(); // Asegura liberar el client al final
-  }
-});
 
 router.post('/delete-event', async (req, res) => {
   try {
-    const { id, month } = req.query;
+    const { id } = req.query;
+    const organization_id = req.user.orgId;
 
-    const yearActual = format(new Date(), 'yyyy');
+    if (!id || !organization_id) {
+      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
+      return;
+    }
 
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             DELETE
-            FROM "${yearActual}"."${month}"
-            WHERE id = $1;
+            FROM events
+            WHERE id = $1 AND organization_id = $2;
         `;
-    const result = await client.query(query, [id]);
-    client.release();
+    const result = await client.query(query, [id, organization_id]);
 
     res.json({ success: true, data: 'success' });
   } catch (err) {
@@ -236,30 +125,28 @@ router.post('/delete-event', async (req, res) => {
 
 router.get('/month-events', async (req, res) => {
   try {
-    const { month } = req.query;
-    var monthFormmated = month;
+    const { month, year } = req.query;
+    const organization_id = req.user.orgId;
 
-    if (!month) {
-      res.status(400).send("El parámetro 'month' es requerido.");
+    if (!month || !year || !organization_id) {
+      res.status(400).send("Los parámetros 'month', 'year' y 'organization_id' son requeridos.");
       return;
-    } else if (month.length != 2) {
-      monthFormmated = '0' + month;
     }
 
-    const yearActual = format(new Date(), 'yyyy');
-
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             SELECT *
-            FROM "${yearActual}"."${monthFormmated}";
+            FROM events
+            WHERE EXTRACT(MONTH FROM fecha) = $1
+              AND EXTRACT(YEAR FROM fecha) = $2
+              AND organization_id = $3;
         `;
-    const result = await client.query(query);
-    client.release();
+    const result = await client.query(query, [month, year, organization_id]);
 
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {
     console.error('Error al consultar la tabla: ', err);
@@ -269,36 +156,42 @@ router.get('/month-events', async (req, res) => {
 
 router.get('/month-topic', async (req, res) => {
   try {
-    const { month } = req.query;
+    const { id } = req.query;
+    const organization_id = req.user.orgId;
 
-    if (!id) {
-      res.status(400).send("El parámetro 'month' es requerido.");
+    if (!id || !organization_id) {
+      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
       return;
     }
 
-    const yearActual = format(new Date(), 'yyyy');
-
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             SELECT tema
-            FROM "${yearActual}"."${month}"
-            WHERE id = 0;
+            FROM events
+            WHERE id = $1 AND organization_id = $2;
         `;
-    const result = await client.query(query, [month]);
-    client.release();
+    const result = await client.query(query, [id, organization_id]);
 
     if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
+      res.json({ success: true, data: result.rows[0] });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_hay_evento' });
     }
   } catch (err) {
-    res.json({ success: false, data: 'No_hay_tablas' });
+    console.error('Error al consultar el evento: ', err);
+    res.status(500).send('Error al consultar el evento: ' + err.message);
   }
 });
 
 router.get('/week-events', async (req, res) => {
   try {
+    const organization_id = req.user.orgId;
+
+    if (!organization_id) {
+      res.status(400).send("El parámetro 'organization_id' es requerido.");
+      return;
+    }
+
     var currentdate = new Date();
     var oneJan = new Date(currentdate.getFullYear(), 0, 1);
     var numberOfDays = Math.floor(
@@ -306,25 +199,18 @@ router.get('/week-events', async (req, res) => {
     );
     var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
 
-    const yearActual = format(new Date(), 'yyyy');
-    const monthActual = format(new Date(), 'MM');
-
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             SELECT *
-            FROM "${yearActual}"."${monthActual}"
-            WHERE n_semana = $1;
+            FROM events
+            WHERE n_semana = $1 AND organization_id = $2;
         `;
-    const result = await client.query(query, [result_week]);
-    client.release();
-
-    // id, tema, acargo, mediagroup_video, mediagroup_sonido,
-    // fecha, descripcion, lugar, n_semana
+    const result = await client.query(query, [result_week, organization_id]);
 
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {
     console.error('Error al consultar la tabla: ', err);
@@ -334,32 +220,32 @@ router.get('/week-events', async (req, res) => {
 
 router.get('/next-events', async (req, res) => {
   try {
-    currentdate = new Date();
+    const organization_id = req.user.orgId;
+
+    if (!organization_id) {
+      res.status(400).send("El parámetro 'organization_id' es requerido.");
+      return;
+    }
+
+    var currentdate = new Date();
     var oneJan = new Date(currentdate.getFullYear(), 0, 1);
     var numberOfDays = Math.floor(
       (currentdate - oneJan) / (24 * 60 * 60 * 1000)
     );
     var result_week = Math.ceil((currentdate.getDay() + 1 + numberOfDays) / 7);
 
-    const yearActual = format(new Date(), 'yyyy');
-    const monthActual = format(new Date(), 'MM');
-
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             SELECT *
-            FROM "${yearActual}"."${monthActual}"
-            WHERE n_semana = $1;
+            FROM events
+            WHERE n_semana = $1 AND organization_id = $2;
         `;
-    const result = await client.query(query, [result_week]);
-    client.release();
-
-    // id, tema, acargo, mediagroup_video, mediagroup_sonido,
-    // fecha, descripcion, lugar, n_semana
+    const result = await client.query(query, [result_week, organization_id]);
 
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {
     console.error('Error al consultar la tabla: ', err);
@@ -369,32 +255,22 @@ router.get('/next-events', async (req, res) => {
 
 router.get('/closest-event', async (req, res) => {
   try {
-    const yearActual = format(new Date(), 'yyyy');
+    const organization_id = req.user.orgId;
 
-    // Construir cada SELECT incluyendo la diferencia en segundos entre fecha y now()
-    // y filtrando solo los eventos futuros.
-    let unionQueries = [];
-    for (let i = 1; i <= 12; i++) {
-      const month = String(i).padStart(2, '0');
-      unionQueries.push(`
-                SELECT *, extract(epoch from (fecha - now())) as diff
-                FROM "${yearActual}"."${month}"
-                WHERE fecha >= now()
-            `);
+    if (!organization_id) {
+      res.status(400).send("El parámetro 'organization_id' es requerido.");
+      return;
     }
 
-    // Encapsular el UNION ALL en una subconsulta para ordenar por 'diff' de forma ascendente
-    const finalQuery = `
-            SELECT * FROM (
-                ${unionQueries.join(' UNION ALL ')}
-            ) AS combined
-            ORDER BY diff ASC
-            LIMIT 1
+    const client = req.dbClient;
+    const query = `
+            SELECT *
+            FROM events
+            WHERE fecha >= NOW() AND organization_id = $1
+            ORDER BY fecha ASC
+            LIMIT 1;
         `;
-
-    const client = await pool.connect();
-    const result = await client.query(finalQuery);
-    client.release();
+    const result = await client.query(query, [organization_id]);
 
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows[0] });
@@ -402,6 +278,8 @@ router.get('/closest-event', async (req, res) => {
       res.json({ success: false, data: 'No se encontró ningún evento futuro' });
     }
   } catch (err) {
+    console.log("err");
+    console.log(err)
     console.error('Error al obtener el evento futuro más cercano: ', err);
     res.status(500).send('Error al obtener el evento: ' + err.message);
   }
@@ -409,61 +287,73 @@ router.get('/closest-event', async (req, res) => {
 
 router.get('/event', async (req, res) => {
   try {
-    const { id, month } = req.query;
+    const { id } = req.query;
+    const organization_id = req.user.orgId;
 
-    const yearActual = format(new Date(), 'yyyy');
+    if (!id || !organization_id) {
+      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
+      return;
+    }
 
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
             SELECT  *
-            FROM "${yearActual}"."${month}"
-            WHERE id = $1;
+            FROM events
+            WHERE id = $1 AND organization_id = $2;
         `;
-    const result = await client.query(query, [id]);
-    client.release();
+    const result = await client.query(query, [id, organization_id]);
 
     if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
+      res.json({ success: true, data: result.rows[0] });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_hay_evento' });
     }
   } catch (err) {
-    console.error('Error al consultar la tabla: ', err);
-    res.status(500).send('Error al consultar la tabla: ' + err.message);
+    console.error('Error al consultar el evento: ', err);
+    res.status(500).send('Error al consultar el evento: ' + err.message);
   }
 });
 
 router.post('/mediagroup', async (req, res) => {
   try {
-    const { id, month, video, sonido } = req.query;
+    const { id, video, sonido } = req.query;
+    const organization_id = req.user.orgId;
 
-    const yearActual = format(new Date(), 'yyyy');
+    if (!id || !organization_id) {
+      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
+      return;
+    }
 
-    const client = await pool.connect();
+    const client = req.dbClient;
     const query = `
-            UPDATE "${yearActual}"."${month}"
-            SET mediagroup_video = '$1',
-                mediagroup_sonido = '$2'
-            WHERE id = $3;
+            UPDATE events
+            SET mediagroup_video = $1,
+                mediagroup_sonido = $2
+            WHERE id = $3 AND organization_id = $4;
         `;
-    const values = [video, sonido, id];
+    const values = [video, sonido, id, organization_id];
     const result = await client.query(query, values);
-    client.release();
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows });
+    if (result.rowCount > 0) {
+      res.json({ success: true, data: 'success' });
     } else {
-      res.json({ success: false, data: 'No_hay_tablas' });
+      res.json({ success: false, data: 'No_se_encontró_evento_para_actualizar' });
     }
   } catch (err) {
-    console.error('Error al consultar la tabla: ', err);
-    res.status(500).send('Error al consultar la tabla: ' + err.message);
+    console.error('Error al actualizar mediagroup: ', err);
+    res.status(500).send('Error al actualizar mediagroup: ' + err.message);
   }
 });
 
 router.get('/list-mediagroup', async (req, res) => {
-  let client;
   try {
+    const organization_id = req.user.orgId;
+
+    if (!organization_id) {
+      res.status(400).send("El parámetro 'organization_id' es requerido.");
+      return;
+    }
+
     // Obtener la fecha actual
     const currentdate = new Date();
     const oneJan = new Date(currentdate.getFullYear(), 0, 1);
@@ -476,92 +366,48 @@ router.get('/list-mediagroup', async (req, res) => {
       (numberOfDays + currentdate.getDay() + 1) / 7
     );
 
-    // Obtener el año y mes actuales en formato 'yyyy' y 'MM'
-    const yearActual = format(currentdate, 'yyyy');
-    const monthActual = format(currentdate, 'MM');
-
-    // Calcular el mes siguiente
-    const nextMonthDate = new Date(
-      currentdate.getFullYear(),
-      currentdate.getMonth() + 1,
-      1
-    );
-    const monthNext = format(nextMonthDate, 'MM');
-
     // Conectar a la base de datos
-    client = await pool.connect();
+    const client = req.dbClient;
 
-    // Consulta SQL para el mes actual
-    const queryCurrentMonth = `
+    // Consulta SQL para las semanas actuales y futuras
+    const query = `
             SELECT *
-            FROM "${yearActual}"."${monthActual}"
-            WHERE n_semana IN ($1, $2, $3, $4);
+            FROM events
+            WHERE organization_id = $1 AND n_semana IN ($2, $3, $4, $5)
+            ORDER BY fecha ASC;
         `;
     const values = [
+      organization_id,
       result_week,
       result_week + 1,
       result_week + 2,
       result_week + 3,
     ];
 
-    // Ejecutar la consulta en el mes actual
-    let resultCurrentMonth = await client.query(queryCurrentMonth, values);
-
-    // Arreglo para almacenar semanas faltantes
-    let semanasFaltantes = [];
-    const semanasBuscadas = [
-      result_week,
-      result_week + 1,
-      result_week + 2,
-      result_week + 3,
-    ];
-
-    // Filtrar las semanas faltantes
-    semanasBuscadas.forEach((semana) => {
-      if (!resultCurrentMonth.rows.some((row) => row.n_semana === semana)) {
-        semanasFaltantes.push(semana);
-      }
-    });
-
-    // Si hay semanas faltantes, buscar en el mes siguiente
-    if (semanasFaltantes.length > 0) {
-      const queryNextMonth = `
-                SELECT *
-                FROM "${yearActual}"."${monthNext}"
-                WHERE n_semana IN (${semanasFaltantes
-                  .map((_, i) => `$${i + 1}`)
-                  .join(', ')});
-            `;
-      const resultNextMonth = await client.query(
-        queryNextMonth,
-        semanasFaltantes
-      );
-
-      // Combinar resultados del mes actual y el siguiente
-      resultCurrentMonth.rows = [
-        ...resultCurrentMonth.rows,
-        ...resultNextMonth.rows,
-      ];
-    }
+    // Ejecutar la consulta
+    let result = await client.query(query, values);
 
     // Verificar si se encontraron datos
-    if (resultCurrentMonth.rows.length > 0) {
-      res.json(resultCurrentMonth.rows);
+    if (result.rows.length > 0) {
+      res.json(result.rows);
     } else {
-      // Si no hay datos en ninguna tabla, retornar un JSON indicando que no hay tablas
-      res.json({ success: false, data: 'No_hay_tablas' });
+      // Si no hay datos, retornar un JSON indicando que no hay eventos
+      res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {
-    console.error('Error al consultar la tabla: ', err);
+    console.error('Error al consultar los eventos de mediagroup: ', err);
     res
       .status(500)
-      .json({ error: 'Error al consultar la tabla: ' + err.message });
-  } finally {
-    // Asegurarse de liberar el cliente de la base de datos
-    if (client) {
-      client.release();
-    }
+      .json({ error: 'Error al consultar los eventos de mediagroup: ' + err.message });
   }
+});
+
+// Middleware para liberar el cliente después de cada solicitud
+router.use((req, res, next) => {
+  if (req.dbClient) {
+    req.dbClient.release();
+  }
+  next();
 });
 
 export default router;
