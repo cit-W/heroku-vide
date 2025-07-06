@@ -5,7 +5,7 @@ const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 
 // Verifica si hay conexión con la base de datos
 export async function checkConnection() {
-  const query = 'SELECT * FROM android_mysql.usuarios';
+  const query = 'SELECT 1;';
   const { rows } = await pool.query(query);
   return rows;
 }

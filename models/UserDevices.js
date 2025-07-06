@@ -49,12 +49,12 @@ export async function deleteDevice(id, organizacion_id) {
   return result.rowCount > 0;
 }
 
-export async function saveDevice({ personal_id, player_id, device_type, organizacion_id }, client = pool) {
+export async function saveDevice({ email, player_id, device_type, organizacion_id }, client = pool) {
   const query = `
-            INSERT INTO user_devices (personal_id, player_id, device_type, last_active, organizacion_id)
+            INSERT INTO user_devices (email, player_id, device_type, last_active, organizacion_id)
             VALUES ($1, $2, $3, CURRENT_TIMESTAMP, $4)
             ON CONFLICT (player_id) DO UPDATE
             SET last_active = CURRENT_TIMESTAMP, device_type = EXCLUDED.device_type, organizacion_id = EXCLUDED.organizacion_id;
         `;
-  await client.query(query, [personal_id, player_id, device_type, organizacion_id]);
+  await client.query(query, [email, player_id, device_type, organizacion_id]);
 }

@@ -1,17 +1,13 @@
 import pool from "../config/db.js";
 import axios from "axios";
 
+import { saveDevice } from './UserDevices.js';
+
 const ONE_SIGNAL_APP_ID = process.env.ONE_SIGNAL_APP_ID;
 const ONE_SIGNAL_API_KEY = process.env.ONE_SIGNAL_API_KEY;
 
-export async function registerUser(user_id, player_id, role) {
-        const query = `
-        INSERT INTO android_mysql.users (user_id, player_id, role)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_id)
-        DO UPDATE SET player_id = EXCLUDED.player_id, role = EXCLUDED.role;
-        `;
-        await pool.query(query, [user_id, player_id, role]);
+export async function registerUser(email, player_id, role, organizacion_id) {
+        await saveDevice({ email, player_id, device_type: role, organizacion_id });
 
         await axios.post(
         `https://onesignal.com/api/v1/players/${player_id}/on_session`,
