@@ -20,7 +20,7 @@ export async function fuzzySearch(search, organizacion_id) {
     SELECT *
     FROM students
     WHERE organizacion_id = $1
-      AND word_similarity(name, $2) > 0.12 
+      AND word_similarity(name, $2) > 0.12
     ORDER BY similarity(name, $2) DESC;
   `;
   const dbResult = await pool.query(query, [organizacion_id, search]);

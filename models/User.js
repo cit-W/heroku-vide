@@ -1,5 +1,5 @@
 import pool from '../config/db.js';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 const saltRounds = 10; // Número de iteraciones para generar la sal
 
 const User = {

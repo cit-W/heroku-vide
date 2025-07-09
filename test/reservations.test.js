@@ -4,11 +4,11 @@ import app from 'file:///C:/Users/jhoan/Documents/heroku-vide/app.js';
 import jwt from 'jsonwebtoken';
 import sinon from 'sinon';
 import pool from '../config/db.js';
-import Reservation from 'file:///C:/Users/jhoan/Documents/heroku-vide/models/Reserva.js';
+
 
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkeyforlocaldev';
 
-describe('User Routes', () => {
+describe('Reservations Routes', () => {
   let sandbox;
   let mockClient;
   let token;
@@ -22,19 +22,19 @@ describe('User Routes', () => {
     };
     sandbox.stub(pool, 'connect').resolves(mockClient);
     token = jwt.sign(testUser, SECRET_KEY, { expiresIn: '1h' });
-    mockClient.query.withArgs('SET app.current_org_id = $1', [testUser.orgId]).resolves();
+    mockClient.query.withArgs("SELECT set_config('app.current_org_id', $1, false)", [testUser.orgId.toString()]).resolves();
   });
 
   afterEach(() => {
     sandbox.restore();
   });
 
-  describe('GET /user-reservations/get-reservation-ids', () => {
+  describe('GET /reservations/get-reservation-ids', () => {
     it('should return reservation IDs if authenticated', async () => {
       sandbox.stub(Reservation, 'getReservationsByOrganization').resolves([{ id: 1, name: 'Reserva 1' }]);
 
       const res = await request(app)
-        .get('/user-reservations/get-reservation-ids')
+        .get('/reservations/get-reservation-ids')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(200);
@@ -44,7 +44,7 @@ describe('User Routes', () => {
 
     it('should return 401 if no token is provided', async () => {
       const res = await request(app)
-        .get('/user-reservations/get-reservation-ids');
+        .get('/reservations/get-reservation-ids');
 
       expect(res.statusCode).to.equal(401);
       expect(res.body.error.message).to.equal('Token requerido');
@@ -54,7 +54,7 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'getReservationsByOrganization').throws(new Error('DB Error'));
 
       const res = await request(app)
-        .get('/user-reservations/get-reservation-ids')
+        .get('/reservations/get-reservation-ids')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(500);
@@ -62,12 +62,12 @@ describe('User Routes', () => {
     });
   });
 
-  describe('GET /user-reservations/get-reservation-record', () => {
+  describe('GET /reservations/get-reservation-record', () => {
     it('should return reservation record if ID is valid', async () => {
       sandbox.stub(Reservation, 'getReservationById').resolves({ id: 1, name: 'Reserva 1' });
 
       const res = await request(app)
-        .get('/user-reservations/get-reservation-record?id=1')
+        .get('/reservations/get-reservation-record?id=1')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(200);
@@ -77,7 +77,7 @@ describe('User Routes', () => {
 
     it('should return 400 if no ID is provided', async () => {
       const res = await request(app)
-        .get('/user-reservations/get-reservation-record')
+        .get('/reservations/get-reservation-record')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(400);
@@ -89,10 +89,10 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'getReservationById').resolves(null);
 
       const res = await request(app)
-        .get('/user-reservations/get-reservation-record?id=999')
+        .get('/reservations/get-reservation-record?id=999')
         .set('Authorization', `Bearer ${token}`);
 
-      expect(res.statusCode).to.equal(200);
+      expect(res.statusCode).to.equal(404);
       expect(res.body.success).to.be.false;
       expect(res.body.data).to.equal('Reserva no encontrada');
     });
@@ -101,7 +101,7 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'getReservationById').throws(new Error('DB Error'));
 
       const res = await request(app)
-        .get('/user-reservations/get-reservation-record?id=1')
+        .get('/reservations/get-reservation-record?id=1')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(500);
@@ -109,7 +109,7 @@ describe('User Routes', () => {
     });
   });
 
-  describe('POST /user-reservations/report-reservation', () => {
+  describe('POST /reservations/report-reservation', () => {
     const validReportData = {
       clase: 'Matemáticas',
       lugar: 'Aula 101',
@@ -121,7 +121,7 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'reportReservation').resolves({});
 
       const res = await request(app)
-        .post('/user-reservations/report-reservation')
+        .post('/reservations/report-reservation')
         .set('Authorization', `Bearer ${token}`)
         .send(validReportData);
 
@@ -132,7 +132,7 @@ describe('User Routes', () => {
 
     it('should return 400 if data is missing', async () => {
       const res = await request(app)
-        .post('/user-reservations/report-reservation')
+        .post('/reservations/report-reservation')
         .set('Authorization', `Bearer ${token}`)
         .send({ clase: 'Matemáticas' }); 
 
@@ -145,7 +145,7 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'reportReservation').throws(new Error('DB Error'));
 
       const res = await request(app)
-        .post('/user-reservations/report-reservation')
+        .post('/reservations/report-reservation')
         .set('Authorization', `Bearer ${token}`)
         .send(validReportData);
 
@@ -154,7 +154,7 @@ describe('User Routes', () => {
     });
   });
 
-  describe('POST /user-reservations/book-place', () => {
+  describe('POST /reservations/book-place', () => {
     const validBookData = {
       clase: 'Historia',
       lugar: 'Biblioteca',
@@ -166,7 +166,7 @@ describe('User Routes', () => {
       sandbox.stub(Reservation, 'bookPlace').resolves({});
 
       const res = await request(app)
-        .post('/user-reservations/book-place')
+        .post('/reservations/book-place')
         .set('Authorization', `Bearer ${token}`)
         .send(validBookData);
 
@@ -177,7 +177,7 @@ describe('User Routes', () => {
 
     it('should return 400 if data is missing', async () => {
       const res = await request(app)
-        .post('/user-reservations/book-place')
+        .post('/reservations/book-place')
         .set('Authorization', `Bearer ${token}`)
         .send({ clase: 'Historia' }); 
 
@@ -187,12 +187,82 @@ describe('User Routes', () => {
     });
 
     it('should return 500 if booking place fails', async () => {
-      mockClient.query.withArgs(sinon.match.string, sinon.match.array).throws(new Error('DB Error'));
+      sandbox.stub(Reservation, 'bookPlace').throws(new Error('DB Error'));
 
       const res = await request(app)
-        .post('/user-reservations/book-place')
+        .post('/reservations/book-place')
         .set('Authorization', `Bearer ${token}`)
         .send(validBookData);
+
+      expect(res.statusCode).to.equal(500);
+      expect(res.body.success).to.be.false;
+    });
+  });
+
+  describe('POST /reservations/delete-expired-reservations', () => {
+    it('should delete expired reservations successfully', async () => {
+      sandbox.stub(Reservation, 'deleteExpired').resolves({ updatedCount: 1, updatedIds: [1] });
+
+      const res = await request(app)
+        .post('/reservations/delete-expired-reservations')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body.success).to.be.true;
+      expect(res.body.data).to.have.property('updatedCount', 1);
+    });
+
+    it('should return 500 if deleting expired reservations fails', async () => {
+      sandbox.stub(Reservation, 'deleteExpired').throws(new Error('DB Error'));
+
+      const res = await request(app)
+        .post('/reservations/delete-expired-reservations')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.statusCode).to.equal(500);
+      expect(res.body.success).to.be.false;
+    });
+  });
+
+  describe('POST /reservations/check-reservation-availability', () => {
+    const validCheckData = {
+      lugar: 'Aula 101',
+      clase: 'Matemáticas',
+      hora_inicio: new Date().toISOString(),
+      hora_final: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    it('should return availability status', async () => {
+      sandbox.stub(Reservation, 'checkAvailability').resolves({ disponible: true });
+
+      const res = await request(app)
+        .post('/reservations/check-reservation-availability')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validCheckData);
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body.success).to.be.true;
+      expect(res.body.data).to.have.property('disponible', true);
+    });
+
+    it('should return 400 if data is missing', async () => {
+      const res = await request(app)
+        .post('/reservations/check-reservation-availability')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ lugar: 'Aula 101' }); 
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.data).to.equal('Faltan datos');
+    });
+
+    it('should return 500 if checking availability fails', async () => {
+      sandbox.stub(Reservation, 'checkAvailability').throws(new Error('DB Error'));
+
+      const res = await request(app)
+        .post('/reservations/check-reservation-availability')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validCheckData);
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;

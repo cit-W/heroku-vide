@@ -1,7 +1,8 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
 import Reservation from '../../models/Reserva.js';
-import pool from '../../config/db.js'; 
+import resolveNamesToIds from '../../models/resolveNamesToIds.js';
+import pool from '../../config/db.js';
 
 const router = express.Router();
 
@@ -9,14 +10,14 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    
+
     await client.query("SELECT set_config('app.current_org_id', $1, false)", [
       req.user.orgId.toString(),
     ]);
-    req.dbClient = client; 
+    req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
@@ -28,6 +29,11 @@ router.get('/get-reservation-ids', async (req, res, next) => {
       orgId,
       req.dbClient
     );
+
+    if (!data || data.length === 0) {
+      return res.json({ success: false, data: 'No hay Reservas' });
+    }
+
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -60,9 +66,9 @@ router.post('/report-reservation', async (req, res, next) => {
   }
   try {
     const orgId = req.user.orgId;
-    const userId = req.user.userId; 
+    const userId = req.user.userId;
     await Reservation.reportReservation(
-      userId, 
+      userId,
       clase,
       lugar,
       hora_inicio,
@@ -83,9 +89,9 @@ router.post('/book-place', async (req, res, next) => {
   }
   try {
     const orgId = req.user.orgId;
-    const userId = req.user.userId; 
+    const userId = req.user.userId;
     await Reservation.bookPlace(
-      userId, 
+      userId,
       clase,
       lugar,
       hora_inicio,
@@ -101,8 +107,6 @@ router.post('/book-place', async (req, res, next) => {
 
 router.post('/delete-expired-reservations', async (req, res, next) => {
   try {
-    
-    
     const result = await Reservation.deleteExpired(req.dbClient);
     res.json({ success: true, data: result });
   } catch (error) {
@@ -111,15 +115,14 @@ router.post('/delete-expired-reservations', async (req, res, next) => {
 });
 
 router.post('/check-reservation-availability', async (req, res, next) => {
-  const { lugar, clase, hora_inicio, hora_final } = req.body;
-  if (!lugar || !clase || !hora_inicio || !hora_final) {
+  const { lugar, hora_inicio, hora_final } = req.body;
+  if (!lugar || !hora_inicio || !hora_final) {
     return res.status(400).json({ success: false, data: 'Faltan datos' });
   }
   try {
     const orgId = req.user.orgId;
     const result = await Reservation.checkAvailability(
       lugar,
-      clase,
       hora_inicio,
       hora_final,
       orgId,

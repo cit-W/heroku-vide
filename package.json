@@ -10,7 +10,11 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "mocha --recursive"
+    "test": "mocha --recursive",
+    "test1": "mocha test/general_routes.test.js test/department.test.js test/user_routes.test.js test/user_device.test.js test/track.test.js",
+    "test2": "mocha test/students.test.js test/social_work_routes.test.js test/reservations.test.js test/appointments.test.js test/reports.test.js",
+    "test3": "mocha test/account.test.js test/notifications.test.js test/grade.test.js test/schedule.test.js test/role_routes.test.js",
+    "test4": "mocha test/place.test.js test/education_level.test.js test/users.test.js test/course_schedules.test.js test/teacher_schedules.test.js test/user.test.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

@@ -11,11 +11,13 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
     req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
@@ -34,6 +36,7 @@ router.get('/get-places', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
     const data = await getPlacesByOrganization(orgId, req.dbClient);
+    console.log(data)
     res.json({ success: true, data });
   } catch (error) {
     next(error);

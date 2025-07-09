@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import User from '../models/User.js';
+import User from 'file:///C:/Users/jhoan/Documents/heroku-vide/models/User.js';
 import bcrypt from 'bcrypt';
 
 describe('User Model', () => {

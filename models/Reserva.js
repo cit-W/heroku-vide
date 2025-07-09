@@ -3,7 +3,7 @@ import resolveNamesToIds from './resolveNamesToIds.js';
 
 const Reservation = {
   async getReservationsByOrganization(organizacion_id, client = pool) {
-    
+
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
@@ -11,7 +11,7 @@ const Reservation = {
   },
 
   async getReservationById(id, client = pool) {
-    
+
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
 
@@ -23,7 +23,7 @@ const Reservation = {
   },
 
   async reportReservation(
-    user_id, 
+    user_id,
     grade,
     place,
     start,
@@ -46,7 +46,7 @@ const Reservation = {
       ($1, $2, $3, $4::TIMESTAMPTZ, $5::TIMESTAMPTZ, $6);
   `;
     await client.query(query, [
-      user_id, 
+      user_id,
       grade_id,
       place_id,
       start,
@@ -56,7 +56,7 @@ const Reservation = {
   },
 
   async bookPlace(
-    user_id, 
+    user_id,
     grade,
     place,
     start,
@@ -80,7 +80,7 @@ const Reservation = {
   `;
 
     const { rows } = await client.query(insertQuery, [
-      user_id, 
+      user_id,
       grade_id,
       place_id,
       start,
@@ -96,7 +96,7 @@ const Reservation = {
     UPDATE reservations
     SET status = 'past'
     WHERE finish < (NOW() AT TIME ZONE 'UTC')
-    AND status = 'upcoming' 
+    AND status = 'upcoming'
     RETURNING id;
   `;
     const { rows, rowCount } = await client.query(query);
@@ -106,31 +106,22 @@ const Reservation = {
 
   async checkAvailability(
     place,
-    grade,
     hora_inicio,
     hora_final,
     organizacion_id,
     client = pool
   ) {
-    const { grade_id, place_id } = await resolveNamesToIds(
-      {
-        grade,
-        place,
-        organizacion_id,
-      },
-      client
-    );
 
     const queryLugar = `
       SELECT * FROM reservation_details
-      WHERE place_id = $1
+      WHERE place = $1
       AND organizacion_id = $2
       AND (
         start < $3::TIMESTAMPTZ AND finish > $4::TIMESTAMPTZ
       );
     `;
     const resultLugar = await client.query(queryLugar, [
-      place_id,
+      place,
       organizacion_id,
       hora_final,
       hora_inicio,
@@ -139,30 +130,8 @@ const Reservation = {
     if (resultLugar.rows.length > 0) {
       return { disponible: false, conflictos: resultLugar.rows };
     }
-
-    const queryClase = `
-      SELECT * FROM reservations
-      WHERE grade_id = $1
-      AND place_id <> $2
-      AND organizacion_id = $3
-      AND (
-        start < $4::TIMESTAMPTZ AND finish > $5::TIMESTAMPTZ
-      );
-    `;
-    const resultClase = await client.query(queryClase, [
-      grade_id,
-      place_id,
-      organizacion_id,
-      hora_final,
-      hora_inicio,
-    ]);
-
-    if (resultClase.rows.length > 0) {
-      return { disponible: false, conflictos: resultClase.rows };
-    }
-
     return { disponible: true };
-  },
+  }
 };
 
 export default Reservation;
