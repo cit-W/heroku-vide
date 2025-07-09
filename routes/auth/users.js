@@ -4,7 +4,7 @@ import { saveDevice } from "../../models/UserDevices.js";
 import { getUserInfo } from "../../models/General.js";
 import { authenticateUser } from "../../models/Authentication.js";
 import { verifyToken } from "../../middleware/auth.js";
-import pool from '../../config/db.js'; 
+import pool from '../../config/db.js';
 
 const router = express.Router();
 
@@ -14,10 +14,10 @@ router.use(async (req, res, next) => {
     if (req.user && req.user.orgId) {
       await client.query('SET app.current_org_id = $1', [req.user.orgId]);
     }
-    req.dbClient = client; 
+    req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });

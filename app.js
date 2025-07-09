@@ -62,6 +62,7 @@ import courseSchedulesRoutes from './routes/schedules/course_schedules.js';
 import teacherSchedulesRoutes from './routes/schedules/teacher_schedules.js';
 import studentsRoutes from './routes/students/students.js';
 import userReservationRoutes from './routes/user_routes.js';
+import verifyRoutes from './routes/auth/verify.js';
 
 
 app.use('/role', roleRoutes);
@@ -84,6 +85,7 @@ app.use('/course-schedules', courseSchedulesRoutes);
 app.use('/teacher-schedules', teacherSchedulesRoutes);
 app.use('/students', studentsRoutes);
 app.use('/user-reservations', userReservationRoutes);
+app.use('/auth', verifyRoutes);
 
 
 app.use(errorHandler);
