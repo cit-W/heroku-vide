@@ -73,10 +73,12 @@ router.post("/sign-in", async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Email y contraseña son requeridos" });
     }
 
-    const token = await authenticateUser(email, password, req.dbClient);
+    const { accessToken, refreshToken } = await authenticateUser(email, password, req.dbClient);
 
-    if (token) {
-      res.json({ success: true, message: "Inicio de sesión exitoso", token });
+    if (accessToken && refreshToken) {
+      console.log(refreshToken, accessToken)
+      res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
+      res.json({ success: true, message: "Inicio de sesión exitoso", accessToken });
     } else {
       res.status(401).json({ success: false, message: "Credenciales incorrectas" });
     }

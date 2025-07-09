@@ -35,7 +35,7 @@ export async function authenticateUser(email, password, client = pool) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return null;
 
-    const payload = {
+    const accessTokenPayload = {
       userId: user.id,
       personalId: user.personal_id,
       orgId: user.organizacion_id,
@@ -43,9 +43,47 @@ export async function authenticateUser(email, password, client = pool) {
       email: user.email,
     };
 
-    return jwt.sign(payload, SECRET_KEY, { expiresIn: '2h', algorithm: 'HS256' });
+    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '15m', algorithm: 'HS256' });
+
+    const refreshToken = jwt.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+
+    await client.query('UPDATE users SET refresh_token = $1 WHERE id = $2', [refreshToken, user.id]);
+
+    return { accessToken, refreshToken };
   } catch (err) {
     console.error('Error en autenticarUsuario:', err);
     throw new Error('Error interno al autenticar');
+  }
+}
+
+export async function verifyRefreshToken(refreshToken, client = pool) {
+  try {
+    const { rows } = await client.query('SELECT * FROM users WHERE refresh_token = $1', [refreshToken]);
+    if (rows.length === 0) {
+      return null;
+    }
+    const user = rows[0];
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    if (decoded.userId !== user.id) {
+      return null;
+    }
+
+    const accessTokenPayload = {
+      userId: user.id,
+      personalId: user.personal_id,
+      orgId: user.organizacion_id,
+      role: user.role,
+      email: user.email,
+    };
+
+    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '15m', algorithm: 'HS256' });
+
+    return accessToken;
+
+  } catch (err) {
+    console.error('Error en verifyRefreshToken:', err);
+    throw new Error('Error interno al verificar el refresh token');
   }
 }

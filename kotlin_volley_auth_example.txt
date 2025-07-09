@@ -1,0 +1,198 @@
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
+import android.widget.Button
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.android.volley.AuthFailureError
+import com.android.volley.Request
+import com.android.volley.RequestQueue
+import com.android.volley.Response
+import com.android.volley.VolleyError
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONException
+import org.json.JSONObject
+
+// 1. TokenManager (Conceptual)
+// Esta clase manejaría el almacenamiento y la recuperación de tus tokens.
+// Para refreshToken, considera EncryptedSharedPreferences para mayor seguridad.
+object TokenManager {
+    private const val PREFS_NAME = "auth_prefs"
+    private const val ACCESS_TOKEN_KEY = "access_token"
+    private const val REFRESH_TOKEN_KEY = "refresh_token"
+
+    private lateinit var sharedPreferences: SharedPreferences
+
+    fun initialize(context: Context) {
+        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    var accessToken: String?
+        get() = sharedPreferences.getString(ACCESS_TOKEN_KEY, null)
+        set(value) = sharedPreferences.edit().putString(ACCESS_TOKEN_KEY, value).apply()
+
+    var refreshToken: String?
+        get() = sharedPreferences.getString(REFRESH_TOKEN_KEY, null)
+        set(value) = sharedPreferences.edit().putString(REFRESH_TOKEN_KEY, value).apply()
+
+    fun clearTokens() {
+        sharedPreferences.edit().remove(ACCESS_TOKEN_KEY).remove(REFRESH_TOKEN_KEY).apply()
+    }
+}
+
+// 2. Solicitud Volley Personalizada (o usando un interceptor de RequestQueue)
+// Este es un ejemplo simplificado. En una aplicación real, podrías usar un RequestQueue personalizado
+// o un patrón de interceptor para manejar la actualización de tokens de forma más limpia.
+
+class AuthenticatedStringRequest(
+    method: Int,
+    url: String,
+    listener: Response.Listener<String>,
+    errorListener: Response.ErrorListener
+) : StringRequest(method, url, listener, errorListener) {
+
+    @Throws(AuthFailureError::class)
+    override fun getHeaders(): MutableMap<String, String> {
+        val headers = HashMap<String, String>()
+        TokenManager.accessToken?.let {
+            headers["Authorization"] = "Bearer $it"
+        }
+        return headers
+    }
+
+    override fun parseNetworkError(volleyError: VolleyError): VolleyError {
+        if (volleyError.networkResponse != null && volleyError.networkResponse.statusCode == 401) {
+            // Aquí es donde activarías la lógica de actualización del token
+            // Por simplicidad, solo relanzaremos por ahora, pero en una aplicación real,
+            // tendrías un mecanismo para poner en cola la solicitud original y reintentarla después de la actualización.
+            Log.e("AuthRequest", "401 No autorizado - Token caducado o inválido")
+            // Podrías emitir un evento o usar una devolución de llamada para activar la actualización
+        }
+        return super.parseNetworkError(volleyError)
+    }
+}
+
+// 3. Ejemplo de uso en una actividad/fragmento
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var requestQueue: RequestQueue
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main) // Asegúrate de tener un layout con botones de login y fetch
+
+        TokenManager.initialize(applicationContext)
+        requestQueue = Volley.newRequestQueue(this)
+
+        // Ejemplo: Clic en el botón de inicio de sesión
+        findViewById<Button>(R.id.loginButton).setOnClickListener {
+            performLogin("user@example.com", "password123")
+        }
+
+        // Ejemplo: Clic en el botón de obtener datos protegidos
+        findViewById<Button>(R.id.fetchDataButton).setOnClickListener {
+            fetchProtectedData()
+        }
+    }
+
+    private fun performLogin(email: String, password: String) {
+        val url = "YOUR_BASE_URL/auth/sign-in" // Reemplaza con tu URL de inicio de sesión real
+
+        val loginRequest = object : StringRequest(Method.POST, url,
+            Response.Listener { response ->
+                try {
+                    val jsonResponse = JSONObject(response)
+                    val accessToken = jsonResponse.getString("accessToken")
+                    // Asumiendo que refreshToken se envía como cookie HttpOnly, por lo que no está directamente en el cuerpo de la respuesta JSON
+                    // Si tu servidor lo envía en el cuerpo para pruebas, también lo analizarías aquí.
+
+                    TokenManager.accessToken = accessToken
+                    // refreshToken es manejado por la cookie HttpOnly, por lo que Volley no lo ve directamente aquí.
+                    // Si necesitas gestionarlo explícitamente en el lado del cliente (por ejemplo, para cerrar sesión),
+                    // asegúrate de que tu servidor lo envíe de una manera a la que puedas acceder (menos seguro).
+
+                    Toast.makeText(this, "¡Inicio de sesión exitoso!", Toast.LENGTH_SHORT).show()
+                    Log.d("Login", "Access Token: $accessToken")
+                } catch (e: JSONException) {
+                    Toast.makeText(this, "Error al analizar la respuesta de inicio de sesión", Toast.LENGTH_SHORT).show()
+                    Log.e("Login", "Error de análisis JSON: ${e.message}")
+                }
+            },
+            Response.ErrorListener { error ->
+                Toast.makeText(this, "Inicio de sesión fallido: ${error.message}", Toast.LENGTH_SHORT).show()
+                Log.e("Login", "Error: ${error.message}", error)
+            }) {
+            override fun getParams(): MutableMap<String, String> {
+                val params = HashMap<String, String>()
+                params["email"] = email
+                params["password"] = password
+                return params
+            }
+        }
+        requestQueue.add(loginRequest)
+    }
+
+    private fun fetchProtectedData() {
+        val url = "YOUR_BASE_URL/some-protected-endpoint" // Reemplaza con tu endpoint protegido real
+
+        val protectedDataRequest = AuthenticatedStringRequest(Method.GET, url,
+            Response.Listener { response ->
+                Toast.makeText(this, "Datos protegidos: $response", Toast.LENGTH_LONG).show()
+                Log.d("ProtectedData", response)
+            },
+            Response.ErrorListener { error ->
+                if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                    // Aquí es donde la lógica de actualización se activaría.
+                    // En una aplicación real, tendrías una forma centralizada de manejar esto.
+                    // Por ahora, solo registraremos y mostraremos un toast.
+                    Toast.makeText(this, "Sesión caducada. Intentando actualizar...", Toast.LENGTH_SHORT).show()
+                    Log.w("ProtectedData", "401 No autorizado. El token podría haber caducado.")
+                    // Activar el flujo de refresh token
+                    refreshAccessToken { success ->
+                        if (success) {
+                            Toast.makeText(this, "Token actualizado. Reintentando solicitud...", Toast.LENGTH_SHORT).show()
+                            // Reintentar la solicitud original
+                            fetchProtectedData()
+                        } else {
+                            Toast.makeText(this, "Error al actualizar el token. Por favor, inicia sesión de nuevo.", Toast.LENGTH_LONG).show()
+                            // Redirigir a la pantalla de inicio de sesión
+                            TokenManager.clearTokens()
+                            // Iniciar actividad de inicio de sesión
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Error al obtener datos: ${error.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("ProtectedData", "Error: ${error.message}", error)
+                }
+            })
+        requestQueue.add(protectedDataRequest)
+    }
+
+    private fun refreshAccessToken(callback: (Boolean) -> Unit) {
+        val url = "YOUR_BASE_URL/auth/refresh-token" // Reemplaza con tu URL de refresh token real
+
+        // Volley no envía directamente las cookies HttpOnly en getHeaders().
+        // La cookie HttpOnly es enviada automáticamente por el navegador/WebView para el dominio.
+        // Por lo tanto, solo necesitas hacer una solicitud al endpoint de refresco.
+        val refreshRequest = object : StringRequest(Method.POST, url,
+            Response.Listener { response ->
+                try {
+                    val jsonResponse = JSONObject(response)
+                    val newAccessToken = jsonResponse.getString("accessToken")
+                    TokenManager.accessToken = newAccessToken
+                    callback(true)
+                } catch (e: JSONException) {
+                    Log.e("RefreshToken", "Error de análisis JSON: ${e.message}")
+                    callback(false)
+                }
+            },
+            Response.ErrorListener { error ->
+                Log.e("RefreshToken", "Error al actualizar el token: ${error.message}", error)
+                callback(false)
+            }) {
+            // No es necesario añadir manualmente el refresh token a los encabezados, está en la cookie HttpOnly
+        }
+        requestQueue.add(refreshRequest)
+    }
+}

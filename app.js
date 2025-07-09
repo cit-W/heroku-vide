@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { errorHandler } from './middleware/errorHandler.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 dotenv.config();
@@ -32,6 +33,7 @@ app.use(helmet.hidePoweredBy());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
@@ -63,6 +65,7 @@ import teacherSchedulesRoutes from './routes/schedules/teacher_schedules.js';
 import studentsRoutes from './routes/students/students.js';
 import userReservationRoutes from './routes/user_routes.js';
 import verifyRoutes from './routes/auth/verify.js';
+import refreshRoutes from './routes/auth/refresh.js';
 
 
 app.use('/role', roleRoutes);
@@ -86,6 +89,7 @@ app.use('/teacher-schedules', teacherSchedulesRoutes);
 app.use('/students', studentsRoutes);
 app.use('/user-reservations', userReservationRoutes);
 app.use('/auth', verifyRoutes);
+app.use('/auth', refreshRoutes);
 
 
 app.use(errorHandler);

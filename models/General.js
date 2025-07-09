@@ -28,7 +28,7 @@ export async function getUserInfo(email) {
       `;
       const { rows } = await pool.query(query, [email]);
 
-      
+
       usuario = rows.length > 0 ? rows[0] : null;
       if (usuario) cache.set(cacheKey, usuario);
     }
