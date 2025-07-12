@@ -15,6 +15,19 @@ const Attendance = {
         const { rows } = await pool.query(query, [id]);
         return rows;
     },
+
+    async getAttendanceByStudentName(studentName, date, orgId, client = pool) {
+    const query = `
+      SELECT u.name, ad.fecha
+      FROM asistencia.asistencia_diaria ad
+      JOIN users u ON ad.id = u.id
+      WHERE u.name ILIKE $1
+        AND u.organizacion_id = $2
+        AND ad.fecha::date = $3::date;
+    `;
+    const { rows } = await client.query(query, [studentName, orgId, date]);
+    return rows;
+  },
 };
 
 export default Attendance;

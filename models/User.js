@@ -67,6 +67,12 @@ const User = {
     const { rows } = await client.query(query, [email]);
     return rows;
   },
+
+  async getUserById(id, organizacion_id, client = pool) {
+    const query = 'SELECT id, name, email, organizacion_id, role_id FROM users WHERE id = $1 AND organizacion_id = $2';
+    const { rows } = await client.query(query, [id, organizacion_id]);
+    return rows.length > 0 ? rows[0] : null;
+  },
 };
 
 export default User;

@@ -1,0 +1,50 @@
+# Hoja de Ruta del Proyecto: Hacia la Integración de IA
+
+Este documento describe las funcionalidades a implementar para construir un sistema robusto de seguimiento estudiantil, que servirá como base para futuras integraciones de Inteligencia Artificial.
+
+---
+
+## Fase 1: Sistema de Seguimiento Integral del Estudiante (SIE)
+
+**Objetivo:** Centralizar todos los datos cualitativos y cuantitativos del comportamiento y desempeño del estudiante para permitir una visión 360°.
+
+### 1. Módulo de Asistencia Avanzada
+- **Tarea:** Reforzar el modelo `Asistencia.js`.
+- **Detalles:**
+    - [ ] Registrar no solo la ausencia, sino también las **tardanzas**.
+    - [ ] Añadir un campo para **justificaciones** de ausencias/tardanzas (ej. "Cita médica").
+    - [ ] Crear endpoints para calcular **estadísticas de asistencia** por estudiante (ej. % de ausentismo mensual, total de tardanzas).
+
+### 2. Módulo de Incidencias (Evaluación de Comportamiento)
+- **Tarea:** Evolucionar el sistema de `Citacion.js` y crear uno para `Amonestaciones`.
+- **Detalles:**
+    - [ ] Modificar el modelo `Citacion.js` para incluir un campo `tipo` con valores: `'Positiva'` (reconocimientos, méritos) y `'Negativa'` (incumplimientos). El estado (`Pending`, `Completed`, `Cancelled`) sigue siendo válido.
+    - [ ] Crear un nuevo modelo y rutas para **Amonestaciones**. Estas son advertencias o deméritos más pequeños que no requieren una citación formal. Debe registrar quién la emite, el motivo y la fecha.
+    - [ ] Desarrollar un **dashboard de "Historial de Incidencias"** para que los orientadores y administradores puedan ver un resumen por estudiante.
+
+### 3. Módulo de Observador del Estudiante (Bitácora de Comportamiento)
+- **Tarea:** Crear un sistema para registrar comentarios continuos sobre el comportamiento.
+- **Detalles:**
+    - [ ] Crear un nuevo modelo `Observacion.js`.
+    - [ ] Debe permitir a cualquier profesor añadir un **comentario fechado** sobre un estudiante. Ejemplo: "Participó activamente en clase hoy" o "Mostró dificultades para trabajar en equipo".
+    - [ ] Este historial debe ser visible en el perfil del estudiante para el personal autorizado.
+
+---
+
+## Fase 2: Implementación de Inteligencia Artificial
+
+**Objetivo:** Utilizar los datos de alta calidad recopilados en la Fase 1 para crear herramientas proactivas.
+
+### 1. Sistema Predictivo de Riesgo Estudiantil
+- **Tarea:** Construir y entrenar un modelo de Machine Learning.
+- **Datos de entrada que usará:**
+    - Frecuencia y patrones de **ausencias y tardanzas** (del Módulo 1).
+    - Conteo y severidad de **citaciones negativas** y **amonestaciones** (del Módulo 2).
+    - Análisis de sentimiento o frecuencia de **observaciones negativas** en la bitácora (del Módulo 3).
+    - (Futuro) Calificaciones y rendimiento académico.
+- **Resultado:** Asignará una "puntuación de riesgo" a cada estudiante, permitiendo una intervención temprana y focalizada.
+
+### 2. Chatbot de Asistencia Inteligente
+- **Tarea:** Implementar un chatbot para responder preguntas de padres y estudiantes.
+- **Capacidades:**
+    - [ ] Podrá responder preguntas como: "¿Mi hijo tiene alguna citación pendiente?" o "¿Cómo ha sido el comportamiento de mi hijo esta semana?", utilizando los datos de los módulos de la Fase 1.

@@ -186,6 +186,21 @@ describe('Reservations Routes', () => {
       expect(res.body.data).to.equal('Faltan datos');
     });
 
+    it('should return 409 if booking conflicts with an existing reservation', async () => {
+      const error = new Error('El lugar no está disponible en el horario solicitado.');
+      error.status = 409;
+      sandbox.stub(Reservation, 'bookPlace').throws(error);
+
+      const res = await request(app)
+        .post('/reservations/book-place')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validBookData);
+
+      expect(res.statusCode).to.equal(409);
+      expect(res.body.success).to.be.false;
+      expect(res.body.error.message).to.equal('El lugar no está disponible en el horario solicitado.');
+    });
+
     it('should return 500 if booking place fails', async () => {
       sandbox.stub(Reservation, 'bookPlace').throws(new Error('DB Error'));
 

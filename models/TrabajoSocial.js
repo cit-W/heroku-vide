@@ -1,13 +1,20 @@
 import pool from '../config/db.js';
 
-export async function addSocialWork(name, description, hours, date, orgId, client = pool) {
-  const query = `INSERT INTO social_work (name, description, hours, date, organizacion_id)
+export async function addSocialWork(
+  user_id,
+  description,
+  hours,
+  date,
+  orgId,
+  client = pool
+) {
+  const query = `INSERT INTO social_work (user_id, description, hours, date, organizacion_id)
                   VALUES ($1, $2, $3, $4, $5)`;
-  await client.query(query, [name, description, hours, date, orgId]);
+  await client.query(query, [user_id, description, hours, date, orgId]);
 }
 
-export async function getIDs(orgId, client = pool) {
-  const query = 'SELECT id FROM social_work WHERE organizacion_id = $1';
+export async function getSocialWorks(orgId, client = pool) {
+  const query = 'SELECT * FROM social_work_details WHERE organizacion_id = $1';
   const { rows } = await client.query(query, [orgId]);
   return rows;
 }

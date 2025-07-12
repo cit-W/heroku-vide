@@ -5,6 +5,7 @@ import pool from '../../config/db.js';
 const router = express.Router();
 
 router.post('/refresh-token', async (req, res, next) => {
+  console.log("RefreshToken")
   const { refreshToken } = req.cookies;
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: 'Refresh token no proporcionado' });

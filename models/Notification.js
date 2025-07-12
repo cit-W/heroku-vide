@@ -53,3 +53,33 @@ export async function sendNotification(title, body, role, departamento, nivel) {
         }
         );
 }
+
+export async function sendNotificationByRole(role, message, orgId) {
+  const notification = {
+    app_id: ONE_SIGNAL_APP_ID,
+    contents: { en: message, es: message },
+    headings: { en: 'Notificación', es: 'Notificación' },
+    filters: [
+      { field: 'tag', key: 'role', relation: '=', value: role },
+      { operator: 'AND' },
+      { field: 'tag', key: 'organizacion_id', relation: '=', value: orgId },
+    ],
+  };
+
+  try {
+    const response = await axios.post(
+      'https://onesignal.com/api/v1/notifications',
+      notification,
+      {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          Authorization: `Basic ${ONE_SIGNAL_API_KEY}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error sending notification:', error.response.data);
+    throw new Error('Failed to send notification.');
+  }
+}

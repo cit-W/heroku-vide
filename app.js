@@ -66,6 +66,8 @@ import studentsRoutes from './routes/students/students.js';
 import userReservationRoutes from './routes/user_routes.js';
 import verifyRoutes from './routes/auth/verify.js';
 import refreshRoutes from './routes/auth/refresh.js';
+import aiCounselorRoutes from './routes/ai_counselor.js';
+import aiAgentRoutes from './routes/ai_agent.js';
 
 
 app.use('/role', roleRoutes);
@@ -90,6 +92,8 @@ app.use('/students', studentsRoutes);
 app.use('/user-reservations', userReservationRoutes);
 app.use('/auth', verifyRoutes);
 app.use('/auth', refreshRoutes);
+app.use('/api/ai/counselor', aiCounselorRoutes);
+app.use('/api/ai/agent', aiAgentRoutes);
 
 
 app.use(errorHandler);

@@ -13,7 +13,6 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS reservations CASCADE;
       DROP TABLE IF EXISTS social_work CASCADE;
       DROP TABLE IF EXISTS student_users CASCADE;
-      DROP TABLE IF EXISTS students CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
       DROP TABLE IF EXISTS places CASCADE;
       DROP TABLE IF EXISTS roles CASCADE;
@@ -73,9 +72,9 @@ const setupDatabase = async () => {
       ADD CONSTRAINT "fk_organizations_status_id_status_id" FOREIGN KEY("status_id") REFERENCES "public"."status"("id");
     `);
 
-    
 
-    
+
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."departments" (
         "id" INTEGER NOT NULL DEFAULT nextval('departamento_id_seq'::regclass),
@@ -195,7 +194,7 @@ const setupDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."reservations" (
         "id" INTEGER NOT NULL DEFAULT nextval('reserva_id_seq'::regclass),
-        "user_id" INTEGER NOT NULL, 
+        "user_id" INTEGER NOT NULL,
         "grade_id" INTEGER NOT NULL,
         "place_id" INTEGER NOT NULL,
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -204,7 +203,7 @@ const setupDatabase = async () => {
         "status" VARCHAR(50) NOT NULL DEFAULT 'upcoming',
         PRIMARY KEY ("id")
       );
-      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id"); 
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
@@ -212,23 +211,36 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."reservations" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."social_work" (
         "id" INTEGER NOT NULL DEFAULT nextval('trabajo_social_id_seq'::regclass),
-        "name" TEXT NOT NULL,
+        "user_id" INTEGER NOT NULL,
         "description" TEXT NOT NULL,
         "hours" TEXT NOT NULL,
         "date" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
+      ALTER TABLE "public"."social_work" ADD CONSTRAINT "fk_social_work_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
       ALTER TABLE "public"."social_work" ADD CONSTRAINT "fk_social_work_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."social_work" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."social_work" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
+
+      CREATE OR REPLACE VIEW social_work_details AS
+      SELECT
+        sw.id,
+        sw.user_id,
+        u.name AS user_name,
+        sw.description,
+        sw.hours,
+        sw.date,
+        sw.organizacion_id
+      FROM social_work sw
+      JOIN users u ON sw.user_id = u.id;
     `);
 
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."appointments" (
         "id" INTEGER NOT NULL DEFAULT nextval('citaciones_id_seq'::regclass),
@@ -249,7 +261,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."appointments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."report_place" (
         "id" INTEGER NOT NULL DEFAULT nextval('reporte_lugar_id_seq'::regclass),
@@ -268,7 +280,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."report_place" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    
+
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."student_users" (
@@ -286,7 +298,7 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."student_users" ADD CONSTRAINT "fk_student_users_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
     `);
 
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."user_devices" (
         "id" INTEGER NOT NULL DEFAULT nextval('user_devices_id_seq'::regclass),
@@ -302,7 +314,7 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."events" (
           "id" SERIAL PRIMARY KEY,

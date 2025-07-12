@@ -110,13 +110,14 @@ const createViews = async () => {
       CREATE OR REPLACE VIEW social_work_details AS
       SELECT
         sw.id,
-        sw.name,
+        sw.user_id,
+        u.name AS user_name,
         sw.description,
         sw.hours,
         sw.date,
-        o.name AS organization
+        sw.organizacion_id
       FROM social_work sw
-      JOIN organizations o ON sw.organizacion_id = o.id;
+      JOIN users u ON sw.user_id = u.id;
     `);
     console.log('✅ Vista social_work_details creada correctamente.');
 

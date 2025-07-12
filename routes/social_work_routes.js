@@ -1,6 +1,10 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import { addSocialWork, getIDs, getByID } from '../models/TrabajoSocial.js';
+import {
+  addSocialWork,
+  getSocialWorks,
+  getByID,
+} from '../models/TrabajoSocial.js';
 import pool from '../config/db.js';
 
 const router = express.Router();
@@ -21,15 +25,16 @@ router.use(verifyToken, async (req, res, next) => {
 });
 
 router.post('/add-social-work', async (req, res, next) => {
-  const { name, description, hours, date } = req.body;
+  const { description, hours, date } = req.body;
   const orgId = req.user.orgId;
+  const userId = req.user.userId;
 
-  if (!name || !description || !hours || !date) {
+  if (!description || !hours || !date) {
     return res.status(400).json({ error: 'Faltan datos' });
   }
 
   try {
-    await addSocialWork(name, description, hours, date, orgId, req.dbClient);
+    await addSocialWork(userId, description, hours, date, orgId, req.dbClient);
     res.json({ message: 'Trabajo social registrado' });
   } catch (error) {
     next(error);
@@ -40,7 +45,7 @@ router.get('/get-ids', async (req, res, next) => {
   const orgId = req.user.orgId;
 
   try {
-    const data = await getIDs(orgId, req.dbClient);
+    const data = await getSocialWorks(orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);

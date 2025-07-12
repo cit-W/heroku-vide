@@ -65,3 +65,15 @@ export async function deleteStudentsByOrganization(organizacion_id, client = poo
   const query = 'DELETE FROM students WHERE organizacion_id = $1';
   await client.query(query, [organizacion_id]);
 }
+
+export async function getStudentInfoByName(studentName, orgId, client = pool) {
+  const query = `
+    SELECT s.name, s.personal_id, s.rh, g.name as grade_name, e.name as school_name
+    FROM students s
+    LEFT JOIN grados g ON s.grade_id = g.id
+    LEFT JOIN escuelas e ON g.escuela_id = e.id
+    WHERE s.name ILIKE $1 AND s.organizacion_id = $2;
+  `;
+  const { rows } = await client.query(query, [studentName, orgId]);
+  return rows.length > 0 ? rows[0] : null;
+}

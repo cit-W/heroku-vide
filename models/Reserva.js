@@ -3,15 +3,15 @@ import resolveNamesToIds from './resolveNamesToIds.js';
 
 const Reservation = {
   async getReservationsByOrganization(organizacion_id, client = pool) {
-
     const query =
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
+
+    console.log('Datos Recibidos GET:', rows);
     return rows;
   },
 
   async getReservationById(id, client = pool) {
-
     const query = 'SELECT * FROM reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
 
@@ -64,6 +64,21 @@ const Reservation = {
     organizacion_id,
     client = pool
   ) {
+    const availability = await this.checkAvailability(
+      place,
+      start,
+      finish,
+      organizacion_id,
+      client
+    );
+
+    if (!availability.disponible) {
+      const error = new Error('El lugar no está disponible en el horario solicitado.');
+      error.status = 409; // Conflict
+      error.details = availability.conflictos;
+      throw error;
+    }
+
     const { grade_id, place_id } = await resolveNamesToIds(
       {
         grade,
@@ -72,6 +87,8 @@ const Reservation = {
       },
       client
     );
+
+    console.log("Datos Recibidos POST:", start, finish);
 
     const insertQuery = `
     INSERT INTO reservations (user_id, grade_id, place_id, start, finish, organizacion_id)
@@ -111,7 +128,6 @@ const Reservation = {
     organizacion_id,
     client = pool
   ) {
-
     const queryLugar = `
       SELECT * FROM reservation_details
       WHERE place = $1
@@ -131,7 +147,7 @@ const Reservation = {
       return { disponible: false, conflictos: resultLugar.rows };
     }
     return { disponible: true };
-  }
+  },
 };
 
 export default Reservation;
