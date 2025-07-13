@@ -4,6 +4,8 @@ import { verifyToken } from '../middleware/auth.js';
 import { ValidationError, DatabaseError } from '../errors/CustomError.js';
 import pool from '../config/db.js';
 import helmet from 'helmet';
+import { resolveNamesToIds } from '../models/resolveNamesToIds.js';
+import { getMonthlyTopic, setMonthlyTopic } from '../models/MonthlyTopic.js';
 
 const router = express.Router();
 
@@ -43,16 +45,20 @@ router.post('/create-event', async (req, res) => {
       mediagroup_sonido,
       fecha,
       descripcion,
-      lugar,
+      lugar, // This is now the place name, not ID
     } = req.query;
 
     const organization_id = req.user.orgId;
 
+    // Resolve place name to place_id
+    const resolvedIds = await resolveNamesToIds({
+      organizacion_id: organization_id,
+      place: lugar,
+    });
+    const place_id = resolvedIds.place_id;
 
     const eventDate = new Date(fecha);
-
     const isoDate = eventDate.toISOString();
-
 
     const oneJan = new Date(eventDate.getFullYear(), 0, 1);
     const numberOfDays = Math.floor(
@@ -62,8 +68,8 @@ router.post('/create-event', async (req, res) => {
 
     const query_create_event = `
             INSERT INTO events
-            (organization_id, tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, lugar, n_semana)
-            VALUES( $1, $2, $3, $4, $5::TIMESTAMPTZ, $6, $7, $8, $9 );
+            (organization_id, tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, place_id, n_semana)
+            VALUES( $1, $2, $3, $4, $5, $6, $7, $8, $9 );
         `;
 
     const values = [
@@ -74,7 +80,7 @@ router.post('/create-event', async (req, res) => {
       mediagroup_sonido,
       isoDate,
       descripcion,
-      lugar,
+      place_id, // Use place_id here
       result_week,
     ];
 
@@ -88,15 +94,13 @@ router.post('/create-event', async (req, res) => {
   }
 });
 
-
-
 router.post('/delete-event', async (req, res) => {
   try {
     const { id } = req.query;
     const organization_id = req.user.orgId;
 
-    if (!id || !organization_id) {
-      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
+    if (!id) {
+      res.status(400).send("El parámetro 'id' es requerido.");
       return;
     }
 
@@ -128,7 +132,7 @@ router.get('/month-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events
+            FROM events_details
             WHERE EXTRACT(MONTH FROM fecha) = $1
               AND EXTRACT(YEAR FROM fecha) = $2
               AND organization_id = $3;
@@ -148,30 +152,45 @@ router.get('/month-events', async (req, res) => {
 
 router.get('/month-topic', async (req, res) => {
   try {
-    const { id } = req.query;
+    const { month, year } = req.query;
     const organization_id = req.user.orgId;
 
-    if (!id || !organization_id) {
-      res.status(400).send("Los parámetros 'id' y 'organization_id' son requeridos.");
+    if (!month || !year) {
+      res.status(400).send("Los parámetros 'month' y 'year' son requeridos.");
       return;
     }
 
     const client = req.dbClient;
-    const query = `
-            SELECT tema
-            FROM events
-            WHERE id = $1 AND organization_id = $2;
-        `;
-    const result = await client.query(query, [id, organization_id]);
+    const topic = await getMonthlyTopic(organization_id, year, month, client);
 
-    if (result.rows.length > 0) {
-      res.json({ success: true, data: result.rows[0] });
+    if (topic) {
+      res.json({ success: true, data: topic });
     } else {
-      res.json({ success: false, data: 'No_hay_evento' });
+      res.json({ success: false, data: 'No se encontró un tema para el mes especificado.' });
     }
   } catch (err) {
-    console.error('Error al consultar el evento: ', err);
-    res.status(500).send('Error al consultar el evento: ' + err.message);
+    console.error('Error al consultar el tema del mes: ', err);
+    res.status(500).send('Error al consultar el tema del mes: ' + err.message);
+  }
+});
+
+router.post('/month-topic', async (req, res) => {
+  try {
+    const { month, year, topic } = req.body;
+    const organization_id = req.user.orgId;
+
+    if (!month || !year || !topic) {
+      res.status(400).send("Los parámetros 'month', 'year' y 'topic' son requeridos.");
+      return;
+    }
+
+    const client = req.dbClient;
+    await setMonthlyTopic(organization_id, year, month, topic, client);
+
+    res.json({ success: true, message: 'Tema del mes guardado exitosamente.' });
+  } catch (err) {
+    console.error('Error al guardar el tema del mes: ', err);
+    res.status(500).send('Error al guardar el tema del mes: ' + err.message);
   }
 });
 
@@ -194,7 +213,7 @@ router.get('/week-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events
+            FROM events_details
             WHERE n_semana = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [result_week, organization_id]);
@@ -229,7 +248,7 @@ router.get('/next-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events
+            FROM events_details
             WHERE n_semana = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [result_week, organization_id]);
@@ -257,7 +276,7 @@ router.get('/closest-event', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events
+            FROM events_details
             WHERE fecha >= NOW() AND organization_id = $1
             ORDER BY fecha ASC
             LIMIT 1;
@@ -290,7 +309,7 @@ router.get('/event', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT  *
-            FROM events
+            FROM events_details
             WHERE id = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [id, organization_id]);
@@ -363,7 +382,7 @@ router.get('/list-mediagroup', async (req, res) => {
 
     const query = `
             SELECT *
-            FROM events
+            FROM events_details
             WHERE organization_id = $1 AND n_semana IN ($2, $3, $4, $5)
             ORDER BY fecha ASC;
         `;

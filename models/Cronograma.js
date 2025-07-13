@@ -1,73 +1,47 @@
 import pool from '../config/db.js';
 
-export async function createSchema(year) {
-  const yearBefore = Number(year) - 1;
-  const schemaCurrent = `${year}`;
-  const schemaBefore = `${yearBefore}`;
-  const client = await pool.connect();
-
-  try {
-    const schemaExistsResult = await client.query(
-      `SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = $1)`,
-      [schemaBefore]
-    );
-    const schemaExists = schemaExistsResult.rows[0].exists;
-
-    await client.query('BEGIN');
-    if (schemaExists) {
-      await client.query(`DROP SCHEMA IF EXISTS "${schemaBefore}" CASCADE`);
-    }
-
-    await client.query(`CREATE SCHEMA IF NOT EXISTS "${schemaCurrent}"`);
-    for (let i = 0; i < 12; i++) {
-      const month = String(i + 1).padStart(2, '0');
-      await client.query(`
-            CREATE TABLE IF NOT EXISTS "${schemaCurrent}"."${month}" (
-                id SERIAL PRIMARY KEY,
-                tema VARCHAR(50) NOT NULL,
-                acargo VARCHAR(40),
-                mediagroup_video VARCHAR(20),
-                mediagroup_sonido VARCHAR(20),
-                fecha TIMESTAMPTZ NOT NULL,
-                descripcion VARCHAR(200),
-                lugar VARCHAR(40),
-                n_semana INT NOT NULL
-            )
-            `);
-    }
-    await client.query('COMMIT');
-    return 'cronograma_registrado';
-  } catch (error) {
-    await client.query('ROLLBACK');
-    throw error;
-  } finally {
-    client.release();
-  }
-}
-
-export async function createEvent(evento) {
+/**
+ * Crea un nuevo evento en la base de datos centralizada.
+ * @param {object} evento - El objeto del evento a crear.
+ * @param {string} evento.tema - El tema o título del evento.
+ * @param {string} evento.acargo - La persona o departamento a cargo.
+ * @param {string} [evento.mediagroup_video] - URL o identificador del video.
+ * @param {string} [evento.mediagroup_sonido] - URL o identificador del sonido.
+ * @param {string|Date} evento.fecha - La fecha y hora del evento.
+ * @param {string} [evento.descripcion] - Una descripción del evento.
+ * @param {string} [evento.place_id] - El ID del lugar donde se realizará el evento.
+ * @param {string} organizacion_id - El ID de la organización a la que pertenece el evento.
+ * @param {object} [client=pool] - El cliente de base de datos a utilizar.
+ * @returns {Promise<object>} El resultado de la inserción de la base de datos.
+ */
+export async function createEvent(evento, organizacion_id, client = pool) {
   const eventDate = new Date(evento.fecha);
   const isoDate = eventDate.toISOString();
+
+  // Calcula el número de la semana del año
   const oneJan = new Date(eventDate.getFullYear(), 0, 1);
   const numberOfDays = Math.floor((eventDate - oneJan) / (24 * 60 * 60 * 1000));
   const resultWeek = Math.ceil((eventDate.getDay() + 1 + numberOfDays) / 7);
-  const tableYear = eventDate.getFullYear().toString();
-  const month = eventDate.toLocaleString('en-US', { month: '2-digit' });
 
   const query = `
-        INSERT INTO "${tableYear}"."${month}" (tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, lugar, n_semana)
-        VALUES ($1, $2, $3, $4, $5::TIMESTAMPTZ, $6, $7, $8);
-        `;
+    INSERT INTO events 
+      (tema, acargo, mediagroup_video, mediagroup_sonido, fecha, descripcion, place_id, n_semana, organization_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING *;
+  `;
+
   const values = [
     evento.tema,
     evento.acargo,
-    evento.mediagroup_video,
-    evento.mediagroup_sonido,
+    evento.mediagroup_video || null,
+    evento.mediagroup_sonido || null,
     isoDate,
-    evento.descripcion,
-    evento.lugar,
+    evento.descripcion || null,
+    evento.place_id || null,
     resultWeek,
+    organizacion_id,
   ];
-  await pool.query(query, values);
-  return 'SUCCESS';
+
+  const result = await client.query(query, values);
+  return result.rows[0];
 }

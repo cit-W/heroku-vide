@@ -106,17 +106,20 @@ router.post('/execute', verifyToken, async (req, res, next) => {
             }
             break;
           case 'create_event':
-            await createEvent(
-              args.tema,
-              args.acargo,
-              null,
-              null,
-              args.fecha,
-              args.descripcion,
-              args.lugar,
-              orgId
-            );
-            functionResponseContent = `Evento '${args.tema}' programado exitosamente.`;
+            try {
+              const eventDetails = {
+                tema: args.tema,
+                descripcion: args.descripcion,
+                lugar: args.lugar,
+                fecha: args.fecha, // La IA ya debería proporcionar la fecha en un formato adecuado
+                acargo: args.acargo,
+              };
+              await createEvent(eventDetails, orgId, req.dbClient);
+              functionResponseContent = `Evento '${args.tema}' programado exitosamente.`;
+            } catch (error) {
+              console.error('Error al crear evento desde IA:', error);
+              functionResponseContent = `Error al crear el evento: ${error.message}`;
+            }
             break;
           case 'create_social_work':
             const { name: studentName, description, hours, date } = args;

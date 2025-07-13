@@ -21,6 +21,7 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS grades CASCADE;
       DROP TABLE IF EXISTS organizations CASCADE;
       DROP TABLE IF EXISTS status CASCADE;
+      DROP TABLE IF EXISTS monthly_topics CASCADE;
 
     `);
 
@@ -327,16 +328,48 @@ const setupDatabase = async () => {
           "mediagroup_sonido" VARCHAR(20),
           "fecha" TIMESTAMPTZ NOT NULL,
           "descripcion" VARCHAR(200),
-          "lugar" VARCHAR(40),
+          "place_id" INTEGER,
           "n_semana" INT NOT NULL
       );
       ALTER TABLE "public"."events" ADD CONSTRAINT "fk_events_organizacion_id_organizations_id" FOREIGN KEY("organization_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."events" ADD CONSTRAINT "fk_events_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."events" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."events" FOR ALL USING (organization_id = current_setting('app.current_org_id', true));
 
       CREATE INDEX IF NOT EXISTS idx_events_fecha ON "public"."events" (fecha);
       CREATE INDEX IF NOT EXISTS idx_events_organization_id ON "public"."events" (organization_id);
       CREATE INDEX IF NOT EXISTS idx_events_org_fecha ON "public"."events" (organization_id, fecha);
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "public"."monthly_topics" (
+        "id" SERIAL PRIMARY KEY,
+        "organization_id" VARCHAR(16) NOT NULL,
+        "year" INTEGER NOT NULL,
+        "month" INTEGER NOT NULL,
+        "topic" VARCHAR(255) NOT NULL,
+        UNIQUE ("organization_id", "year", "month")
+      );
+      ALTER TABLE "public"."monthly_topics" ADD CONSTRAINT "fk_monthly_topics_organization_id_organizations_id" FOREIGN KEY("organization_id") REFERENCES "public"."organizations"("id");
+      ALTER TABLE "public"."monthly_topics" ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY org_isolation_policy ON "public"."monthly_topics" FOR ALL USING (organization_id = current_setting('app.current_org_id', true));
+    `);
+
+    await pool.query(`
+      CREATE OR REPLACE VIEW events_details AS
+      SELECT
+        e.id,
+        e.organization_id,
+        e.tema,
+        e.acargo,
+        e.mediagroup_video,
+        e.mediagroup_sonido,
+        e.fecha,
+        e.descripcion,
+        p.place AS lugar,
+        e.n_semana
+      FROM events e
+      LEFT JOIN places p ON e.place_id = p.id;
     `);
 
     console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');

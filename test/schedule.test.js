@@ -4,6 +4,8 @@ import app from 'file:///C:/Users/jhoan/Documents/heroku-vide/app.js';
 import sinon from 'sinon';
 import pool from 'file:///C:/Users/jhoan/Documents/heroku-vide/config/db.js';
 import jwt from 'jsonwebtoken';
+import * as resolveNamesToIds from 'file:///C:/Users/jhoan/Documents/heroku-vide/models/resolveNamesToIds.js';
+import { getMonthlyTopic, setMonthlyTopic } from 'file:///C:/Users/jhoan/Documents/heroku-vide/models/MonthlyTopic.js';
 
 const SECRET_KEY = process.env.SECRET_KEY || 'supersecretkeyforlocaldev';
 
@@ -30,6 +32,7 @@ describe('Schedule Routes', () => {
 
   describe('POST /schedule/create-event', () => {
     it('should create an event successfully', async () => {
+      sandbox.stub(resolveNamesToIds, 'resolveNamesToIds').resolves({ place_id: 1 });
       mockClient.query.resolves({});
 
       const res = await request(app)
@@ -40,6 +43,10 @@ describe('Schedule Routes', () => {
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
       expect(res.body.data).to.equal('SUCCESS');
+      expect(resolveNamesToIds.resolveNamesToIds.calledWith({
+        organizacion_id: testUser.orgId,
+        place: 'Room 101',
+      })).to.be.true;
     });
 
     it('should return 500 if event creation fails', async () => {
@@ -139,47 +146,82 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/month-topic', () => {
     it('should return month topic successfully', async () => {
-      mockClient.query.resolves({ rows: [{ tema: 'Test Topic' }] });
+      sandbox.stub(MonthlyTopic, 'getMonthlyTopic').resolves({ topic: 'Test Monthly Topic' });
 
       const res = await request(app)
         .get('/schedule/month-topic')
         .set('Authorization', `Bearer ${token}`)
-        .query({ id: 1, organization_id: 101 });
+        .query({ month: 1, year: 2025 });
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
-      expect(res.body.data).to.have.property('tema', 'Test Topic');
+      expect(res.body.data).to.have.property('topic', 'Test Monthly Topic');
     });
 
     it('should return 400 if parameters are missing', async () => {
       const res = await request(app)
         .get('/schedule/month-topic')
         .set('Authorization', `Bearer ${token}`)
-        .query({ id: 1 });
+        .query({ month: 1 });
 
       expect(res.statusCode).to.equal(400);
     });
 
     it('should return success false if no topic is found', async () => {
-      mockClient.query.resolves({ rows: [] });
+      sandbox.stub(MonthlyTopic, 'getMonthlyTopic').resolves(null);
 
       const res = await request(app)
         .get('/schedule/month-topic')
         .set('Authorization', `Bearer ${token}`)
-        .query({ id: 999, organization_id: 101 });
+        .query({ month: 1, year: 2025 });
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.false;
-      expect(res.body.data).to.equal('No_hay_evento');
+      expect(res.body.data).to.equal('No se encontró un tema para el mes especificado.');
     });
 
     it('should return 500 if fetching month topic fails', async () => {
-      mockClient.query.throws(new Error('DB Error'));
+      sandbox.stub(MonthlyTopic, 'getMonthlyTopic').throws(new Error('DB Error'));
 
       const res = await request(app)
         .get('/schedule/month-topic')
         .set('Authorization', `Bearer ${token}`)
-        .query({ id: 1, organization_id: 101 });
+        .query({ month: 1, year: 2025 });
+
+      expect(res.statusCode).to.equal(500);
+    });
+  });
+
+  describe('POST /schedule/month-topic', () => {
+    it('should set month topic successfully', async () => {
+      sandbox.stub(MonthlyTopic, 'setMonthlyTopic').resolves({});
+
+      const res = await request(app)
+        .post('/schedule/month-topic')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ month: 1, year: 2025, topic: 'New Monthly Topic' });
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body.success).to.be.true;
+      expect(res.body.message).to.equal('Tema del mes guardado exitosamente.');
+    });
+
+    it('should return 400 if parameters are missing', async () => {
+      const res = await request(app)
+        .post('/schedule/month-topic')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ month: 1, year: 2025 });
+
+      expect(res.statusCode).to.equal(400);
+    });
+
+    it('should return 500 if setting month topic fails', async () => {
+      sandbox.stub(MonthlyTopic, 'setMonthlyTopic').throws(new Error('DB Error'));
+
+      const res = await request(app)
+        .post('/schedule/month-topic')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ month: 1, year: 2025, topic: 'New Monthly Topic' });
 
       expect(res.statusCode).to.equal(500);
     });
@@ -187,7 +229,7 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/week-events', () => {
     it('should return week events successfully', async () => {
-      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event 1' }] });
+      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event 1', lugar: 'Room A' }] });
 
       const res = await request(app)
         .get('/schedule/week-events')
@@ -234,7 +276,7 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/next-events', () => {
     it('should return next events successfully', async () => {
-      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event 1' }] });
+      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event 1', lugar: 'Room A' }] });
 
       const res = await request(app)
         .get('/schedule/next-events')
@@ -281,7 +323,7 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/closest-event', () => {
     it('should return closest event successfully', async () => {
-      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Closest Event' }] });
+      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Closest Event', lugar: 'Room A' }] });
 
       const res = await request(app)
         .get('/schedule/closest-event')
@@ -328,7 +370,7 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/event', () => {
     it('should return event successfully', async () => {
-      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event Detail' }] });
+      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Event Detail', lugar: 'Room A' }] });
 
       const res = await request(app)
         .get('/schedule/event')
@@ -424,7 +466,7 @@ describe('Schedule Routes', () => {
 
   describe('GET /schedule/list-mediagroup', () => {
     it('should return a list of mediagroup events successfully', async () => {
-      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Media Event 1' }] });
+      mockClient.query.resolves({ rows: [{ id: 1, tema: 'Media Event 1', lugar: 'Room A' }] });
 
       const res = await request(app)
         .get('/schedule/list-mediagroup')
@@ -466,7 +508,7 @@ describe('Schedule Routes', () => {
 
       expect(res.statusCode).to.equal(500);
     });
-  """  });
+  });
 
   describe('Event Lifecycle', () => {
     it('should create, retrieve, and delete an event', async () => {
@@ -479,6 +521,7 @@ describe('Schedule Routes', () => {
       };
 
       // 1. Create the event
+      sandbox.stub(resolveNamesToIds, 'resolveNamesToIds').resolves({ place_id: 1 });
       mockClient.query.resolves({ rows: [{ id: 999 }] }); // Mock the insert
       const createRes = await request(app)
         .post('/schedule/create-event')
@@ -489,7 +532,7 @@ describe('Schedule Routes', () => {
       expect(createRes.body.success).to.be.true;
 
       // 2. Retrieve the event to verify creation
-      mockClient.query.resolves({ rows: [{ id: 999, ...eventData }] });
+      mockClient.query.resolves({ rows: [{ id: 999, ...eventData, lugar: 'Test Room' }] });
       const getRes = await request(app)
         .get('/schedule/event')
         .set('Authorization', `Bearer ${token}`)
@@ -498,6 +541,7 @@ describe('Schedule Routes', () => {
       expect(getRes.statusCode).to.equal(200);
       expect(getRes.body.success).to.be.true;
       expect(getRes.body.data.tema).to.equal(eventData.tema);
+      expect(getRes.body.data.lugar).to.equal(eventData.lugar);
 
       // 3. Delete the event
       mockClient.query.resolves({});
@@ -521,4 +565,3 @@ describe('Schedule Routes', () => {
     });
   });
 });
-""
