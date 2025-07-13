@@ -215,6 +215,10 @@ router.post('/execute', verifyToken, async (req, res, next) => {
             const allStudents = await fuzzySearch(args.texto_busqueda, orgId);
             functionResponseContent = allStudents.length > 0 ? allStudents : 'No se encontraron estudiantes con ese nombre en la organización.';
             break;
+          case 'consultar_trabajo_social_por_estado':
+            const socialWorks = await getSocialWorksByStatus(args.estado, orgId);
+            functionResponseContent = socialWorks.length > 0 ? socialWorks : `No se encontraron trabajos sociales con estado '${args.estado}'.`;
+            break;
           default:
             return res
               .status(400)

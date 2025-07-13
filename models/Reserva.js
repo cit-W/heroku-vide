@@ -7,7 +7,6 @@ const Reservation = {
       'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
 
-    console.log('Datos Recibidos GET:', rows);
     return rows;
   },
 

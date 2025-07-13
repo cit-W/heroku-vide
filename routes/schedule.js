@@ -10,14 +10,14 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    
+
     await client.query("SELECT set_config('app.current_org_id', $1, false)", [
       req.user.orgId.toString(),
     ]);
-    req.dbClient = client; 
+    req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
@@ -34,9 +34,6 @@ router.use(
   })
 );
 
-
-
-
 router.post('/create-event', async (req, res) => {
   try {
     const {
@@ -51,12 +48,12 @@ router.post('/create-event', async (req, res) => {
 
     const organization_id = req.user.orgId;
 
-    
+
     const eventDate = new Date(fecha);
-    
+
     const isoDate = eventDate.toISOString();
 
-    
+
     const oneJan = new Date(eventDate.getFullYear(), 0, 1);
     const numberOfDays = Math.floor(
       (eventDate - oneJan) / (24 * 60 * 60 * 1000)
@@ -349,11 +346,11 @@ router.get('/list-mediagroup', async (req, res) => {
       return;
     }
 
-    
+
     const currentdate = new Date();
     const oneJan = new Date(currentdate.getFullYear(), 0, 1);
 
-    
+
     const numberOfDays = Math.floor(
       (currentdate - oneJan) / (24 * 60 * 60 * 1000)
     );
@@ -363,7 +360,7 @@ router.get('/list-mediagroup', async (req, res) => {
 
     const client = req.dbClient;
 
-    
+
     const query = `
             SELECT *
             FROM events
@@ -380,11 +377,11 @@ router.get('/list-mediagroup', async (req, res) => {
 
     let result = await client.query(query, values);
 
-    
+
     if (result.rows.length > 0) {
       res.json(result.rows);
     } else {
-      
+
       res.json({ success: false, data: 'No_hay_eventos' });
     }
   } catch (err) {

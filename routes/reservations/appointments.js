@@ -1,7 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../../middleware/auth.js';
 import {createAppointment,getAppointments,updateAppointment,getTables,} from '../../models/Citacion.js';
-import pool from '../../config/db.js'; 
+import pool from '../../config/db.js';
 
 const router = express.Router();
 
@@ -9,34 +9,42 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    
-    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
-    req.dbClient = client; 
+
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
+    req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
 
-router.post('/create_citation', async (req, res, next) => {
+router.post('/create-citation', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await createAppointment({ ...req.query, organizacion_id: orgId }, req.dbClient);
+    const userId = req.user.userId;
+    await createAppointment(
+      { ...req.body, organizacion_id: orgId },
+      userId,
+      req.dbClient
+    );
     res.json({ success: true, message: 'Citación creada con éxito' });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/get_citations', async (req, res, next) => {
+router.get('/get-citations', async (req, res, next) => {
   try {
-    const { person, status } = req.query;
+    const { status } = req.query;
     const orgId = req.user.orgId;
-    if (!person || !status)
+    const user_id = req.user.userId;
+    if (!status)
       return res.status(400).json({ error: 'Faltan parámetros' });
 
-    const data = await getAppointments(person, status, orgId, req.dbClient);
+    const data = await getAppointments(user_id, status, orgId, req.dbClient);
     res.json(
       data.length
         ? { success: true, data }
@@ -47,7 +55,7 @@ router.get('/get_citations', async (req, res, next) => {
   }
 });
 
-router.put('/update_citation', async (req, res, next) => {
+router.put('/update-citation', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
     await updateAppointment({ ...req.query, organizacion_id: orgId }, req.dbClient);

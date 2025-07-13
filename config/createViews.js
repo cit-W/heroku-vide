@@ -46,6 +46,7 @@ const createViews = async () => {
     console.log('✅ Vista student_user_details creada correctamente.');
 
 
+    await pool.query(`DROP VIEW IF EXISTS appointments_details;`);
     await pool.query(`
       CREATE OR REPLACE VIEW appointments_details AS
       SELECT
@@ -55,13 +56,14 @@ const createViews = async () => {
         a.date,
         a.notes,
         a.status,
+        a.user_id,
+        a.student_id, -- Added student_id
         s.name AS student_name,
         u.name AS tutor_name,
-        o.name AS organization
+        a.organizacion_id
       FROM appointments a
       JOIN students s ON a.student_id = s.id
-      JOIN users u ON a.user_id = u.id
-      JOIN organizations o ON a.organizacion_id = o.id;
+      JOIN users u ON a.user_id = u.id;
     `);
     console.log('✅ Vista appointments_details creada correctamente.');
 
@@ -115,6 +117,7 @@ const createViews = async () => {
         sw.description,
         sw.hours,
         sw.date,
+        sw.status,
         sw.organizacion_id
       FROM social_work sw
       JOIN users u ON sw.user_id = u.id;

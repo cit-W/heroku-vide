@@ -220,6 +220,7 @@ const setupDatabase = async () => {
         "hours" TEXT NOT NULL,
         "date" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
+        "status" VARCHAR(50) NOT NULL DEFAULT 'upcoming',
         PRIMARY KEY ("id")
       );
       ALTER TABLE "public"."social_work" ADD CONSTRAINT "fk_social_work_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
@@ -235,6 +236,7 @@ const setupDatabase = async () => {
         sw.description,
         sw.hours,
         sw.date,
+        sw.status,
         sw.organizacion_id
       FROM social_work sw
       JOIN users u ON sw.user_id = u.id;

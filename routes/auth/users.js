@@ -77,7 +77,7 @@ router.post("/sign-in", async (req, res, next) => {
 
     if (accessToken && refreshToken) {
       res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
-      res.json({ success: true, message: "Inicio de sesión exitoso", accessToken });
+      res.json({ success: true, message: "Inicio de sesión exitoso", accessToken, refreshToken });
     } else {
       res.status(401).json({ success: false, message: "Credenciales incorrectas" });
     }

@@ -244,4 +244,20 @@ export const availableTools = {
       required: ['texto_busqueda'],
     },
   },
+
+  consultar_trabajo_social_por_estado: {
+    name: 'consultar_trabajo_social_por_estado',
+    description:
+      "Consulta los registros de trabajo social filtrados por su estado (ej. 'upcoming' para próximos, 'past' para pasados). Útil para ver trabajos sociales pendientes o completados.",
+    parameters: {
+      type: 'object',
+      properties: {
+        estado: {
+          type: 'string',
+          description: "El estado del trabajo social a consultar (ej. 'upcoming', 'past').",
+        },
+      },
+      required: ['estado'],
+    },
+  },
 };

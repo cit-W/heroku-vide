@@ -15,7 +15,9 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
     req.dbClient = client;
     next();
   } catch (error) {
@@ -35,12 +37,12 @@ router.post('/create-student-user', async (req, res, next) => {
 });
 
 router.get('/get-student-record-by-name', async (req, res, next) => {
-  const { nombre } = req.query;
+  const { name } = req.query;
   const orgId = req.user.orgId;
-  if (!nombre) return res.status(400).json({ error: 'No se proporcionó un nombre válido' });
+  if (!name) return res.status(400).json({ error: 'No se proporcionó un nombre válido' });
 
   try {
-    const data = await getStudentByName(nombre, orgId, req.dbClient);
+    const data = await getStudentByName(name, orgId, req.dbClient);
     res.json(data ? { success: true, data } : { success: false, message: 'No se encontraron registros' });
   } catch (error) {
     next(error);

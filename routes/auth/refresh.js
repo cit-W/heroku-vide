@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/refresh-token', async (req, res, next) => {
   console.log("RefreshToken")
-  const { refreshToken } = req.cookies;
+  const { refreshToken } = req.body;
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: 'Refresh token no proporcionado' });
   }
@@ -21,6 +21,7 @@ router.post('/refresh-token', async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+    console.log('RefreshToken', error);
   } finally {
     client.release();
   }

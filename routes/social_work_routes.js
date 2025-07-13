@@ -41,7 +41,7 @@ router.post('/add-social-work', async (req, res, next) => {
   }
 });
 
-router.get('/get-ids', async (req, res, next) => {
+router.get('/get-social-works', async (req, res, next) => {
   const orgId = req.user.orgId;
 
   try {
