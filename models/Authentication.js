@@ -43,7 +43,7 @@ export async function authenticateUser(email, password, client = pool) {
       email: user.email,
     };
 
-    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '1m', algorithm: 'HS256' });
+    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '10m', algorithm: 'HS256' });
 
     const refreshToken = jwt.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 
@@ -78,7 +78,7 @@ export async function verifyRefreshToken(refreshToken, client = pool) {
       email: user.email,
     };
 
-    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '1m', algorithm: 'HS256' });
+    const accessToken = jwt.sign(accessTokenPayload, SECRET_KEY, { expiresIn: '10m', algorithm: 'HS256' });
 
     return accessToken;
 

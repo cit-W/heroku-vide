@@ -466,5 +466,59 @@ describe('Schedule Routes', () => {
 
       expect(res.statusCode).to.equal(500);
     });
+  """  });
+
+  describe('Event Lifecycle', () => {
+    it('should create, retrieve, and delete an event', async () => {
+      const eventData = {
+        tema: 'Lifecycle Test Event',
+        acargo: 'Lifecycle Tester',
+        fecha: '2025-07-13T10:00:00Z',
+        descripcion: 'This is a lifecycle test.',
+        lugar: 'Test Room',
+      };
+
+      // 1. Create the event
+      mockClient.query.resolves({ rows: [{ id: 999 }] }); // Mock the insert
+      const createRes = await request(app)
+        .post('/schedule/create-event')
+        .set('Authorization', `Bearer ${token}`)
+        .query(eventData);
+
+      expect(createRes.statusCode).to.equal(200);
+      expect(createRes.body.success).to.be.true;
+
+      // 2. Retrieve the event to verify creation
+      mockClient.query.resolves({ rows: [{ id: 999, ...eventData }] });
+      const getRes = await request(app)
+        .get('/schedule/event')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 999 });
+
+      expect(getRes.statusCode).to.equal(200);
+      expect(getRes.body.success).to.be.true;
+      expect(getRes.body.data.tema).to.equal(eventData.tema);
+
+      // 3. Delete the event
+      mockClient.query.resolves({});
+      const deleteRes = await request(app)
+        .post('/schedule/delete-event')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 999 });
+
+      expect(deleteRes.statusCode).to.equal(200);
+      expect(deleteRes.body.success).to.be.true;
+
+      // 4. Attempt to retrieve the deleted event
+      mockClient.query.resolves({ rows: [] });
+      const getDeletedRes = await request(app)
+        .get('/schedule/event')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ id: 999 });
+
+      expect(getDeletedRes.statusCode).to.equal(200);
+      expect(getDeletedRes.body.success).to.be.false;
+    });
   });
 });
+""

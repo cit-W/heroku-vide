@@ -50,6 +50,7 @@ export async function getAppointments(
     status,
     organizacion_id,
   ]);
+  console.log(user_id, status, organizacion_id);
   return rows;
 }
 
@@ -67,6 +68,7 @@ export async function updateAppointment({
   const values = [];
   let counter = 1;
 
+  console.log(id, topic, tutor, date, notes, status, organizacion_id);
   if (topic) {
     updateFields.push(`topic = $${counter++}`);
     values.push(topic);

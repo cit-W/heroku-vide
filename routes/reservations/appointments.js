@@ -58,7 +58,7 @@ router.get('/get-citations', async (req, res, next) => {
 router.put('/update-citation', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await updateAppointment({ ...req.query, organizacion_id: orgId }, req.dbClient);
+    await updateAppointment({ ...req.body, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Citación actualizada' });
   } catch (error) {
     next(error);
