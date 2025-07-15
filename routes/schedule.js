@@ -46,7 +46,7 @@ router.post('/create-event', async (req, res) => {
       fecha,
       descripcion,
       lugar, // This is now the place name, not ID
-    } = req.query;
+    } = req.body;
 
     const organization_id = req.user.orgId;
 
@@ -80,7 +80,7 @@ router.post('/create-event', async (req, res) => {
       mediagroup_sonido,
       isoDate,
       descripcion,
-      place_id, // Use place_id here
+      place_id,
       result_week,
     ];
 

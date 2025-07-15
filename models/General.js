@@ -18,11 +18,11 @@ export async function getUserInfo(email) {
 
     if (!usuario) {
       const query = `
-        SELECT personal_id, name, email, role, department, education_level, grade
+        SELECT personal_id, name, email, role_code, role_name AS role, department, education_level, grade
         FROM user_details
         WHERE email = $1
         UNION
-        SELECT student_id::VARCHAR, student_name, email, role, NULL AS department, NULL AS education_level, grade
+        SELECT student_id::VARCHAR, student_name, email, role_code, role_name AS role, NULL AS department, NULL AS education_level, grade
         FROM student_user_details
         WHERE email = $1
       `;

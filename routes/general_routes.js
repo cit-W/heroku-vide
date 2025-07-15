@@ -65,17 +65,17 @@ router.get('/user-info', async (req, res) => {
   try {
     const data = await getUserInfo(email);
 
-    
+
     if (!data) {
       return res.json({ success: false, message: 'No se encontró usuario' });
     }
 
-    
+
     if (Array.isArray(data) && data.length === 0) {
       return res.json({ success: false, message: 'No se encontró usuario' });
     }
 
-    
+
     res.json({ success: true, data });
   } catch (error) {
     console.error(error);

@@ -12,7 +12,7 @@ router.use(verifyToken, async (req, res, next) => {
     req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
@@ -20,7 +20,8 @@ router.use(verifyToken, async (req, res, next) => {
 router.post('/create-role', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    await createRole({ ...req.body, organizacion_id: orgId }, req.dbClient);
+    const { role_code, role_name } = req.body;
+    await createRole({ role_code, role_name, organizacion_id: orgId }, req.dbClient);
     res.json({ success: true, message: 'Rol creado con éxito' });
   } catch (error) {
     next(error);
@@ -37,11 +38,11 @@ router.get('/get-roles', async (req, res, next) => {
   }
 });
 
-router.get('/get-single-role', async (req, res, next) => {
+router.get('/roles-in-organization', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
-    const data = await getRolesByOrganization(orgId, req.dbClient);
-    res.json({ success: true, data });
+    const count = await countRolesByOrganization(orgId, req.dbClient);
+    res.json({ success: true, count });
   } catch (error) {
     next(error);
   }

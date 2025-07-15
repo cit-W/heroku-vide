@@ -12,7 +12,8 @@ const createViews = async () => {
         u.personal_id,
         u.name,
         u.email,
-        r.role,
+        r.role_code,
+        r.role_name,
         d.department,
         el.level AS education_level,
         g.grade AS grade,
@@ -32,7 +33,8 @@ const createViews = async () => {
       SELECT
         su.id,
         su.email,
-        su.role,
+        r.role_code,
+        r.role_name,
         s.student_id,
         s.name AS student_name,
         s.rh,
@@ -41,7 +43,8 @@ const createViews = async () => {
       FROM student_users su
       JOIN students s ON su.student_id = s.id
       JOIN grades g ON s.grade = g.grade
-      JOIN organizations o ON s.organizacion_id = o.id;
+      JOIN organizations o ON s.organizacion_id = o.id
+      JOIN roles r ON su.role_id = r.id;
     `);
     console.log('✅ Vista student_user_details creada correctamente.');
 

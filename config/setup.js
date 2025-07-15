@@ -4,7 +4,6 @@ const setupDatabase = async () => {
   try {
     console.log('🔄 Verificando y creando tablas necesarias...');
 
-
     await pool.query(`
       DROP TABLE IF EXISTS events CASCADE;
       DROP TABLE IF EXISTS user_devices CASCADE;
@@ -22,13 +21,13 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS organizations CASCADE;
       DROP TABLE IF EXISTS status CASCADE;
       DROP TABLE IF EXISTS monthly_topics CASCADE;
+      DROP TABLE IF EXISTS ai_memory CASCADE;
 
     `);
 
     await pool.query(`
       CREATE SCHEMA IF NOT EXISTS "public";
     `);
-
 
     await pool.query(`
       CREATE SEQUENCE IF NOT EXISTS roles_id_seq;
@@ -45,8 +44,8 @@ const setupDatabase = async () => {
       CREATE SEQUENCE IF NOT EXISTS studentuser_id_seq;
       CREATE SEQUENCE IF NOT EXISTS grades_id_seq;
       CREATE SEQUENCE IF NOT EXISTS events_id_seq;
+      CREATE SEQUENCE IF NOT EXISTS ai_memory_id_seq;
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."status" (
@@ -54,7 +53,6 @@ const setupDatabase = async () => {
         "status" CHAR(15) NOT NULL
       );
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."organizations" (
@@ -73,9 +71,6 @@ const setupDatabase = async () => {
       ADD CONSTRAINT "fk_organizations_status_id_status_id" FOREIGN KEY("status_id") REFERENCES "public"."status"("id");
     `);
 
-
-
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."departments" (
         "id" INTEGER NOT NULL DEFAULT nextval('departamento_id_seq'::regclass),
@@ -88,7 +83,6 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."departments" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."departments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."education_levels" (
@@ -103,7 +97,6 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."education_levels" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."grades" (
         "id" INTEGER NOT NULL DEFAULT nextval('grades_id_seq'::regclass),
@@ -117,20 +110,19 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."grades" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."roles" (
         "id" INTEGER NOT NULL DEFAULT nextval('roles_id_seq'::regclass),
-        "role" TEXT NOT NULL,
+        "role_code" INTEGER NOT NULL,
+        "role_name" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id"),
-        UNIQUE ("role", "organizacion_id")
+        UNIQUE ("role_code", "organizacion_id")
       );
       ALTER TABLE "public"."roles" ADD CONSTRAINT "fk_roles_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."roles" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."roles" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."places" (
@@ -144,7 +136,6 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."places" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."places" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."users" (
@@ -173,11 +164,10 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."users" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."students" (
         "id" INTEGER NOT NULL DEFAULT nextval('students_id_seq'::regclass),
-        "student_id" INTEGER NOT NULL,
+        "student_id" INTEGER NOT NULL UNIQUE,
         "name" TEXT NOT NULL,
         "rh" CHAR(4),
         "grade" TEXT NOT NULL,
@@ -185,12 +175,14 @@ const setupDatabase = async () => {
         "grade_id" INTEGER NOT NULL,
         PRIMARY KEY ("id")
       );
-      ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
-      ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
-      ALTER TABLE "public"."students" ENABLE ROW LEVEL SECURITY;
-      CREATE POLICY org_isolation_policy ON "public"."students" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
-    `);
+  ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+  ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
 
+  DROP POLICY IF EXISTS org_isolation_policy ON "public"."students";
+
+  ALTER TABLE "public"."students" ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY org_isolation_policy ON "public"."students" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
+`);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."reservations" (
@@ -211,7 +203,6 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."reservations" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."reservations" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."social_work" (
@@ -243,7 +234,6 @@ const setupDatabase = async () => {
       JOIN users u ON sw.user_id = u.id;
     `);
 
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."appointments" (
         "id" INTEGER NOT NULL DEFAULT nextval('citaciones_id_seq'::regclass),
@@ -264,7 +254,6 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."appointments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."report_place" (
         "id" INTEGER NOT NULL DEFAULT nextval('reporte_lugar_id_seq'::regclass),
@@ -283,15 +272,13 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."report_place" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-
-
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."student_users" (
         "id" INTEGER NOT NULL DEFAULT nextval('studentuser_id_seq'::regclass),
         "student_id" INTEGER NOT NULL UNIQUE,
         "email" TEXT NOT NULL UNIQUE,
         "password" TEXT NOT NULL,
-        "role" TEXT NOT NULL DEFAULT 'student'::text,
+        "role_id" INTEGER NOT NULL,
         "email_verified" BOOLEAN DEFAULT FALSE,
         "email_verification_token" VARCHAR(255),
         "email_verification_token_expires_at" TIMESTAMP,
@@ -299,8 +286,8 @@ const setupDatabase = async () => {
         PRIMARY KEY ("id")
       );
       ALTER TABLE "public"."student_users" ADD CONSTRAINT "fk_student_users_student_id_students_id" FOREIGN KEY("student_id") REFERENCES "public"."students"("id");
+      ALTER TABLE "public"."student_users" ADD CONSTRAINT "fk_student_users_role_id_roles_id" FOREIGN KEY("role_id") REFERENCES "public"."roles"("id");
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."user_devices" (
@@ -316,7 +303,6 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."user_devices" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
-
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."events" (
@@ -351,8 +337,24 @@ const setupDatabase = async () => {
         UNIQUE ("organization_id", "year", "month")
       );
       ALTER TABLE "public"."monthly_topics" ADD CONSTRAINT "fk_monthly_topics_organization_id_organizations_id" FOREIGN KEY("organization_id") REFERENCES "public"."organizations"("id");
+      DROP POLICY IF EXISTS org_isolation_policy ON "public"."monthly_topics";
       ALTER TABLE "public"."monthly_topics" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."monthly_topics" FOR ALL USING (organization_id = current_setting('app.current_org_id', true));
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "public"."ai_memory" (
+        "id" SERIAL PRIMARY KEY,
+        "user_id" INTEGER,
+        "organization_id" VARCHAR(16),
+        "role" TEXT,
+        "key" TEXT NOT NULL,
+        "value" TEXT NOT NULL,
+        "created_at" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE ("user_id", "organization_id", "role", "key")
+      );
+      ALTER TABLE "public"."ai_memory" ADD CONSTRAINT "fk_ai_memory_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
+      ALTER TABLE "public"."ai_memory" ADD CONSTRAINT "fk_ai_memory_organization_id_organizations_id" FOREIGN KEY("organization_id") REFERENCES "public"."organizations"("id");
     `);
 
     await pool.query(`
@@ -372,9 +374,12 @@ const setupDatabase = async () => {
       LEFT JOIN places p ON e.place_id = p.id;
     `);
 
-    console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');
-    console.log('🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.');
-
+    console.log(
+      '✅ Todas las tablas han sido verificadas o creadas correctamente.'
+    );
+    console.log(
+      '🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.'
+    );
   } catch (error) {
     console.error('❌ Error al configurar la base de datos:', error);
   } finally {

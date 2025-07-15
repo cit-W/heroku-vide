@@ -33,12 +33,12 @@ describe('Role Routes', () => {
 
   describe('POST /role/create-role', () => {
     it('should create a role successfully', async () => {
-      mockClient.query.withArgs(sinon.match.string, [1, 'Admin', testUser.orgId]).throws(new Error('DB Error'));
+      mockClient.query.withArgs(sinon.match.string, [0, 'Admin', testUser.orgId]).resolves();
 
       const res = await request(app)
         .post('/role/create-role')
         .set('Authorization', `Bearer ${token}`)
-        .send({ id: 1, name: 'Admin' });
+        .send({ role_code: 0, role_name: 'Admin' });
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
@@ -46,12 +46,12 @@ describe('Role Routes', () => {
     });
 
     it('should return 500 if role creation fails', async () => {
-      mockClient.query.withArgs(sinon.match.string, [1, 'Admin', testUser.orgId]).throws(new Error('DB Error'));
+      mockClient.query.withArgs(sinon.match.string, [0, 'Admin', testUser.orgId]).throws(new Error('DB Error'));
 
       const res = await request(app)
         .post('/role/create-role')
         .set('Authorization', `Bearer ${token}`)
-        .send({ id: 1, name: 'Admin' });
+        .send({ role_code: 0, role_name: 'Admin' });
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
@@ -60,7 +60,7 @@ describe('Role Routes', () => {
     it('should return 401 if no token is provided', async () => {
       const res = await request(app)
         .post('/role/create-role')
-        .send({ id: 1, name: 'Admin' });
+        .send({ role_code: 0, role_name: 'Admin' });
 
       expect(res.statusCode).to.equal(401);
       expect(res.body.error.message).to.equal('Token requerido');

@@ -260,4 +260,64 @@ export const availableTools = {
       required: ['estado'],
     },
   },
+
+  save_ai_memory: {
+    name: 'save_ai_memory',
+    description:
+      'Guarda una pieza de información en la memoria de la IA, asociada a un usuario, rol u organización específica. Útil para recordar preferencias, datos importantes o contexto de conversaciones pasadas.',
+    parameters: {
+      type: 'object',
+      properties: {
+        user_id: {
+          type: 'number',
+          description: 'El ID del usuario al que se asocia la memoria. Puede ser nulo si la memoria es para un rol o la organización.',
+        },
+        organization_id: {
+          type: 'string',
+          description: 'El ID de la organización a la que se asocia la memoria. Puede ser nulo si la memoria es para un usuario o rol específico.',
+        },
+        role: {
+          type: 'string',
+          description: "El rol al que se asocia la memoria (ej. 'admin', 'student'). Puede ser nulo si la memoria es para un usuario o la organización.",
+        },
+        key: {
+          type: 'string',
+          description: "La clave única para identificar la información guardada (ej. 'color_favorito', 'preferencia_notificacion').",
+        },
+        value: {
+          type: 'string',
+          description: "El valor de la información a guardar (ej. 'azul', 'email').",
+        },
+      },
+      required: ['key', 'value'],
+    },
+  },
+
+  retrieve_ai_memory: {
+    name: 'retrieve_ai_memory',
+    description:
+      'Recupera una pieza de información de la memoria de la IA, asociada a un usuario, rol u organización específica. Útil para recordar preferencias, datos importantes o contexto de conversaciones pasadas.',
+    parameters: {
+      type: 'object',
+      properties: {
+        user_id: {
+          type: 'number',
+          description: 'El ID del usuario al que se asocia la memoria. Puede ser nulo si la memoria es para un rol o la organización.',
+        },
+        organization_id: {
+          type: 'string',
+          description: 'El ID de la organización a la que se asocia la memoria. Puede ser nulo si la memoria es para un usuario o rol específico.',
+        },
+        role: {
+          type: 'string',
+          description: "El rol al que se asocia la memoria (ej. 'admin', 'student'). Puede ser nulo si la memoria es para un usuario o la organización.",
+        },
+        key: {
+          type: 'string',
+          description: 'La clave única para identificar la información a recuperar.',
+        },
+      },
+      required: ['key'],
+    },
+  },
 };

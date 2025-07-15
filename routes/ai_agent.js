@@ -14,6 +14,7 @@ import { getStudentInfoByName } from '../models/Student.js';
 import { sendNotificationByRole } from '../models/Notification.js';
 import { createAppointment } from '../models/Citacion.js';
 import { findStudentInGradeFuzzy, fuzzySearch } from '../models/Rastrear.js';
+import { saveAIMemory, retrieveAIMemory } from '../models/AIMemory.js';
 
 const router = express.Router();
 
@@ -37,6 +38,11 @@ router.post('/execute', verifyToken, async (req, res, next) => {
     La fecha y hora actual exacta del usuario es: ${referenceTime}.
     Cuando un usuario menciona una fecha u hora relativa (como 'hoy a las 5pm', 'mañana', 'en 2 horas'),
     debes usar esta fecha y hora como referencia absoluta para calcular la fecha y hora exacta en formato ISO 8601 que requieren las herramientas.
+
+    Además de tus funciones principales, tienes la capacidad de recordar y recuperar información específica para usuarios, roles u organizaciones.
+    Utiliza la herramienta 'save_ai_memory' cuando el usuario te proporcione información que pueda ser útil para futuras interacciones, como preferencias, datos personales relevantes (si el usuario lo permite), o cualquier dato que el usuario explícitamente te pida recordar.
+    Utiliza la herramienta 'retrieve_ai_memory' cuando necesites recordar información previamente guardada para responder a una pregunta o completar una tarea del usuario.
+    Siempre considera el contexto del usuario actual (ID de usuario: ${userId}, ID de organización: ${orgId}, Rol: ${role}) al guardar o recuperar información de la memoria, para asegurar que la información sea relevante y esté correctamente segmentada.
   `;
 
   try {
@@ -221,6 +227,25 @@ router.post('/execute', verifyToken, async (req, res, next) => {
           case 'consultar_trabajo_social_por_estado':
             const socialWorks = await getSocialWorksByStatus(args.estado, orgId);
             functionResponseContent = socialWorks.length > 0 ? socialWorks : `No se encontraron trabajos sociales con estado '${args.estado}'.`;
+            break;
+          case 'save_ai_memory':
+            await saveAIMemory({
+              user_id: userId,
+              organization_id: orgId,
+              role: role,
+              key: args.key,
+              value: args.value,
+            }, req.dbClient);
+            functionResponseContent = `Información guardada en la memoria de la IA con la clave '${args.key}'.`;
+            break;
+          case 'retrieve_ai_memory':
+            const retrievedValue = await retrieveAIMemory({
+              user_id: userId,
+              organization_id: orgId,
+              role: role,
+              key: args.key,
+            }, req.dbClient);
+            functionResponseContent = retrievedValue !== null ? `El valor para la clave '${args.key}' es: ${retrievedValue}` : `No se encontró información para la clave '${args.key}'.`;
             break;
           default:
             return res

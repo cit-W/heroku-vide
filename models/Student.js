@@ -46,18 +46,18 @@ export async function addStudent(studentData, client = pool) {
 
 
 export async function upsertStudentUser(userData, client = pool) {
-  const { personal_id, name, email, password, grade, organizacion_id } = userData;
+  const { personal_id, email, password, role_id, organizacion_id } = userData;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
   const query = `
-    INSERT INTO student_users (personal_id, name, email, password, grade, organizacion_id)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    ON CONFLICT (personal_id) DO UPDATE
-    SET name = EXCLUDED.name,
-        email = EXCLUDED.email,
-        grade = EXCLUDED.grade,
+    INSERT INTO student_users (student_id, email, password, role_id, organizacion_id)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (student_id) DO UPDATE
+    SET email = EXCLUDED.email,
+        password = EXCLUDED.password,
+        role_id = EXCLUDED.role_id,
         organizacion_id = EXCLUDED.organizacion_id;
   `;
-  await client.query(query, [personal_id, name, email, hashedPassword, grade, organizacion_id]);
+  await client.query(query, [personal_id, email, hashedPassword, role_id, organizacion_id]);
 }
 
 
