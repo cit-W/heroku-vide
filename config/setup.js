@@ -12,6 +12,7 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS reservations CASCADE;
       DROP TABLE IF EXISTS social_work CASCADE;
       DROP TABLE IF EXISTS student_users CASCADE;
+      DROP TABLE IF EXISTS students CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
       DROP TABLE IF EXISTS places CASCADE;
       DROP TABLE IF EXISTS roles CASCADE;
@@ -170,7 +171,6 @@ const setupDatabase = async () => {
         "student_id" INTEGER NOT NULL UNIQUE,
         "name" TEXT NOT NULL,
         "rh" CHAR(4),
-        "grade" TEXT NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
         "grade_id" INTEGER NOT NULL,
         PRIMARY KEY ("id")

@@ -34,16 +34,21 @@ export async function getStudentById(id, organizacion_id, client = pool) {
 
 
 export async function addStudent(studentData, client = pool) {
-  const { name, personal_id, rh, grade, organizacion_id } = studentData;
+  const { name, student_id, rh, grade_id, organizacion_id } = studentData;
   const query = `
-    INSERT INTO students (name, personal_id, rh, grade, organizacion_id)
+    INSERT INTO students (name, student_id, rh, grade_id, organizacion_id)
     VALUES ($1, $2, $3, $4, $5)
-    ON CONFLICT (personal_id, organizacion_id) DO NOTHING;
+    ON CONFLICT (student_id) DO NOTHING;
   `;
-  const result = await client.query(query, [name, personal_id, rh, grade, organizacion_id]);
+  const result = await client.query(query, [name, student_id, rh, grade_id, organizacion_id]);
   return result;
 }
 
+export async function getStudentsByGrade(grade, organizacion_id, client = pool) {
+  const query = 'SELECT * FROM students_details WHERE grade = $1 AND organizacion_id = $2';
+  const { rows } = await client.query(query, [grade, organizacion_id]);
+  return rows;
+}
 
 export async function upsertStudentUser(userData, client = pool) {
   const { personal_id, email, password, role_id, organizacion_id } = userData;

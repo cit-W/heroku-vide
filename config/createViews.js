@@ -4,7 +4,7 @@ const createViews = async () => {
   try {
     console.log('🔄 Creando vistas para la base de datos...');
 
-
+    // Vista para detalles de usuario
     await pool.query(`
       CREATE OR REPLACE VIEW user_details AS
       SELECT
@@ -27,7 +27,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista user_details creada correctamente.');
 
-
+    // Vista para detalles de usuarios estudiantes
     await pool.query(`
       CREATE OR REPLACE VIEW student_user_details AS
       SELECT
@@ -42,13 +42,13 @@ const createViews = async () => {
         o.name AS organization
       FROM student_users su
       JOIN students s ON su.student_id = s.id
-      JOIN grades g ON s.grade = g.grade
+      JOIN grades g ON s.grade_id = g.id
       JOIN organizations o ON s.organizacion_id = o.id
       JOIN roles r ON su.role_id = r.id;
     `);
     console.log('✅ Vista student_user_details creada correctamente.');
 
-
+    // Vista de citas (appointments)
     await pool.query(`DROP VIEW IF EXISTS appointments_details;`);
     await pool.query(`
       CREATE OR REPLACE VIEW appointments_details AS
@@ -60,7 +60,7 @@ const createViews = async () => {
         a.notes,
         a.status,
         a.user_id,
-        a.student_id, -- Added student_id
+        a.student_id,
         s.name AS student_name,
         u.name AS tutor_name,
         a.organizacion_id
@@ -70,7 +70,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista appointments_details creada correctamente.');
 
-
+    // Vista de reservas
     await pool.query(`DROP VIEW IF EXISTS reservation_details;`);
     await pool.query(`
       CREATE OR REPLACE VIEW reservation_details AS
@@ -92,7 +92,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista reservation_details creada correctamente.');
 
-
+    // Vista de informes de lugar
     await pool.query(`
       CREATE OR REPLACE VIEW report_place_details AS
       SELECT
@@ -110,7 +110,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista report_place_details creada correctamente.');
 
-
+    // Vista de trabajo social
     await pool.query(`
       CREATE OR REPLACE VIEW social_work_details AS
       SELECT
@@ -127,7 +127,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista social_work_details creada correctamente.');
 
-
+    // Vista de dispositivos de usuario
     await pool.query(`
       CREATE OR REPLACE VIEW user_devices_details AS
       SELECT
@@ -142,7 +142,7 @@ const createViews = async () => {
     `);
     console.log('✅ Vista user_devices_details creada correctamente.');
 
-
+    // Vista de estado de organización
     await pool.query(`
       CREATE OR REPLACE VIEW organization_status_details AS
       SELECT
@@ -157,10 +157,24 @@ const createViews = async () => {
     `);
     console.log('✅ Vista organization_status_details creada correctamente.');
 
+    // Vista de detalles de estudiantes
+    await pool.query(`
+      CREATE OR REPLACE VIEW students_details AS
+      SELECT
+        s.id,
+        s.student_id,
+        s.name,
+        s.rh,
+        g.grade AS grade,
+        s.organizacion_id
+      FROM students s
+      JOIN grades g ON s.grade_id = g.id;
+    `);
+    console.log('✅ Vista students_details creada correctamente.');
+
     console.log('✅ Todas las vistas han sido creadas correctamente.');
   } catch (error) {
     console.error('❌ Error al crear las vistas:', error);
-  } finally {
   }
 };
 

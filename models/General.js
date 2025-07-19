@@ -15,8 +15,6 @@ export async function getPersonal(personalId) {
     let usuario = cache.get(cacheKey);
 
     if (!usuario) {
-      console.log(personalId);
-      console.log(typeof personalId);
       const query = `
         SELECT personal_id::VARCHAR AS personal_id, name, email, role_code, role_name AS role, department, education_level, grade
         FROM user_details

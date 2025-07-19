@@ -6,6 +6,7 @@ import {
   addStudent,
   upsertStudentUser,
   deleteStudentsByOrganization,
+  getStudentsByGrade,
 } from '../../models/Student.js';
 import pool from '../../config/db.js';
 
@@ -87,6 +88,24 @@ router.post('/upload-students', async (req, res, next) => {
     }
 
     res.json({ success: true, message: 'Estudiantes agregados correctamente', orgId });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/by-grade/:grade', async (req, res, next) => {
+  const { grade } = req.params;
+  const orgId = req.user.orgId;
+
+  if (!grade) {
+    return res
+      .status(400)
+      .json({ error: 'No se proporcionó un ID de grado válido' });
+  }
+
+  try {
+    const students = await getStudentsByGrade(grade, orgId, req.dbClient);
+    res.json({ success: true, data: students });
   } catch (error) {
     next(error);
   }
