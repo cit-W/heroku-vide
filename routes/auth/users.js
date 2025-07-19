@@ -1,7 +1,7 @@
 import express from "express";
 import User from "../../models/User.js";
 import { saveDevice } from "../../models/UserDevices.js";
-import { getUserInfo } from "../../models/General.js";
+import { getPersonal } from "../../models/General.js";
 import { authenticateUser } from "../../models/Authentication.js";
 import { verifyToken } from "../../middleware/auth.js";
 import pool from '../../config/db.js';
@@ -19,6 +19,34 @@ router.use(async (req, res, next) => {
   } catch (error) {
     client.release();
     next(error);
+  }
+});
+
+router.get('/personal',verifyToken, async (req, res) => {
+  const personalId = req.user.personalId;
+  if (!personalId) {
+    return res
+      .status(400)
+      .json({ error: 'No se proporcionó un userId válido' });
+  }
+  try {
+    console.log(req.user)
+    const data = await getPersonal(personalId);
+
+    if (!data) {
+      return res.json({ success: false, message: 'No se encontró usuario' });
+    }
+
+    if (Array.isArray(data) && data.length === 0) {
+      return res.json({ success: false, message: 'No se encontró usuario' });
+    }
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: 'Error al obtener la información del usuario' });
   }
 });
 
@@ -44,8 +72,8 @@ router.post("/save-user-devices", verifyToken, async (req, res, next) => {
 
 router.get("/get-names", verifyToken, async (req, res, next) => {
   try {
-    const orgId = req.user.orgId;
-    const data = await getUserInfo(req.query.cedula);
+    const userId = req.user.userId;
+    const data = await getPersonal(userId);
     res.json(
       data.length
         ? { success: true, data }

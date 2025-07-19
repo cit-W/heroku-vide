@@ -55,34 +55,4 @@ router.get('/get-users', async (req, res) => {
   }
 });
 
-router.get('/user-info', async (req, res) => {
-  const { email } = req.query;
-  if (!email) {
-    return res
-      .status(400)
-      .json({ error: 'No se proporcionó una cédula válida' });
-  }
-  try {
-    const data = await getUserInfo(email);
-
-
-    if (!data) {
-      return res.json({ success: false, message: 'No se encontró usuario' });
-    }
-
-
-    if (Array.isArray(data) && data.length === 0) {
-      return res.json({ success: false, message: 'No se encontró usuario' });
-    }
-
-
-    res.json({ success: true, data });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: 'Error al obtener la información del usuario' });
-  }
-});
-
 export default router;
