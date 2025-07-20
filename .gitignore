@@ -15,3 +15,4 @@ docker-compose.yml
 config/setupTest.js
 
 TODO
+.env
