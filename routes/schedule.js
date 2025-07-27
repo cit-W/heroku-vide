@@ -132,7 +132,7 @@ router.get('/month-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events_details
+            FROM mview_events_details
             WHERE EXTRACT(MONTH FROM fecha) = $1
               AND EXTRACT(YEAR FROM fecha) = $2
               AND organization_id = $3;
@@ -213,7 +213,7 @@ router.get('/week-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events_details
+            FROM mview_events_details
             WHERE n_semana = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [result_week, organization_id]);
@@ -248,7 +248,7 @@ router.get('/next-events', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events_details
+            FROM mview_events_details
             WHERE n_semana = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [result_week, organization_id]);
@@ -276,7 +276,7 @@ router.get('/closest-event', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT *
-            FROM events_details
+            FROM mview_events_details
             WHERE fecha >= NOW() AND organization_id = $1
             ORDER BY fecha ASC
             LIMIT 1;
@@ -309,7 +309,7 @@ router.get('/event', async (req, res) => {
     const client = req.dbClient;
     const query = `
             SELECT  *
-            FROM events_details
+            FROM mview_events_details
             WHERE id = $1 AND organization_id = $2;
         `;
     const result = await client.query(query, [id, organization_id]);
@@ -382,7 +382,7 @@ router.get('/list-mediagroup', async (req, res) => {
 
     const query = `
             SELECT *
-            FROM events_details
+            FROM mview_events_details
             WHERE organization_id = $1 AND n_semana IN ($2, $3, $4, $5)
             ORDER BY fecha ASC;
         `;

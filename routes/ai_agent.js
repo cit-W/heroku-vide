@@ -11,7 +11,7 @@ import { createEvent } from '../models/Cronograma.js';
 import { verifyToken } from '../middleware/auth.js';
 import Attendance from '../models/Asistencia.js';
 import { getStudentInfoByName } from '../models/Student.js';
-import { sendNotificationByRole } from '../models/Notification.js';
+import { sendNotificationByRoles } from '../models/Notification.js';
 import { createAppointment } from '../models/Citacion.js';
 import { findStudentInGradeFuzzy, fuzzySearch } from '../models/Rastrear.js';
 import { saveAIMemory, retrieveAIMemory } from '../models/AIMemory.js';
@@ -29,21 +29,34 @@ router.post('/execute', verifyToken, async (req, res, next) => {
       .json({ success: false, message: 'Se requiere una consulta (query).' });
   }
 
-  // 2. CREAR LA INSTRUCCIÓN DEL SISTEMA DINÁMICAMENTE
+  const memories = await retrieveAIMemory({
+    user_id: userId,
+    organization_id: orgId,
+    role,
+  });
+  const memoryContext = memories.map(mem => `- ${mem.key}: ${mem.value}`).join('\n');
+
+  // 3. CREAR LA INSTRUCCIÓN DEL SISTEMA DINÁMICAMENTE
   // Usamos la hora del cliente si existe, si no, la del servidor como respaldo.
   const referenceTime = clientTimestamp || new Date().toISOString();
   const systemInstruction = `
-    Eres un asistente virtual experto para una institución educativa.
+    Eres Dolfen, basado en la api de Gemini de Google, experto para una institución educativa.
     Tu objetivo es ayudar a los usuarios a gestionar reservas, eventos y otras tareas administrativas.
     La fecha y hora actual exacta del usuario es: ${referenceTime}.
     Cuando un usuario menciona una fecha u hora relativa (como 'hoy a las 5pm', 'mañana', 'en 2 horas'),
     debes usar esta fecha y hora como referencia absoluta para calcular la fecha y hora exacta en formato ISO 8601 que requieren las herramientas.
+    Los niveles de los roles van de 0 a 3, siendo 0 el nivel más alto y 3 el más bajo.
 
     Además de tus funciones principales, tienes la capacidad de recordar y recuperar información específica para usuarios, roles u organizaciones.
     Utiliza la herramienta 'save_ai_memory' cuando el usuario te proporcione información que pueda ser útil para futuras interacciones, como preferencias, datos personales relevantes (si el usuario lo permite), o cualquier dato que el usuario explícitamente te pida recordar.
-    Utiliza la herramienta 'retrieve_ai_memory' cuando necesites recordar información previamente guardada para responder a una pregunta o completar una tarea del usuario.
+    No utilices la herramienta 'retrieve_ai_memory', en su lugar, utiliza la información de la sección de memoria.
     Siempre considera el contexto del usuario actual (ID de usuario: ${userId}, ID de organización: ${orgId}, Rol: ${role}) al guardar o recuperar información de la memoria, para asegurar que la información sea relevante y esté correctamente segmentada.
+
+    Memoria:
+    ${memoryContext}
   `;
+
+  //console.log(systemInstruction);
 
   try {
     // 3. INICIALIZAR EL MODELO CON LA CONFIGURACIÓN DINÁMICA
@@ -174,9 +187,9 @@ router.post('/execute', verifyToken, async (req, res, next) => {
             const studentInfo = await getStudentInfoByName(args.nombre_estudiante, orgId);
             functionResponseContent = studentInfo || 'No se encontró información para el estudiante especificado.';
             break;
-          case 'enviar_notificacion_por_rol':
-            await sendNotificationByRole(args.rol, args.mensaje, orgId);
-            functionResponseContent = `Notificación enviada exitosamente al rol '${args.rol}'.`;
+          case 'send_notification':
+            await sendNotificationByRoles('Notificación de IA', args.message, args.roles, orgId);
+            functionResponseContent = `Notificación enviada exitosamente a los roles: ${args.roles.join(', ')}`;
             break;
           case 'crear_citacion':
             const { nombre_estudiante, nombre_grado, motivo, fecha_hora } = args;
@@ -229,23 +242,17 @@ router.post('/execute', verifyToken, async (req, res, next) => {
             functionResponseContent = socialWorks.length > 0 ? socialWorks : `No se encontraron trabajos sociales con estado '${args.estado}'.`;
             break;
           case 'save_ai_memory':
-            await saveAIMemory({
-              user_id: userId,
-              organization_id: orgId,
-              role: role,
-              key: args.key,
-              value: args.value,
-            }, req.dbClient);
+            await saveAIMemory(
+              {
+                user_id: userId,
+                organization_id: orgId,
+                role: role,
+                key: args.key,
+                value: args.value,
+              },
+              req.dbClient
+            );
             functionResponseContent = `Información guardada en la memoria de la IA con la clave '${args.key}'.`;
-            break;
-          case 'retrieve_ai_memory':
-            const retrievedValue = await retrieveAIMemory({
-              user_id: userId,
-              organization_id: orgId,
-              role: role,
-              key: args.key,
-            }, req.dbClient);
-            functionResponseContent = retrievedValue !== null ? `El valor para la clave '${args.key}' es: ${retrievedValue}` : `No se encontró información para la clave '${args.key}'.`;
             break;
           default:
             return res

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@onesignal/node-onesignal": "^5.2.0-beta1",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",

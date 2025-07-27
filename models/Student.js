@@ -45,7 +45,7 @@ export async function addStudent(studentData, client = pool) {
 }
 
 export async function getStudentsByGrade(grade, organizacion_id, client = pool) {
-  const query = 'SELECT * FROM students_details WHERE grade = $1 AND organizacion_id = $2';
+  const query = 'SELECT * FROM mview_student_user_details WHERE grade = $1 AND organizacion_id = $2';
   const { rows } = await client.query(query, [grade, organizacion_id]);
   return rows;
 }

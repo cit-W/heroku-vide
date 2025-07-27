@@ -159,24 +159,25 @@ export const availableTools = {
     },
   },
 
-  enviar_notificacion_por_rol: {
-    name: 'enviar_notificacion_por_rol',
+  send_notification: {
+    name: 'send_notification',
     description:
-      "Envía un mensaje o notificación a todos los usuarios que tienen un rol específico (ej. 'Estudiante', 'Profesor', 'Acudiente').",
+      "Envía un mensaje o notificación a todos los usuarios que tienen uno o más roles específicos (ej. ['Estudiante', 'Profesor'], ['Acudiente']).",
     parameters: {
       type: 'object',
       properties: {
-        rol: {
-          type: 'string',
+        roles: {
+          type: 'array',
+          items: { type: 'string' },
           description:
-            "El nombre del rol al que se enviará la notificación. Debe ser uno de los roles válidos del sistema.",
+            "Una lista de los códigos de los roles a los que se enviará la notificación. Debe ser uno o más de los roles válidos del sistema.",
         },
-        mensaje: {
+        message: {
           type: 'string',
           description: 'El contenido del mensaje que se desea enviar.',
         },
       },
-      required: ['rol', 'mensaje'],
+      required: ['roles', 'message'],
     },
   },
 

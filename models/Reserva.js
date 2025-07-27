@@ -3,15 +3,17 @@ import resolveNamesToIds from './resolveNamesToIds.js';
 
 const Reservation = {
   async getReservationsByOrganization(organizacion_id, client = pool) {
+    // Usa la vista materializada para listados generales (rápido)
     const query =
-      'SELECT * FROM reservation_details WHERE organizacion_id = $1 ORDER BY place;';
+      'SELECT * FROM mview_reservation_details WHERE organizacion_id = $1 ORDER BY place;';
     const { rows } = await client.query(query, [organizacion_id]);
 
     return rows;
   },
 
   async getReservationById(id, client = pool) {
-    const query = 'SELECT * FROM reservation_details WHERE id = $1;';
+    // Usa la vista materializada para obtener un solo registro (rápido)
+    const query = 'SELECT * FROM mview_reservation_details WHERE id = $1;';
     const { rows } = await client.query(query, [id]);
 
     if (rows.length === 0) {
@@ -127,8 +129,9 @@ const Reservation = {
     organizacion_id,
     client = pool
   ) {
+    // ¡CRÍTICO! Usa la vista estándar para datos en tiempo real.
     const queryLugar = `
-      SELECT * FROM reservation_details
+      SELECT * FROM view_reservation_details
       WHERE place = $1
       AND organizacion_id = $2
       AND (

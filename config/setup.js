@@ -220,18 +220,7 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."social_work" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."social_work" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
 
-      CREATE OR REPLACE VIEW social_work_details AS
-      SELECT
-        sw.id,
-        sw.user_id,
-        u.name AS user_name,
-        sw.description,
-        sw.hours,
-        sw.date,
-        sw.status,
-        sw.organizacion_id
-      FROM social_work sw
-      JOIN users u ON sw.user_id = u.id;
+      
     `);
 
     await pool.query(`
@@ -292,13 +281,20 @@ const setupDatabase = async () => {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."user_devices" (
         "id" INTEGER NOT NULL DEFAULT nextval('user_devices_id_seq'::regclass),
-        "email" VARCHAR(20) NOT NULL,
+        "user_id" INTEGER NOT NULL,
         "player_id" TEXT NOT NULL UNIQUE,
-        "device_type" TEXT NOT NULL,
-        "last_active" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         "organizacion_id" VARCHAR(16) NOT NULL,
+        "device_type" TEXT,
+        "app_version" VARCHAR(20),
+        "is_active" BOOLEAN DEFAULT true,
+        "last_seen_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        "device_model" TEXT,
+        "os_version" VARCHAR(20),
+        "ip_address" VARCHAR(45),
         PRIMARY KEY ("id")
       );
+      ALTER TABLE "public"."user_devices" ADD CONSTRAINT "fk_user_devices_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
       ALTER TABLE "public"."user_devices" ADD CONSTRAINT "fk_user_devices_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."user_devices" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."user_devices" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
@@ -358,28 +354,42 @@ const setupDatabase = async () => {
     `);
 
     await pool.query(`
-      CREATE OR REPLACE VIEW events_details AS
-      SELECT
-        e.id,
-        e.organization_id,
-        e.tema,
-        e.acargo,
-        e.mediagroup_video,
-        e.mediagroup_sonido,
-        e.fecha,
-        e.descripcion,
-        p.place AS lugar,
-        e.n_semana
-      FROM events e
-      LEFT JOIN places p ON e.place_id = p.id;
+      
     `);
 
-    console.log(
-      '✅ Todas las tablas han sido verificadas o creadas correctamente.'
-    );
-    console.log(
-      '🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.'
-    );
+    console.log('✅ Todas las tablas han sido verificadas o creadas correctamente.');
+    console.log('🔐 Row-Level Security ha sido habilitado en las tablas pertinentes.');
+
+    const indexQueries = `
+      -- Índices para Claves Foráneas (FKs) y columnas usadas en JOINs
+      CREATE INDEX IF NOT EXISTS idx_users_organizacion_id ON users(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+      CREATE INDEX IF NOT EXISTS idx_users_grade_id ON users(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_students_organizacion_id ON students(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_students_grade_id ON students(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_reservations_user_id ON reservations(user_id);
+      CREATE INDEX IF NOT EXISTS idx_reservations_place_id ON reservations(place_id);
+      CREATE INDEX IF NOT EXISTS idx_reservations_grade_id ON reservations(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_reservations_organizacion_id ON reservations(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_events_place_id ON events(place_id);
+      CREATE INDEX IF NOT EXISTS idx_events_organizacion_id ON events(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_social_work_user_id ON social_work(user_id);
+      CREATE INDEX IF NOT EXISTS idx_social_work_organizacion_id ON social_work(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_user_devices_user_id ON user_devices(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_devices_organizacion_id ON user_devices(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_roles_organizacion_id ON roles(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_grades_organizacion_id ON grades(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_places_organizacion_id ON places(organizacion_id);
+
+      -- Índices para búsquedas comunes (WHERE)
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_reservations_start_finish ON reservations(start, finish);
+      CREATE INDEX IF NOT EXISTS idx_events_fecha ON events(fecha);
+    `;
+
+    console.log('Creando índices...');
+    await pool.query(indexQueries);
+    console.log('Índices creados con éxito.');
   } catch (error) {
     console.error('❌ Error al configurar la base de datos:', error);
   } finally {

@@ -17,11 +17,11 @@ export async function getPersonal(personalId) {
     if (!usuario) {
       const query = `
         SELECT personal_id::VARCHAR AS personal_id, name, email, role_code, role_name AS role, department, education_level, grade
-        FROM user_details
+        FROM mview_user_details
         WHERE personal_id::VARCHAR = $1::text
         UNION
         SELECT student_id::VARCHAR, student_name AS name, email, role_code, role_name AS role, NULL AS department, NULL AS education_level, grade
-        FROM student_user_details
+        FROM mview_student_user_details
         WHERE student_id::VARCHAR = $1::text
       `;
 
@@ -46,11 +46,11 @@ export async function getUserInfo(email) {
     if (!usuario) {
       const query = `
         SELECT personal_id, name, email, role_code, role_name AS role, department, education_level, grade
-        FROM user_details
+        FROM mview_user_details
         WHERE email = $1
         UNION
         SELECT student_id::VARCHAR, student_name, email, role_code, role_name AS role, NULL AS department, NULL AS education_level, grade
-        FROM student_user_details
+        FROM mview_student_user_details
         WHERE email = $1
       `;
       const { rows } = await pool.query(query, [email]);

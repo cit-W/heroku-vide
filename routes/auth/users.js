@@ -30,7 +30,6 @@ router.get('/personal',verifyToken, async (req, res) => {
       .json({ error: 'No se proporcionó un userId válido' });
   }
   try {
-    console.log(req.user)
     const data = await getPersonal(personalId);
 
     if (!data) {

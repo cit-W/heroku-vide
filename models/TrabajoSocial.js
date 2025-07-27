@@ -14,13 +14,13 @@ export async function addSocialWork(
 }
 
 export async function getSocialWorks(orgId, client = pool) {
-  const query = "SELECT * FROM social_work_details WHERE organizacion_id = $1 AND status = 'upcoming'";
+  const query = "SELECT * FROM mview_social_work_details WHERE organizacion_id = $1 AND status = 'upcoming'";
   const { rows } = await client.query(query, [orgId]);
   return rows;
 }
 
 export async function getSocialWorksByStatus(status, orgId, client = pool) {
-  const query = 'SELECT * FROM social_work_details WHERE status = $1 AND organizacion_id = $2';
+  const query = 'SELECT * FROM mview_social_work_details WHERE status = $1 AND organizacion_id = $2';
   const { rows } = await client.query(query, [status, orgId]);
   return rows;
 }

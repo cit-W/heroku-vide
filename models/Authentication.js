@@ -10,7 +10,7 @@ export async function authenticateUser(email, password, client = pool) {
 
     // Search in users table
     const userResult = await client.query(
-      'SELECT * FROM users WHERE email = $1',
+      'SELECT u.*, r.role_code as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email = $1',
       [email]
     );
     if (userResult.rows.length > 0) {
@@ -18,7 +18,7 @@ export async function authenticateUser(email, password, client = pool) {
     } else {
       // Search in student_users table
       const studentUserResult = await client.query(
-        'SELECT * FROM student_users WHERE email = $1',
+        "SELECT su.*, 'student' as role FROM student_users su WHERE su.email = $1",
         [email]
       );
       if (studentUserResult.rows.length > 0) {
@@ -58,7 +58,7 @@ export async function authenticateUser(email, password, client = pool) {
 
 export async function verifyRefreshToken(refreshToken, client = pool) {
   try {
-    const { rows } = await client.query('SELECT * FROM users WHERE refresh_token = $1', [refreshToken]);
+    const { rows } = await client.query('SELECT u.*, r.role_code as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.refresh_token = $1', [refreshToken]);
     if (rows.length === 0) {
       return null;
     }

@@ -42,7 +42,7 @@ export async function getAppointments(
   client = pool
 ) {
   const query = `
-    SELECT * FROM appointments_details
+    SELECT * FROM mview_appointments_details
     WHERE user_id = $1 AND status = $2 AND organizacion_id = $3;
   `;
   const { rows } = await client.query(query, [
