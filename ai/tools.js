@@ -111,11 +111,11 @@ export const availableTools = {
     },
   },
 
-  // Herramienta para obtener los grados disponibles de la organización
-  get_grades: {
-    name: 'get_grades',
+  // Herramienta para obtener los departamentos disponibles de la organización
+  get_departments: {
+    name: 'get_departments',
     description:
-      'Obtiene una lista de todos los grados o cursos disponibles en la organización actual. Útil para saber qué niveles educativos o grupos existen.',
+      'Obtiene una lista de todos los departamentos disponibles en la organización actual. Útil para saber qué áreas o grupos existen.',
     parameters: {
       type: 'object',
       properties: {},

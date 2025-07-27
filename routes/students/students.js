@@ -93,18 +93,18 @@ router.post('/upload-students', async (req, res, next) => {
   }
 });
 
-router.get('/by-grade/:grade', async (req, res, next) => {
-  const { grade } = req.params;
+router.get('/by-department/:department', async (req, res, next) => {
+  const { department } = req.params;
   const orgId = req.user.orgId;
 
-  if (!grade) {
+  if (!department) {
     return res
       .status(400)
-      .json({ error: 'No se proporcionó un ID de grado válido' });
+      .json({ error: 'No se proporcionó un ID de departamento válido' });
   }
 
   try {
-    const students = await getStudentsByGrade(grade, orgId, req.dbClient);
+    const students = await getStudentsByDepartment(department, orgId, req.dbClient);
     res.json({ success: true, data: students });
   } catch (error) {
     next(error);

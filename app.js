@@ -47,10 +47,10 @@ app.get('/', (req, res) => res.render('pages/index'));
 import generalRoutes from './routes/general_routes.js';
 import roleRoutes from './routes/role_routes.js';
 import userRoutes from './routes/auth/users.js';
-import gradeRoutes from './routes/grade.js';
+
 import placeRoutes from './routes/place.js';
 import accountRoutes from './routes/auth/account.js';
-import educationLevelRoutes from './routes/education_level.js';
+
 import trackRoutes from './routes/track.js';
 import reportsRoutes from './routes/reports/reports.js';
 import scheduleRoutes from './routes/schedule.js';
@@ -72,11 +72,11 @@ import aiAgentRoutes from './routes/ai_agent.js';
 
 app.use('/role', roleRoutes);
 app.use('/user', userRoutes);
-app.use('/grade', gradeRoutes);
+
 app.use('/general', generalRoutes);
 app.use('/account', accountRoutes);
 app.use('/place', placeRoutes);
-app.use('/education-level', educationLevelRoutes);
+
 app.use('/track', trackRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/schedule', scheduleRoutes);

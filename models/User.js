@@ -14,19 +14,18 @@ const User = {
     organizacion_id,
     role_id,
     department_id,
-    education_levels_id,
-    grade_id,
+    personal_permissions,
   }, client = pool) {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const emailVerificationToken = crypto.randomBytes(32).toString('hex');
     const emailVerificationTokenExpiresAt = new Date(Date.now() + 3600000); // 1 hour from now
 
     const query = `
-        INSERT INTO users (personal_id, name, email, password, organizacion_id, role_id, department_id, education_levels_id, grade_id, email_verification_token, email_verification_token_expires_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        INSERT INTO users (personal_id, name, email, password, organizacion_id, role_id, department_id, personal_permissions, email_verification_token, email_verification_token_expires_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (personal_id) DO UPDATE
         SET name = EXCLUDED.name, email = EXCLUDED.email, role_id = EXCLUDED.role_id, department_id = EXCLUDED.department_id,
-            education_levels_id = EXCLUDED.education_levels_id, grade_id = EXCLUDED.grade_id;
+            personal_permissions = EXCLUDED.personal_permissions;
         `;
     await client.query(query, [
       personal_id,
@@ -36,8 +35,7 @@ const User = {
       organizacion_id,
       role_id,
       department_id,
-      education_levels_id,
-      grade_id,
+      personal_permissions,
       emailVerificationToken,
       emailVerificationTokenExpiresAt,
     ]);

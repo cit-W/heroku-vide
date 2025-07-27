@@ -11,7 +11,7 @@ async function getStudentProfileForAI(studentId, orgId) {
     const client = await pool.connect();
     try {
         // Ejemplo de consulta de datos del estudiante
-        const studentQuery = 'SELECT u.nombre, g.nombre as grado FROM usuarios u JOIN grados g ON u.grado_id = g.id WHERE u.id = $1 AND u.organizacion_id = $2';
+        const studentQuery = 'SELECT u.nombre, d.department as department FROM users u JOIN departments d ON u.department_id = d.id WHERE u.id = $1 AND u.organizacion_id = $2';
         const studentRes = await client.query(studentQuery, [studentId, orgId]);
         if (studentRes.rows.length === 0) return null;
 

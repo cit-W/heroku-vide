@@ -9,9 +9,9 @@ const createViews = async () => {
 
     // 1. Reservas
     await pool.query(`DROP MATERIALIZED VIEW IF EXISTS mview_reservation_details CASCADE;`);
-    await pool.query(`CREATE MATERIALIZED VIEW mview_reservation_details AS SELECT r.id, u.name AS user_name, g.grade, p.place, r.start, r.finish, r.status, r.organizacion_id, o.name AS organization_name FROM reservations r JOIN users u ON r.user_id = u.id JOIN grades g ON r.grade_id = g.id JOIN places p ON r.place_id = p.id JOIN organizations o ON r.organizacion_id = o.id;`);
+    await pool.query(`CREATE MATERIALIZED VIEW mview_reservation_details AS SELECT r.id, u.name AS user_name, d.department, p.place, r.start, r.finish, r.status, r.organizacion_id, o.name AS organization_name FROM reservations r JOIN users u ON r.user_id = u.id JOIN departments d ON r.department_id = d.id JOIN places p ON r.place_id = p.id JOIN organizations o ON r.organizacion_id = o.id;`);
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_mview_reservation_details_id ON mview_reservation_details(id);`);
-    await pool.query(`CREATE OR REPLACE VIEW view_reservation_details AS SELECT r.id, u.name AS user_name, g.grade, p.place, r.start, r.finish, r.status, r.organizacion_id, o.name AS organization_name FROM reservations r JOIN users u ON r.user_id = u.id JOIN grades g ON r.grade_id = g.id JOIN places p ON r.place_id = p.id JOIN organizations o ON r.organizacion_id = o.id;`);
+    await pool.query(`CREATE OR REPLACE VIEW view_reservation_details AS SELECT r.id, u.name AS user_name, d.department, p.place, r.start, r.finish, r.status, r.organizacion_id, o.name AS organization_name FROM reservations r JOIN users u ON r.user_id = u.id JOIN departments d ON r.department_id = d.id JOIN places p ON r.place_id = p.id JOIN organizations o ON r.organizacion_id = o.id;`);
     console.log('✅ Vistas de Reservas (dual) creadas.');
 
     // 2. Trabajo Social
@@ -32,12 +32,12 @@ const createViews = async () => {
     // ----------------------------------------------------------
 
     await pool.query(`DROP MATERIALIZED VIEW IF EXISTS mview_user_details CASCADE;`);
-    await pool.query(`CREATE MATERIALIZED VIEW mview_user_details AS SELECT u.id, u.personal_id, u.name, u.email, r.role_code, r.role_name, d.department, el.level AS education_level, g.grade, o.name AS organization FROM users u JOIN roles r ON u.role_id = r.id JOIN departments d ON u.department_id = d.id JOIN education_levels el ON u.education_levels_id = el.id JOIN grades g ON u.grade_id = g.id JOIN organizations o ON u.organizacion_id = o.id;`);
+    await pool.query(`CREATE MATERIALIZED VIEW mview_user_details AS SELECT u.id, u.personal_id, u.name, u.email, r.role_code, r.role_name, d.department, o.name AS organization FROM users u JOIN roles r ON u.role_id = r.id JOIN departments d ON u.department_id = d.id JOIN organizations o ON u.organizacion_id = o.id;`);
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_mview_user_details_id ON mview_user_details(id);`);
     console.log('✅ Vista Materializada: mview_user_details creada.');
 
     await pool.query(`DROP MATERIALIZED VIEW IF EXISTS mview_student_user_details CASCADE;`);
-    await pool.query(`CREATE MATERIALIZED VIEW mview_student_user_details AS SELECT su.id, su.email, r.role_code, r.role_name, s.student_id, s.name AS student_name, s.rh, g.grade, o.name AS organization FROM student_users su JOIN students s ON su.student_id = s.id JOIN grades g ON s.grade_id = g.id JOIN organizations o ON s.organizacion_id = o.id JOIN roles r ON su.role_id = r.id;`);
+    await pool.query(`CREATE MATERIALIZED VIEW mview_student_user_details AS SELECT su.id, su.email, r.role_code, r.role_name, s.student_id, s.name AS student_name, s.rh, d.department, o.name AS organization FROM student_users su JOIN students s ON su.student_id = s.id JOIN departments d ON s.department_id = d.id JOIN organizations o ON s.organizacion_id = o.id JOIN roles r ON su.role_id = r.id;`);
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_mview_student_user_details_id ON mview_student_user_details(id);`);
     console.log('✅ Vista Materializada: mview_student_user_details creada.');
 

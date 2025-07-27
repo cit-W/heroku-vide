@@ -34,13 +34,13 @@ export async function getStudentById(id, organizacion_id, client = pool) {
 
 
 export async function addStudent(studentData, client = pool) {
-  const { name, student_id, rh, grade_id, organizacion_id } = studentData;
+  const { name, student_id, rh, department_id, organizacion_id } = studentData;
   const query = `
-    INSERT INTO students (name, student_id, rh, grade_id, organizacion_id)
+    INSERT INTO students (name, student_id, rh, department_id, organizacion_id)
     VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT (student_id) DO NOTHING;
   `;
-  const result = await client.query(query, [name, student_id, rh, grade_id, organizacion_id]);
+  const result = await client.query(query, [name, student_id, rh, department_id, organizacion_id]);
   return result;
 }
 

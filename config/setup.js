@@ -17,8 +17,6 @@ const setupDatabase = async () => {
       DROP TABLE IF EXISTS places CASCADE;
       DROP TABLE IF EXISTS roles CASCADE;
       DROP TABLE IF EXISTS departments CASCADE;
-      DROP TABLE IF EXISTS education_levels CASCADE;
-      DROP TABLE IF EXISTS grades CASCADE;
       DROP TABLE IF EXISTS organizations CASCADE;
       DROP TABLE IF EXISTS status CASCADE;
       DROP TABLE IF EXISTS monthly_topics CASCADE;
@@ -41,9 +39,7 @@ const setupDatabase = async () => {
       CREATE SEQUENCE IF NOT EXISTS citaciones_id_seq;
       CREATE SEQUENCE IF NOT EXISTS trabajo_social_id_seq;
       CREATE SEQUENCE IF NOT EXISTS places_id_seq;
-      CREATE SEQUENCE IF NOT EXISTS escuela_id_seq;
       CREATE SEQUENCE IF NOT EXISTS studentuser_id_seq;
-      CREATE SEQUENCE IF NOT EXISTS grades_id_seq;
       CREATE SEQUENCE IF NOT EXISTS events_id_seq;
       CREATE SEQUENCE IF NOT EXISTS ai_memory_id_seq;
     `);
@@ -85,31 +81,9 @@ const setupDatabase = async () => {
       CREATE POLICY org_isolation_policy ON "public"."departments" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS "public"."education_levels" (
-        "id" INTEGER NOT NULL DEFAULT nextval('escuela_id_seq'::regclass),
-        "level" TEXT NOT NULL,
-        "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id"),
-        UNIQUE ("level", "organizacion_id")
-      );
-      ALTER TABLE "public"."education_levels" ADD CONSTRAINT "fk_education_levels_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
-      ALTER TABLE "public"."education_levels" ENABLE ROW LEVEL SECURITY;
-      CREATE POLICY org_isolation_policy ON "public"."education_levels" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
-    `);
+    
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS "public"."grades" (
-        "id" INTEGER NOT NULL DEFAULT nextval('grades_id_seq'::regclass),
-        "grade" TEXT NOT NULL,
-        "organizacion_id" VARCHAR(16) NOT NULL,
-        PRIMARY KEY ("id"),
-        UNIQUE ("grade", "organizacion_id")
-      );
-      ALTER TABLE "public"."grades" ADD CONSTRAINT "fk_grades_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
-      ALTER TABLE "public"."grades" ENABLE ROW LEVEL SECURITY;
-      CREATE POLICY org_isolation_policy ON "public"."grades" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
-    `);
+    
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "public"."roles" (
@@ -148,8 +122,7 @@ const setupDatabase = async () => {
         "organizacion_id" VARCHAR(16) NOT NULL,
         "role_id" INTEGER NOT NULL,
         "department_id" INTEGER NOT NULL,
-        "education_levels_id" INTEGER NOT NULL,
-        "grade_id" INTEGER NOT NULL,
+        "personal_permissions" BOOLEAN NOT NULL DEFAULT FALSE,
         "email_verified" BOOLEAN DEFAULT FALSE,
         "email_verification_token" VARCHAR(255),
         "email_verification_token_expires_at" TIMESTAMP,
@@ -159,8 +132,6 @@ const setupDatabase = async () => {
       ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_role_id_roles_id" FOREIGN KEY("role_id") REFERENCES "public"."roles"("id");
       ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
-      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_education_levels_id_education_levels_id" FOREIGN KEY("education_levels_id") REFERENCES "public"."education_levels"("id");
-      ALTER TABLE "public"."users" ADD CONSTRAINT "fk_users_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
       ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
       CREATE POLICY org_isolation_policy ON "public"."users" FOR ALL USING (organizacion_id = current_setting('app.current_org_id', true));
     `);
@@ -172,10 +143,10 @@ const setupDatabase = async () => {
         "name" TEXT NOT NULL,
         "rh" CHAR(4),
         "organizacion_id" VARCHAR(16) NOT NULL,
-        "grade_id" INTEGER NOT NULL,
+        "department_id" INTEGER NOT NULL,
         PRIMARY KEY ("id")
       );
-  ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+  ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
   ALTER TABLE "public"."students" ADD CONSTRAINT "fk_students_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
 
   DROP POLICY IF EXISTS org_isolation_policy ON "public"."students";
@@ -188,7 +159,7 @@ const setupDatabase = async () => {
       CREATE TABLE IF NOT EXISTS "public"."reservations" (
         "id" INTEGER NOT NULL DEFAULT nextval('reserva_id_seq'::regclass),
         "user_id" INTEGER NOT NULL,
-        "grade_id" INTEGER NOT NULL,
+        "department_id" INTEGER NOT NULL,
         "place_id" INTEGER NOT NULL,
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "finish" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -197,7 +168,7 @@ const setupDatabase = async () => {
         PRIMARY KEY ("id")
       );
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_user_id_users_id" FOREIGN KEY("user_id") REFERENCES "public"."users"("id");
-      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."reservations" ADD CONSTRAINT "fk_reservations_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."reservations" ENABLE ROW LEVEL SECURITY;
@@ -247,14 +218,14 @@ const setupDatabase = async () => {
       CREATE TABLE IF NOT EXISTS "public"."report_place" (
         "id" INTEGER NOT NULL DEFAULT nextval('reporte_lugar_id_seq'::regclass),
         "name" TEXT NOT NULL,
-        "grade_id" INTEGER NOT NULL,
+        "department_id" INTEGER NOT NULL,
         "place_id" INTEGER NOT NULL,
         "start" TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "finish" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
         "organizacion_id" VARCHAR(16) NOT NULL,
         PRIMARY KEY ("id")
       );
-      ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_grade_id_grades_id" FOREIGN KEY("grade_id") REFERENCES "public"."grades"("id");
+      ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_department_id_departments_id" FOREIGN KEY("department_id") REFERENCES "public"."departments"("id");
       ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_place_id_places_id" FOREIGN KEY("place_id") REFERENCES "public"."places"("id");
       ALTER TABLE "public"."report_place" ADD CONSTRAINT "fk_report_place_organizacion_id_organizations_id" FOREIGN KEY("organizacion_id") REFERENCES "public"."organizations"("id");
       ALTER TABLE "public"."report_place" ENABLE ROW LEVEL SECURITY;
@@ -364,12 +335,12 @@ const setupDatabase = async () => {
       -- Índices para Claves Foráneas (FKs) y columnas usadas en JOINs
       CREATE INDEX IF NOT EXISTS idx_users_organizacion_id ON users(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
-      CREATE INDEX IF NOT EXISTS idx_users_grade_id ON users(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_users_department_id ON users(department_id);
       CREATE INDEX IF NOT EXISTS idx_students_organizacion_id ON students(organizacion_id);
-      CREATE INDEX IF NOT EXISTS idx_students_grade_id ON students(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_students_department_id ON students(department_id);
       CREATE INDEX IF NOT EXISTS idx_reservations_user_id ON reservations(user_id);
       CREATE INDEX IF NOT EXISTS idx_reservations_place_id ON reservations(place_id);
-      CREATE INDEX IF NOT EXISTS idx_reservations_grade_id ON reservations(grade_id);
+      CREATE INDEX IF NOT EXISTS idx_reservations_department_id ON reservations(department_id);
       CREATE INDEX IF NOT EXISTS idx_reservations_organizacion_id ON reservations(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_events_place_id ON events(place_id);
       CREATE INDEX IF NOT EXISTS idx_events_organizacion_id ON events(organizacion_id);
@@ -378,7 +349,6 @@ const setupDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_user_devices_user_id ON user_devices(user_id);
       CREATE INDEX IF NOT EXISTS idx_user_devices_organizacion_id ON user_devices(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_roles_organizacion_id ON roles(organizacion_id);
-      CREATE INDEX IF NOT EXISTS idx_grades_organizacion_id ON grades(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_places_organizacion_id ON places(organizacion_id);
 
       -- Índices para búsquedas comunes (WHERE)

@@ -6,7 +6,7 @@ import { availableTools } from '../ai/tools.js';
 import Reservation from '../models/Reserva.js';
 import { addSocialWork } from '../models/TrabajoSocial.js';
 import { getPlacesByOrganization } from '../models/Espacio.js';
-import { getGradesByOrganization } from '../models/Grado.js';
+import { getDepartmentsByOrganization } from '../models/Departamento.js';
 import { createEvent } from '../models/Cronograma.js';
 import { verifyToken } from '../middleware/auth.js';
 import Attendance from '../models/Asistencia.js';

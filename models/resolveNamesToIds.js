@@ -5,7 +5,7 @@ import pool from '../config/db.js';
 
 
 export async function resolveNamesToIds(
-  { organizacion_id, grade, place, roles, education_levels, departments },
+  { organizacion_id, place, roles, departments },
   client = pool
 ) {
   if (!organizacion_id) throw new Error('❌ Se requiere el organizacion_id');
@@ -13,15 +13,7 @@ export async function resolveNamesToIds(
   const resultados = {};
 
   try {
-    if (grade) {
-      const res = await client.query(
-        `SELECT id FROM grades WHERE grade = $1 AND organizacion_id = $2`,
-        [grade, organizacion_id]
-      );
-      if (res.rowCount === 0)
-        throw new Error(`❌ Grado "${grade}" no encontrado.`);
-      resultados.grade_id = res.rows[0].id;
-    }
+    
 
     if (place) {
       const res = await client.query(
@@ -43,17 +35,7 @@ export async function resolveNamesToIds(
       resultados.role_id = res.rows[0].id;
     }
 
-    if (education_levels) {
-      const res = await client.query(
-        `SELECT id FROM education_levels WHERE level = $1 AND organizacion_id = $2`,
-        [education_levels, organizacion_id]
-      );
-      if (res.rowCount === 0)
-        throw new Error(
-          `❌ Nivel educativo "${education_levels}" no encontrado.`
-        );
-      resultados.education_levels_id = res.rows[0].id;
-    }
+    
 
     if (departments) {
       const res = await client.query(
