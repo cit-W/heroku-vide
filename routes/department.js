@@ -1,23 +1,20 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import {
-  createDepartment,
-  getDepartmentsByOrganization,
-} from '../models/Departamento.js';
-import pool from '../config/db.js'; 
+import { createDepartment, getDepartmentsByOrganization } from '../models/Departamento.js';
+import pool from '../config/db.js';
 
 const router = express.Router();
-
 
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    
-    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
-    req.dbClient = client; 
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
+    req.dbClient = client;
     next();
   } catch (error) {
-    client.release(); 
+    client.release();
     next(error);
   }
 });
@@ -51,7 +48,6 @@ router.get('/get-single-department', async (req, res, next) => {
     next(error);
   }
 });
-
 
 router.use((req, res, next) => {
   if (req.dbClient) {

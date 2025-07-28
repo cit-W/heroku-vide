@@ -343,7 +343,7 @@ const setupDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_reservations_department_id ON reservations(department_id);
       CREATE INDEX IF NOT EXISTS idx_reservations_organizacion_id ON reservations(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_events_place_id ON events(place_id);
-      CREATE INDEX IF NOT EXISTS idx_events_organizacion_id ON events(organizacion_id);
+      CREATE INDEX IF NOT EXISTS idx_events_organization_id ON events(organization_id);
       CREATE INDEX IF NOT EXISTS idx_social_work_user_id ON social_work(user_id);
       CREATE INDEX IF NOT EXISTS idx_social_work_organizacion_id ON social_work(organizacion_id);
       CREATE INDEX IF NOT EXISTS idx_user_devices_user_id ON user_devices(user_id);
