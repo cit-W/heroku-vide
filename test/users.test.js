@@ -32,79 +32,213 @@ describe('User Auth Routes', () => {
   });
 
   describe('POST /user/create-user', () => {
-    it('should create a user successfully', async () => {
+    const commonUserData = {
+      personal_id: '12345',
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'password123',
+      department_id: 1,
+      role_id: 1,
+      personal_permissions: true,
+    };
+
+    beforeEach(() => {
       sandbox.stub(bcrypt, 'hash').resolves('hashedPassword');
-      poolQueryStub.withArgs(sinon.match.string, sinon.match.array).resolves({});
+      // Mock transporter.sendMail as it's called in createUser
+      sandbox.stub(User, 'transporter').value({ sendMail: sandbox.stub().resolves(true) });
+    });
+
+    it('should create a user successfully with all valid data', async () => {
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).resolves({});
 
       const res = await request(app)
         .post('/user/create-user')
         .set('Authorization', `Bearer ${token}`)
-        .send({ personal_id: '123', name: 'Test User', email: 'test@example.com', password: 'password' });
+        .send(commonUserData);
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
       expect(res.body.message).to.equal('Usuario registrado con éxito');
+      expect(mockClient.query.calledWithMatch(
+        sinon.match(/INSERT INTO users/),
+        [
+          commonUserData.personal_id,
+          commonUserData.name,
+          commonUserData.email,
+          'hashedPassword',
+          testUser.orgId, // orgId from token
+          commonUserData.role_id,
+          commonUserData.department_id,
+          commonUserData.personal_permissions,
+          sinon.match.string, // email_verification_token
+          sinon.match.date, // email_verification_token_expires_at
+        ]
+      )).to.be.true;
     });
 
-    it('should return 500 if user creation fails', async () => {
-      sandbox.stub(bcrypt, 'hash').resolves('hashedPassword');
-      poolQueryStub.withArgs(sinon.match.string, sinon.match.array).throws(new Error('DB Error'));
+    it('should return 400 if personal_id is missing', async () => {
+      const { personal_id, ...dataWithout } = commonUserData;
+      const res = await request(app)
+        .post('/user/create-user')
+        .set('Authorization', `Bearer ${token}`)
+        .send(dataWithout);
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.include('personal_id'); // Assuming validation error message
+    });
+
+    it('should return 400 if email is missing', async () => {
+      const { email, ...dataWithout } = commonUserData;
+      const res = await request(app)
+        .post('/user/create-user')
+        .set('Authorization', `Bearer ${token}`)
+        .send(dataWithout);
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.include('email');
+    });
+
+    it('should return 400 if password is missing', async () => {
+      const { password, ...dataWithout } = commonUserData;
+      const res = await request(app)
+        .post('/user/create-user')
+        .set('Authorization', `Bearer ${token}`)
+        .send(dataWithout);
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.include('password');
+    });
+
+    it('should return 500 if database operation fails', async () => {
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).throws(new Error('DB Error'));
 
       const res = await request(app)
         .post('/user/create-user')
         .set('Authorization', `Bearer ${token}`)
-        .send({ personal_id: '123', name: 'Test User', email: 'test@example.com', password: 'password' });
+        .send(commonUserData);
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Error interno al registrar usuario'); // Assuming generic error message
+    });
+
+    it('should handle duplicate personal_id gracefully (ON CONFLICT)', async () => {
+      // Simulate ON CONFLICT DO UPDATE behavior
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).resolves({ command: 'UPDATE', rowCount: 1 });
+
+      const res = await request(app)
+        .post('/user/create-user')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commonUserData);
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body.success).to.be.true;
+      expect(res.body.message).to.equal('Usuario registrado con éxito'); // Message remains the same for ON CONFLICT
     });
   });
 
   describe('POST /user/save-user-devices', () => {
-    it('should save user device successfully', async () => {
-      poolQueryStub.withArgs(sinon.match.string, sinon.match.array).resolves({});
+    const commonDeviceData = {
+      player_id: 'test_player_id_123',
+      device_type: 'android',
+      app_version: '1.0.0',
+      device_model: 'Pixel 5',
+      os_version: 'Android 12',
+      ip_address: '192.168.1.1',
+    };
+
+    it('should save user device successfully with all valid data', async () => {
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).resolves({});
 
       const res = await request(app)
         .post('/user/save-user-devices')
         .set('Authorization', `Bearer ${token}`)
-        .send({ player_id: 'player123', device_type: 'mobile' });
+        .send(commonDeviceData);
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
       expect(res.body.message).to.equal('Dispositivo de usuario guardado con éxito');
+      expect(mockClient.query.calledWithMatch(
+        sinon.match(/INSERT INTO user_devices/),
+        [
+          testUser.userId, // userId from token
+          commonDeviceData.player_id,
+          testUser.orgId, // orgId from token
+          commonDeviceData.device_type,
+          commonDeviceData.app_version,
+          true, // is_active default
+          sinon.match.date, // last_seen_at
+          sinon.match.date, // created_at
+          commonDeviceData.device_model,
+          commonDeviceData.os_version,
+          commonDeviceData.ip_address,
+        ]
+      )).to.be.true;
     });
 
-    it('should return 500 if saving user device fails', async () => {
-      poolQueryStub.withArgs(sinon.match.string, sinon.match.array).throws(new Error('DB Error'));
+    it('should return 400 if player_id is missing', async () => {
+      const { player_id, ...dataWithout } = commonDeviceData;
+      const res = await request(app)
+        .post('/user/save-user-devices')
+        .set('Authorization', `Bearer ${token}`)
+        .send(dataWithout);
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.include('player_id'); // Assuming validation error message
+    });
+
+    it('should return 500 if database operation fails', async () => {
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).throws(new Error('DB Error'));
 
       const res = await request(app)
         .post('/user/save-user-devices')
         .set('Authorization', `Bearer ${token}`)
-        .send({ player_id: 'player123', device_type: 'mobile' });
+        .send(commonDeviceData);
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Error interno al guardar dispositivo'); // Assuming generic error message
+    });
+
+    it('should handle duplicate player_id gracefully (ON CONFLICT)', async () => {
+      // Simulate ON CONFLICT DO UPDATE behavior
+      mockClient.query.withArgs(sinon.match.string, sinon.match.array).resolves({ command: 'UPDATE', rowCount: 1 });
+
+      const res = await request(app)
+        .post('/user/save-user-devices')
+        .set('Authorization', `Bearer ${token}`)
+        .send(commonDeviceData);
+
+      expect(res.statusCode).to.equal(200);
+      expect(res.body.success).to.be.true;
+      expect(res.body.message).to.equal('Dispositivo de usuario guardado con éxito'); // Message remains the same for ON CONFLICT
     });
   });
 
   describe('GET /user/get-names', () => {
-    it('should return user names successfully', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['123']).resolves({ rows: [{ name: 'Test User' }] });
+    it('should return user names successfully for a valid personalId', async () => {
+      const mockPersonalData = [{ name: 'Test User 1' }, { name: 'Test User 2' }];
+      sandbox.stub(General, 'getPersonal').resolves(mockPersonalData);
 
       const res = await request(app)
-        .get('/user/get-names?cedula=123')
+        .get('/user/get-names')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
-      expect(res.body.data).to.be.an('array').that.is.not.empty;
+      expect(res.body.data).to.deep.equal(mockPersonalData);
+      expect(General.getPersonal.calledWith(testUser.userId)).to.be.true; // Ensure it's called with userId from token
     });
 
     it('should return success false if no user found', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['999']).resolves({ rows: [] });
+      sandbox.stub(General, 'getPersonal').resolves([]); // Simulate no users found
 
       const res = await request(app)
-        .get('/user/get-names?cedula=999')
+        .get('/user/get-names')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(200);
@@ -113,19 +247,20 @@ describe('User Auth Routes', () => {
     });
 
     it('should return 500 if fetching user names fails', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['123']).throws(new Error('DB Error'));
+      sandbox.stub(General, 'getPersonal').throws(new Error('DB Error'));
 
       const res = await request(app)
-        .get('/user/get-names?cedula=123')
+        .get('/user/get-names')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Error interno al obtener la información del usuario'); // Assuming generic error message
     });
   });
 
   describe('GET /user/user-info', () => {
-    it('should return user info from token', async () => {
+    it('should return user info from token successfully', async () => {
       const res = await request(app)
         .get('/user/user-info')
         .set('Authorization', `Bearer ${token}`);
@@ -133,10 +268,31 @@ describe('User Auth Routes', () => {
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
       expect(res.body.data).to.have.property('userId', testUser.userId);
+      expect(res.body.data).to.have.property('orgId', testUser.orgId);
     });
 
-    it('should return 500 if an error occurs', async () => {
-      sandbox.stub(jwt, 'verify').throws(new Error('Invalid token'));
+    it('should return 401 if no token is provided', async () => {
+      const res = await request(app)
+        .get('/user/user-info');
+
+      expect(res.statusCode).to.equal(401);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Acceso denegado. No se proporcionó token.'); // Assuming message from verifyToken middleware
+    });
+
+    it('should return 401 if an invalid token is provided', async () => {
+      const res = await request(app)
+        .get('/user/user-info')
+        .set('Authorization', `Bearer invalidtoken`);
+
+      expect(res.statusCode).to.equal(401);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Token inválido.'); // Assuming message from verifyToken middleware
+    });
+
+    it('should return 500 if an unexpected error occurs', async () => {
+      // Simulate an error within the route handler itself, after token verification
+      sandbox.stub(express.response, 'json').throws(new Error('Unexpected error'));
 
       const res = await request(app)
         .get('/user/user-info')
@@ -144,56 +300,93 @@ describe('User Auth Routes', () => {
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Error interno del servidor'); // Assuming generic error message from errorHandler
     });
   });
 
   describe('POST /user/sign-in', () => {
-    it('should sign in user successfully and return token', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['test@example.com']).resolves({ rows: [{ id: 1, email: 'test@example.com', password: 'hashedPassword', organizacion_id: 101, role: 'user' }] });
-      sandbox.stub(bcrypt, 'compare').resolves(true);
-      sandbox.stub(jwt, 'sign').returns('mockToken');
+    const commonSignInData = {
+      email: 'test@example.com',
+      password: 'password123',
+    };
+    const mockUser = {
+      id: 1,
+      email: commonSignInData.email,
+      password: 'hashedPassword',
+      organizacion_id: testUser.orgId,
+      role_id: 1,
+      personal_id: '12345',
+    };
 
+    beforeEach(() => {
+      sandbox.stub(Authentication, 'authenticateUser').resolves({
+        accessToken: 'mockAccessToken',
+        refreshToken: 'mockRefreshToken',
+      });
+    });
+
+    it('should sign in user successfully and return tokens', async () => {
       const res = await request(app)
         .post('/user/sign-in')
-        .send({ email: 'test@example.com', password: 'password' });
+        .send(commonSignInData);
 
       expect(res.statusCode).to.equal(200);
       expect(res.body.success).to.be.true;
       expect(res.body.message).to.equal('Inicio de sesión exitoso');
-      expect(res.body.token).to.equal('mockToken');
+      expect(res.body.accessToken).to.equal('mockAccessToken');
+      expect(res.body.refreshToken).to.equal('mockRefreshToken');
+      expect(Authentication.authenticateUser.calledWith(
+        commonSignInData.email,
+        commonSignInData.password,
+        mockClient
+      )).to.be.true;
+      expect(res.headers['set-cookie'][0]).to.include('refreshToken=mockRefreshToken');
     });
 
-    it('should return 400 if email or password missing', async () => {
+    it('should return 400 if email is missing', async () => {
+      const { email, ...dataWithout } = commonSignInData;
       const res = await request(app)
         .post('/user/sign-in')
-        .send({ email: 'test@example.com' });
+        .send(dataWithout);
 
       expect(res.statusCode).to.equal(400);
       expect(res.body.success).to.be.false;
       expect(res.body.message).to.equal('Email y contraseña son requeridos');
     });
 
-    it('should return 401 if credentials are incorrect', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['test@example.com']).resolves({ rows: [] });
+    it('should return 400 if password is missing', async () => {
+      const { password, ...dataWithout } = commonSignInData;
+      const res = await request(app)
+        .post('/user/sign-in')
+        .send(dataWithout);
+
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Email y contraseña son requeridos');
+    });
+
+    it('should return 401 if authentication fails (incorrect credentials)', async () => {
+      Authentication.authenticateUser.resolves({ accessToken: null, refreshToken: null });
 
       const res = await request(app)
         .post('/user/sign-in')
-        .send({ email: 'test@example.com', password: 'wrongpassword' });
+        .send(commonSignInData);
 
       expect(res.statusCode).to.equal(401);
       expect(res.body.success).to.be.false;
       expect(res.body.message).to.equal('Credenciales incorrectas');
     });
 
-    it('should return 500 if authentication fails', async () => {
-      poolQueryStub.withArgs(sinon.match.string, ['test@example.com']).throws(new Error('Auth Error'));
+    it('should return 500 if an unexpected error occurs during authentication', async () => {
+      Authentication.authenticateUser.throws(new Error('Authentication failed'));
 
       const res = await request(app)
         .post('/user/sign-in')
-        .send({ email: 'test@example.com', password: 'password' });
+        .send(commonSignInData);
 
       expect(res.statusCode).to.equal(500);
       expect(res.body.success).to.be.false;
+      expect(res.body.message).to.equal('Error interno del servidor'); // Assuming generic error message from errorHandler
     });
   });
 });

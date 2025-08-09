@@ -71,6 +71,18 @@ const User = {
     const { rows } = await client.query(query, [id, organizacion_id]);
     return rows.length > 0 ? rows[0] : null;
   },
+
+  async getUsersByDepartmentAndOrganization(departmentName, organizacion_id, client = pool) {
+    const query = `
+      SELECT u.id, u.personal_id, u.name, u.email
+      FROM users u
+      JOIN departments d ON u.department_id = d.id
+      WHERE d.department = $1 AND u.organizacion_id = $2
+      ORDER BY u.name;
+    `;
+    const { rows } = await client.query(query, [departmentName, organizacion_id]);
+    return rows;
+  },
 };
 
 export default User;

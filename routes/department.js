@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { createDepartment, getDepartmentsByOrganization } from '../models/Departamento.js';
+import User from '../models/User.js';
 import pool from '../config/db.js';
 
 const router = express.Router();
@@ -43,6 +44,22 @@ router.get('/get-single-department', async (req, res, next) => {
   try {
     const orgId = req.user.orgId;
     const data = await getDepartmentsByOrganization(orgId, req.dbClient);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/users-by-department/:departmentName', async (req, res, next) => {
+  try {
+    const { departmentName } = req.params;
+    const orgId = req.user.orgId;
+
+    if (!departmentName) {
+      return res.status(400).json({ error: 'El nombre del departamento es requerido.' });
+    }
+
+    const data = await User.getUsersByDepartmentAndOrganization(departmentName, orgId, req.dbClient);
     res.json({ success: true, data });
   } catch (error) {
     next(error);
