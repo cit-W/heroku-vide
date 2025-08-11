@@ -8,7 +8,9 @@ const router = express.Router();
 router.use(verifyToken, async (req, res, next) => {
   const client = await pool.connect();
   try {
-    await client.query('SET app.current_org_id = $1', [req.user.orgId]);
+    await client.query("SELECT set_config('app.current_org_id', $1, false)", [
+      req.user.orgId.toString(),
+    ]);
     req.dbClient = client;
     next();
   } catch (error) {

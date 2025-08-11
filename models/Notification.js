@@ -1,108 +1,201 @@
 import pool from '../config/db.js';
 import * as OneSignal from '@onesignal/node-onesignal';
 import { saveDevice } from './UserDevices.js';
+import axios from 'axios';
 
-const config = OneSignal.createConfiguration({
-  authMethods: {
-    appKey: process.env.ONE_SIGNAL_API_KEY,
-  },
-});
-const client = new OneSignal.DefaultApi(config);
-const APP_ID = process.env.ONE_SIGNAL_APP_ID;
+import {
+  oneSignalClient,
+  ONE_SIGNAL_APP_ID,
+} from '../config/oneSignalClient.js';
 
-export async function registerUser(email, player_id, role, organizacion_id) {
-  await saveDevice({ email, player_id, device_type: role, organizacion_id });
+export async function registerUser(
+  deviceInfo,
+  player_id,
+  role,
+  organizacion_id
+) {
+  console.log('funcion_llamada', 'registerUser');
 
+  // Guarda en BD
+  await saveDevice(deviceInfo);
+
+  // Asigna tags en OneSignal
   const player = new OneSignal.UpdatePlayerTagsRequestBody();
-  player.tags = { role };
-  await client.updatePlayerTags(APP_ID, player_id, player);
+  player.tags = { role, org_id: organizacion_id };
+  await oneSignalClient.updatePlayer(ONE_SIGNAL_APP_ID, player_id, player);
 }
 
-export async function sendNotification(title, body, role, departamento, nivel) {
+
+export async function sendNotificationToPlayer(title, body, playerId) {
+  const data = {
+    app_id: ONE_SIGNAL_APP_ID,
+    headings: { en: title, es: title },
+    contents: { en: body, es: body },
+    include_player_ids: [playerId],
+  };
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+  };
+
   try {
-    const filters = [];
-    const add = (key, val) => {
-      if (filters.length) filters.push({ operator: 'AND' });
-      filters.push({ field: 'tag', key, relation: '=', value: val });
-    };
-    if (role) add('role', role);
-    if (departamento) add('departamento', departamento);
-    if (nivel) add('nivel', nivel);
-
-    const notification = {
-      app_id: APP_ID,
-      contents: { en: body, es: body },
-      headings: { en: title, es: title },
-      filters,
-    };
-
-    const response = await client.createNotification(notification);
-    return { notification_id: response.id };
+    const response = await axios.post(
+      'https://onesignal.com/api/v1/notifications',
+      data,
+      { headers }
+    );
+    return { notification_id: response.data.id };
   } catch (error) {
-    console.error('Error sending notification:', error);
-    throw error;
+    console.error(
+      'Error al enviar notificación con Axios:',
+      error.response?.data || error.message
+    );
+    throw new Error('Fallo al enviar notificación a través de la API de OneSignal.');
   }
 }
 
 export async function sendNotificationByRoles(title, body, roles, orgId) {
   if (!roles?.length) throw new Error('Debe proporcionar al menos un rol.');
 
-  const filters = roles.flatMap((r, i) => {
-    const arr = [{ field: 'tag', key: 'role_level', relation: '=', value: r }];
-    if (i < roles.length - 1) arr.push({ operator: 'OR' });
-    return arr;
-  });
+  const roleFilters = roles.map((role) => ({
+    field: 'tag',
+    key: 'role',
+    relation: '=',
+    value: role,
+  }));
+
+  const filters = roleFilters.reduce((acc, current, index) => {
+    acc.push(current);
+    if (index < roleFilters.length - 1) {
+      acc.push({ operator: 'OR' });
+    }
+    return acc;
+  }, []);
 
   filters.push(
     { operator: 'AND' },
     { field: 'tag', key: 'org_id', relation: '=', value: orgId }
   );
 
-  const notification = {
-    app_id: APP_ID,
-    contents: { en: body, es: body },
+  const data = {
+    app_id: ONE_SIGNAL_APP_ID,
     headings: { en: title, es: title },
+    contents: { en: body, es: body },
     filters,
   };
 
-  const { id } = await client.createNotification(notification);
-  return { notification_id: id };
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
+  };
+
+  try {
+    const response = await axios.post(
+      'https://onesignal.com/api/v1/notifications',
+      data,
+      { headers }
+    );
+    return { notification_id: response.data.id };
+  } catch (error) {
+    console.error(
+      'Error al enviar notificación con Axios:',
+      error.response?.data || error.message
+    );
+    throw new Error('Fallo al enviar notificación a través de la API de OneSignal.');
+  }
 }
 
 export async function sendNotificationToOrg(title, body, orgId) {
   if (!orgId) throw new Error('Se debe proporcionar orgId.');
 
-  const notification = {
-    app_id: APP_ID,
-    contents: { en: body, es: body },
+  const data = {
+    app_id: ONE_SIGNAL_APP_ID,
     headings: { en: title, es: title },
+    contents: { en: body, es: body },
     filters: [{ field: 'tag', key: 'org_id', relation: '=', value: orgId }],
   };
 
-  const { id } = await client.createNotification(notification);
-  return { notification_id: id };
-}
-
-export async function sendNotificationToPlayer(title, body, playerId) {
-  const notification = {
-    app_id: APP_ID,
-    contents: { en: body },
-    headings: { en: title },
-    include_subscription_ids: [playerId], // nuevo nombre del campo
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`,
   };
 
-  const { id } = await client.createNotification(notification);
-  return { notification_id: id };
+  try {
+    const response = await axios.post(
+      'https://onesignal.com/api/v1/notifications',
+      data,
+      { headers }
+    );
+    return { notification_id: response.data.id };
+  } catch (error) {
+    console.error(
+      'Error al enviar notificación con Axios:',
+      error.response?.data || error.message
+    );
+    throw new Error('Fallo al enviar notificación a través de la API de OneSignal.');
+  }
 }
 
 export async function getNotificationsForUser(userId) {
+  // ADVERTENCIA: La API de OneSignal no permite filtrar el historial de notificaciones
+  // por el 'player_id' al que fue enviada. Esta función probablemente no devuelva
+  // los resultados esperados.
+  // La forma correcta de implementar un historial por usuario es:
+  // 1. Almacenar el 'notification_id' y 'user_id' en tu propia base de datos al enviar la notificación.
+  // 2. Consultar esa tabla para obtener el historial del usuario.
   const { rows } = await pool.query(
     'SELECT player_id FROM user_devices WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
     [userId]
   );
+
   if (!rows.length) return [];
 
-  const filter = `[{"field":"player_id","relation":"=","value":"${rows[0].player_id}"}]`;
-  const response = await client.getNotifications(APP_ID, '50', 0, null, filter);
+  // Este llamado obtendrá las últimas 50 notificaciones de TODA la app, no solo las del usuario.
+  const response = await oneSignalClient.getNotifications(
+    ONE_SIGNAL_APP_ID,
+    '50',
+    '0'
+  );
   return response.notifications || [];
+}
+
+export async function sendNotificationToAll(title, body) {
+  if (!title || !body) {
+    throw new Error('El título y el cuerpo del mensaje son requeridos.');
+  }
+
+  // 2. Definir los datos y cabeceras como en el cURL que sí funcionó
+  const data = {
+    app_id: ONE_SIGNAL_APP_ID,
+    included_segments: ['Total Subscriptions'], // O usa "Active Subscriptions"
+    headings: { en: title, es: title },
+    contents: { en: body, es: body },
+  };
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Basic ${process.env.ONESIGNAL_REST_API_KEY}`, // <-- La clave es leída desde .env
+  };
+
+  try {
+    // 3. Realizar la llamada a la API con axios
+    const response = await axios.post(
+      'https://onesignal.com/api/v1/notifications',
+      data,
+      { headers: headers }
+    );
+
+    console.log('Notificación masiva enviada con éxito:', response.data);
+    return { notification_id: response.data.id };
+  } catch (error) {
+    // Axios envuelve los errores de manera diferente, así que los manejamos así:
+    console.error(
+      'Error al enviar notificación masiva con Axios:',
+      error.response?.data || error.message
+    );
+    throw new Error(
+      'Fallo al enviar notificación a través de la API de OneSignal.'
+    );
+  }
 }

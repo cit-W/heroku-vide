@@ -63,6 +63,7 @@ router.post('/create-user', async (req, res, next) => {
 });
 
 router.post('/save-user-devices', verifyToken, async (req, res, next) => {
+  console.log('funcion_llamada', '/save-user-devices');
   try {
     const orgId = req.user.orgId;
     await saveDevice({ ...req.body, organizacion_id: orgId }, req.dbClient);

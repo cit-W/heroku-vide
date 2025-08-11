@@ -107,6 +107,7 @@ export async function saveDevice(deviceData, client = pool) {
     user_id,
     player_id,
     organizacion_id,
+    role,
     device_type,
     app_version,
     device_model,
@@ -126,6 +127,10 @@ export async function saveDevice(deviceData, client = pool) {
                 ip_address = EXCLUDED.ip_address,
                 is_active = true;
         `;
+
+  console.log("Datos de device: ",deviceData);
+  console.log(query)
+
   await client.query(query, [
     user_id,
     player_id,

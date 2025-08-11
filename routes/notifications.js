@@ -5,82 +5,85 @@ import {
   sendNotificationToOrg,
   getNotificationsForUser,
   sendNotificationToPlayer,
+  sendNotificationToAll,
 } from '../models/Notification.js';
 import { verifyToken } from '../middleware/auth.js';
-import * as OneSignal from '@onesignal/node-onesignal';
 
 const router = express.Router();
 
-const config = OneSignal.createConfiguration({
-  authMethods: {
-    app_key: {
-      tokenProvider: { getToken: () => process.env.ONESIGNAL_REST_API_KEY },
-    },
-  },
-});
-const client = new OneSignal.DefaultApi(config);
-const APP_ID = process.env.ONESIGNAL_APP_ID;
+// --- ENDPOINTS DE NOTIFICACIONES ---
 
-router.post('/send', async (req, res) => {
-  const { onesignalId, title, body } = req.body;
-  if (!onesignalId || !title || !body) {
-    return res
-      .status(400)
-      .json({ error: 'onesignalId, title y body son requeridos' });
-  }
-
-  try {
-    const notification = new OneSignal.Notification();
-    notification.app_id = APP_ID;
-    notification.include_player_ids = [onesignalId];
-    notification.headings = { en: title };
-    notification.contents = { en: body };
-
-    // (Opcional) puedes agregar data u opciones extras:
-    // notification.data = { key: 'value' };
-    // notification.ios_badgeType = 'Increase';
-    // notification.ios_badgeCount = 1;
-
-    const { id } = await client.createNotification(notification);
-    return res.status(200).json({ success: true, notificationId: id });
-  } catch (err) {
-    console.error('OneSignal error:', err);
-    return res.status(500).json({
-      error: 'Error al enviar la notificación',
-      details: err.response?.body || err.message,
-    });
-  }
-});
-
+// Endpoint para registrar un dispositivo y asociarlo a un usuario y rol
 router.post('/register-user', async (req, res) => {
-  const { player_id, user_id, role, organizacion_id } = req.body;
+  const {
+    player_id,
+    user_id,
+    role,
+    organizacion_id,
+    device_type,
+    app_version,
+    device_model,
+    os_version,
+    ip_address,
+  } = req.body;
+
   if (!player_id || !user_id || !role) {
     return res
       .status(400)
       .json({ error: 'Faltan datos (player_id, user_id, role)' });
   }
-  await registerUser(user_id, player_id, role, organizacion_id);
-  res.json({ success: true, message: 'Usuario registrado y tag asignado.' });
+
+  try {
+    const deviceInfo = {
+      user_id,
+      player_id,
+      organizacion_id,
+      role,
+      device_type,
+      app_version,
+      device_model,
+      os_version,
+      ip_address,
+    };
+
+    await registerUser(deviceInfo, player_id, role, organizacion_id);
+
+    res.json({ success: true, message: 'Usuario registrado y tag asignado.' });
+    console.log('respuesta enviada');
+  } catch (error) {
+    console.log('error respuesta enviada');
+    console.error('Error al registrar usuario en OneSignal:', error);
+    res
+      .status(500)
+      .json({ success: false, error: 'No se pudo registrar el dispositivo.' });
+  }
 });
 
 router.post('/send-to-player', async (req, res) => {
-  const { title, body, playerId, player_id } = req.body;
-  const target = playerId || player_id;
-  if (!title || !body || !target) {
+  const { title, body, player_id } = req.body; // Se estandariza a 'player_id'
+  if (!title || !body || !player_id) {
     return res
       .status(400)
-      .json({ error: 'Faltan datos (title, body, playerId)' });
+      .json({ error: 'Faltan datos (title, body, player_id)' });
   }
-  const data = await sendNotificationToPlayer(title, body, target);
-  res.json({ success: true, data });
+  try {
+    const data = await sendNotificationToPlayer(title, body, player_id);
+    res.json({ success: true, data });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, error: 'Error al enviar la notificación.' });
+  }
 });
 
+// Endpoint para obtener el historial de notificaciones de un usuario
 router.get('/history', verifyToken, async (req, res) => {
   const { userId } = req.user;
   const data = await getNotificationsForUser(userId);
   res.json({ success: true, data });
 });
 
+// Endpoint para enviar notificaciones basadas en roles dentro de una organización
 router.post('/send-by-roles', verifyToken, async (req, res) => {
   const { orgId } = req.user;
   const { title, body, roles } = req.body;
@@ -93,6 +96,7 @@ router.post('/send-by-roles', verifyToken, async (req, res) => {
   res.json({ success: true, data });
 });
 
+// Endpoint para enviar notificaciones a todos en una organización
 router.post('/send-to-org', verifyToken, async (req, res) => {
   const { orgId } = req.user;
   const { title, body } = req.body;
@@ -101,6 +105,36 @@ router.post('/send-to-org', verifyToken, async (req, res) => {
   }
   const data = await sendNotificationToOrg(title, body, orgId);
   res.json({ success: true, data });
+});
+
+router.post('/send-to-all', verifyToken, async (req, res) => {
+  // **Recomendación de seguridad:** Verifica si el usuario tiene un rol específico.
+  // Ejemplo:
+  // if (req.user.role !== 'admin') {
+  //   return res.status(403).json({ error: 'Acceso no autorizado. Se requiere rol de administrador.' });
+  // }
+
+  const { title, body } = req.body;
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Faltan datos (title, body)' });
+  }
+
+  try {
+    const data = await sendNotificationToAll(title, body);
+    res.json({
+      success: true,
+      message: 'Notificación programada para enviarse a todos los usuarios.',
+      data,
+    });
+  } catch (error) {
+    console.error('Error al enviar notificación masiva:', error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        error: 'No se pudo enviar la notificación masiva.',
+      });
+  }
 });
 
 export default router;

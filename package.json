@@ -36,6 +36,7 @@
     "nodemailer": "^6.9.14",
     "performance-now": "^2.1.0",
     "pg": "^8.12.0",
+    "react-onesignal": "^3.2.3",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2"
   },
